@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.vinext/
+.wrangler/
+.env
+.env.*
+!.env.example
+packages/contracts/out/
+packages/contracts/cache/
+packages/contracts/broadcast/
+*.log
+.DS_Store
+
+*.tsbuildinfo
