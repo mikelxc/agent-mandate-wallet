@@ -6,4 +6,4 @@
 - Keep onchain evidence, gateway attestations and UI simulations visibly distinct.
 - Never introduce unrestricted agent signing, arbitrary execution, or token approvals without revisiting the threat model.
 - Never claim ENS/Arc/Ledger integrations are live based on mocks. Record the deployment and verification evidence.
-- Do not deploy public-chain contracts or add private keys to the frontend.
+- Sepolia test deployments are authorized by the user. Keep deployment scripts chain-guarded to 11155111; other public-chain deployments require explicit user authorization. Never add private keys to the frontend.

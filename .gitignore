@@ -13,3 +13,6 @@ packages/contracts/broadcast/
 .DS_Store
 
 *.tsbuildinfo
+
+# Local testnet keystore and password; never commit.
+.secrets/
