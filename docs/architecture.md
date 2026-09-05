@@ -1,5 +1,7 @@
 # Architecture decision record — initial operating account
 
+> This document describes the original reference account. The deployed Kernel wallet uses [the newer architecture](kernel.md); its root owner is not subject to the reference agent policies.
+
 ## Product boundary
 
 A company configures financial authority once. An agent proposes a structured payment. The account enforces the authority, while the gateway records the payment and the offchain service outcome separately.

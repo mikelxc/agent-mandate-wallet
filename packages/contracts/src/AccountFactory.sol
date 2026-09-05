@@ -32,7 +32,7 @@ contract AccountFactory is ERC721, ReentrancyGuard {
         identityAdapter = adapter;
     }
 
-    function createAccount(string calldata label) external nonReentrant returns (uint256 id, address account) {
+    function createAccount(string calldata label) public nonReentrant returns (uint256 id, address account) {
         bytes memory value = bytes(label);
         if (value.length < 3 || value.length > 32) revert InvalidLabel();
         for (uint256 i; i < value.length; ++i) {
@@ -44,7 +44,7 @@ contract AccountFactory is ERC721, ReentrancyGuard {
         if (registeredLabels[labelHash]) revert LabelTaken();
         registeredLabels[labelHash] = true;
         id = nextTokenId++;
-        account = address(new OperatingAccount{salt: bytes32(id)}(IAccountRegistry(address(this)), id));
+        account = _deployAccount(id);
         accountOf[id] = account;
         isOperatingAccount[account] = true;
         labelOf[id] = label;
@@ -53,6 +53,10 @@ contract AccountFactory is ERC721, ReentrancyGuard {
         bytes32 node;
         if (address(identityAdapter) != address(0)) node = identityAdapter.register(label, account);
         emit AccountCreated(id, msg.sender, account, label, node);
+    }
+
+    function _deployAccount(uint256 id) internal virtual returns (address) {
+        return address(new OperatingAccount{salt: bytes32(id)}(IAccountRegistry(address(this)), id));
     }
 
     function proposeHandover(uint256 id, address recipient) external {

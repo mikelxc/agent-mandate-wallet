@@ -4,10 +4,12 @@ Configurable operating accounts for agents: owner-controlled accounts, bounded p
 
 This is the initial ETHOnline monorepo. It includes a working contract core and wallet-connected frontend, plus a clearly labeled policy simulation. It is not yet the complete Circle/Ledger agent workflow.
 
+The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT owner validator. It can spend demo ERC-20 tokens directly from the owner through a capped allowance. See [deployment evidence](docs/sepolia.md) and [current architecture](docs/kernel.md). The original OperatingAccount remains a reference for agent-policy behavior.
+
 ## Stack
 
 - **Bun 1.4.1** — workspace package manager, frontend tooling runtime, SDK tests and scripts.
-- **Foundry 1.4.2 / Solidity 0.8.30** — contracts, deployment scripts and tests.
+- **Foundry 1.4.2 / Solidity 0.8.33** — contracts, deployment scripts and tests.
 - **wagmi 3.7.7** — latest stable npm release checked during setup on September 5, 2026; pinned with the Bun lockfile.
 - React 19, TypeScript, viem, TanStack Query, Vinext/Vite, shadcn primitives.
 - OpenZeppelin 5.4.0; vendored forge-std v1.9.7.

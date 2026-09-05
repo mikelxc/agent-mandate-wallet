@@ -1,0 +1,85 @@
+{
+  "chainId": 11155111,
+  "kernelRevision": "f2a84a332ec5a722e7e95a0d64601905c3c87fe9",
+  "entryPoint": {
+    "address": "0x433709009B8330FDa32311DF1C2AFA402eD8D009",
+    "version": "0.9.0",
+    "codeHash": "0x280d5c7c0de94b512401eb9c4b0ef0436275ff03627aad0ce1f93ab1627187a0"
+  },
+  "contracts": [
+    {
+      "name": "KernelUUPS",
+      "type": "CREATE",
+      "address": "0x1de2280927f27b98607cf5029ea0c10d909bd773",
+      "transactionHash": "0x3a01e164fd0ffad87eb0cc1595218588a8a0eb6ea8afdd09d9aa20561ccaa907",
+      "blockNumber": "11643315",
+      "codeHash": "0xb4d983b6a4aa4f8bb82102be74f2e72e6d1c7e332507613f978b1c36aeb6a472"
+    },
+    {
+      "name": "KernelImmutableECDSA",
+      "type": "CREATE",
+      "address": "0x278e90915f0787f8dcb1aa791dfee6a6c0e380b3",
+      "transactionHash": "0x61af61b4269556c9a3aab8676b8488d701a4c34e310731d4d1669aebb693a6a1",
+      "blockNumber": "11643316",
+      "codeHash": "0x8ec7288fbc45a7aeab391929786c60b3f01f3c5ba1a8956cf6a0d79382a89d7e"
+    },
+    {
+      "name": "KernelFactory",
+      "type": "CREATE",
+      "address": "0x06f085a6c6e4f12ea1044b708412168674e6fad4",
+      "transactionHash": "0x9f4f4f26de7794041d841fff7d9a4829c81af51773b5fcfe2f21cfcb006ceaa0",
+      "blockNumber": "11643317",
+      "codeHash": "0x6d8bfb2807606a93d673acf6f8c2905c8bd326f61b378aa4084b0660bef3a8ad"
+    },
+    {
+      "name": "NFTOwnerValidator",
+      "type": "CREATE",
+      "address": "0xe4cb1515bd7ac3d43f979392517eb35964a7b7cc",
+      "transactionHash": "0xa97ca832cc175d0f6db788ed93cf3887a71bc4550836f3c6d409508669fa2373",
+      "blockNumber": "11643318",
+      "codeHash": "0xe60750d7e7ae9b65f6fc17da88d35792ec4b6cbfdbdec4ded8a48977d4f09408"
+    },
+    {
+      "name": "KernelAccountFactory",
+      "type": "CREATE",
+      "address": "0x39cb47aa65594767d1e456bd329aad849ec98345",
+      "transactionHash": "0x2322ef32ee91245ac29ac90266e5e5ef09288bd380da4b410bed1efb76729802",
+      "blockNumber": "11643319",
+      "codeHash": "0x2f79547223ee42e2a5a5abd5356650c605457363c9d12a193c18498745a1e717"
+    },
+    {
+      "name": "MockUSDC",
+      "type": "CREATE",
+      "address": "0x3c14067e0dbd276c083908c1d9d2f2dc0a65ca41",
+      "transactionHash": "0x0615f687de83bbf218bfe7ea07a608c63b8a3b7ede41a4f213ab7d6c7175a5de",
+      "blockNumber": "11643320",
+      "codeHash": "0x2e3a9852472d681a490cfb33c0cbb6c1e44b58b8ec3d332d2d46af7b28c0b493"
+    },
+    {
+      "name": "KernelAccountFactory",
+      "type": "CALL",
+      "address": "0x39cb47aa65594767d1e456bd329aad849ec98345",
+      "transactionHash": "0xbf2827b54ee8ad7f0cb2b5e3a390aafcae8a87fb7c12aaaded1b12015003537a",
+      "blockNumber": "11643321",
+      "codeHash": "0x2f79547223ee42e2a5a5abd5356650c605457363c9d12a193c18498745a1e717"
+    }
+  ],
+  "explorerSourceVerification": false,
+  "compiler": {
+    "version": "0.8.33",
+    "evmVersion": "prague",
+    "viaIR": true,
+    "optimizerRuns": 200
+  },
+  "sourceSHA256": {
+    "packages/contracts/src/AccountFactory.sol": "9080afb9049a03c9d13508559b1cb810cd8cd920bc7c864fd02b47ae43f56607",
+    "packages/contracts/src/KernelAccountFactory.sol": "5740c8693a3ed1ca80af54fc0f0e4b1233c85df703bd670cf7757d65b5dd0d31",
+    "packages/contracts/src/NFTOwnerValidator.sol": "63253dc55be925369739e4398c04c083eebd71f494dfa071405efafc090bcd61",
+    "packages/contracts/src/MockUSDC.sol": "69def1aa7633c78f60e03ec72a29989d7b4975dbcd2e7803afdb9be3abebf9ae"
+  },
+  "demoAccount": {
+    "address": "0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d",
+    "tokenId": "1",
+    "codeHash": "0xaaa52c8cc8a0e3fd27ce756cc6b4e70c51423e9b597b11f32d3e49f8b1fc890d"
+  }
+}

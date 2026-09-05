@@ -1,36 +1,37 @@
 # Sepolia test deployment
 
-Dedicated deployment wallet: `0x96B0D15128748cE191B79c75560Ed93695788865`.
+Deployed and exercised September 5, 2026 on chain 11155111. Deployer: `0x96B0D15128748cE191B79c75560Ed93695788865`. Funded with 0.5 test ETH; approximately 0.47909 remains after deployment and the first smoke test, with 0.005 initially deposited for account gas.
 
-Chain: Ethereum Sepolia (`11155111`). Only send Sepolia test ETH. This address is public; the keystore and password are local-only under ignored `.secrets/`, with directory mode 0700 and files mode 0600. The password is stored locally for unattended test deployments; encryption does not protect against a process that can read both files. No credentials enter the frontend, logs, or repository.
+| Component | Address |
+| --- | --- |
+| Canonical EntryPoint 0.9 | `0x433709009B8330FDa32311DF1C2AFA402eD8D009` |
+| Kernel implementation | `0x1de2280927f27B98607cF5029EA0C10D909Bd773` |
+| Kernel factory | `0x06f085A6c6E4f12Ea1044B708412168674e6faD4` |
+| NFT owner validator | `0xe4cB1515BD7aC3D43f979392517EB35964A7b7cc` |
+| Product factory / NFT registry | `0x39cB47aA65594767d1e456bd329Aad849EC98345` |
+| Freely mintable demo USDC | `0x3C14067e0dbD276c083908C1D9D2f2Dc0A65ca41` |
+| Demo account #1 | `0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d` |
 
-No deployment has been broadcast yet. Funding is pending. The deployment script below targets the existing payment-account reference prototype, not a Kernel integration.
+[Public manifest](../deployments/sepolia.json) records seven successful deployment receipts, runtime code hashes, and upstream Kernel revision. EntryPoint code presence and its expected SenderCreator were checked before deployment. Explorer source verification has not been performed.
+
+[Payment transaction](https://sepolia.etherscan.io/tx/0x640020603186197879a755345e3699e35059f4b8b8e363e630e208fc03eb09ee) successfully executed a signed UserOperation, transferring 3 demo USDC from the owner's balance to `0x000000000000000000000000000000000000bEEF`. The smoke test checked the matching UserOperation success event and both balance deltas. [Evidence](../deployments/sepolia-smoke.json). The remaining allowance was [revoked](https://sepolia.etherscan.io/tx/0x4a7177e892a2fe48669dfc538a40ec9d0751311a9c7094c51334f8346f5d0fd2).
+
+## Reproduction
 
 ```sh
-bun run contracts:build
-# Run from packages/contracts; paths below point to the root's ignored credentials.
-forge script script/DeploySepolia.s.sol:DeploySepolia \
+bun run check
+# From packages/contracts; omit --broadcast for simulation.
+forge script script/DeployKernelSepolia.s.sol \
   --rpc-url "$SEPOLIA_RPC_URL" \
   --keystore ../../.secrets/sepolia-deployer.json \
-  --password-file ../../.secrets/sepolia-deployer.password
+  --password-file ../../.secrets/sepolia-deployer.password \
+  --sender 0x96B0D15128748cE191B79c75560Ed93695788865 --broadcast --slow
+# From repository root, exercise the EXISTING deployment (mints demo tokens and uses test gas).
+bun scripts/sepolia-smoke.ts --broadcast
 ```
 
-Append `--broadcast` to the exact successfully simulated command when funded and ready. The script rejects all other chains. It deploys AccountFactory and a clearly marked, freely mintable demo token. ENS is disabled unless a configured adapter is explicitly supplied through `ENS_IDENTITY_ADAPTER`; live ENS enrollment still requires the controlled parent registry and adapter factory binding.
+The deployment script rejects other chains. Rerunning it creates new addresses; update the manifest and SDK configuration if intentionally redeploying. The smoke script targets the recorded deployment and revokes allowance after its payment attempt.
 
-After broadcasting, record chain, deployer, transaction hashes, contract addresses, source commit and verification results in a public deployment manifest. Never commit raw keystores or password files, including inside deployment artifacts.
+The encrypted keystore and local password are ignored under `.secrets/` (directory0700, files0600). Encryption does not protect against a process that can read both files. Credentials never enter the frontend or repository.
 
-## Kernel direction
-
-The current account is a behavioral reference for policy tests. For the customizable wallet, use a pinned Kernel account and implement the ownership/mandate extensions rather than growing a second general-purpose wallet.
-
-Checked September 5, 2026: Kernel has stable `v3.3` and newer `v4.0.0-beta.*` tags; ZeroDev SDK latest npm version is `5.5.10`. Choose v3.3 for the initial stable integration and confirm compatible EntryPoint, SDK and deployed bytecode before use. Do not treat the repository's development branch as a stable deployment target.
-
-Suggested split:
-- NFT ownership validator: root signatures authorized by the registry's current owner; owner epoch included in signed authorization domains to prevent round-trip ownership replay.
-- Mandate validator or existing Kernel permission signer/policies: agent authentication, allowed call encoding, expiry, revocation and epoch binding.
-- Paired execution hook (or tightly scoped executor): recheck authority at execution, atomically account for spend and business request IDs, emit receipts. Multiple UserOperations can validate before execution; checking remaining balance only at validation can overspend.
-- AccountFactory remains the product-facing NFT/account registry but creates Kernel accounts via the appropriate factory. ENS continues to reference the stable account address.
-
-Integration tests must cover actual EntryPoint validation/execution, multiple operations in one bundle, stale grants after handover, failed execution accounting, alternate validators/executors, batched calls, delegatecall, approvals, signature validation, and root-configuration changes. A root validator that reads NFT ownership does not by itself make the binding permanent: Kernel root changes/upgrades and module installation need an explicit allowed-governance policy.
-
-Sources: https://github.com/zerodevapp/kernel/tree/v3.3 and https://docs.zerodev.app/smart-accounts/permissions/intro
+See [Kernel architecture and authority limits](kernel.md). ENS, hosted bundler, agent-policy modules, and token-specific signed permits are not live. The frontend's wallet-native batch branch is implemented but has not been exercised against an injected browser wallet; the confirmed test used sequential EOA setup and direct self-bundling.

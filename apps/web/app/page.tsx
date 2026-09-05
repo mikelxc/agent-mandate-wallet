@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { KernelWorkspace } from '../components/kernel-workspace';
 import { usePolicyTools } from '../hooks/use-policy-tools';
 import {
   useAccount,
@@ -36,7 +37,7 @@ type Receipt = {
   detail: string;
 };
 export default function Home() {
-  const [tab, setTab] = useState<'preview' | 'live'>('preview');
+  const [tab, setTab] = useState<'preview' | 'live' | 'kernel'>('kernel');
   const [label, setLabel] = useState('research-desk');
   const [limit, setLimit] = useState('5');
   const [budget, setBudget] = useState('20');
@@ -243,6 +244,7 @@ export default function Home() {
             </span>
           </div>
           <div className="tabs">
+            <button className={tab === 'kernel' ? 'selected' : ''} onClick={() => setTab('kernel')}>Sepolia wallet</button>
             <button
               className={tab === 'preview' ? 'selected' : ''}
               onClick={() => setTab('preview')}
@@ -253,9 +255,10 @@ export default function Home() {
               className={tab === 'live' ? 'selected' : ''}
               onClick={() => setTab('live')}
             >
-              Contract workspace <ArrowUpRight size={14} />
+              Reference contracts <ArrowUpRight size={14} />
             </button>
           </div>
+          {tab === 'kernel' ? <KernelWorkspace key={`${wallet.address}-${wallet.chainId}`} /> : <>
           <div className="account-banner">
             <div className="account-icon">
               <Fingerprint size={30} />
@@ -532,6 +535,7 @@ export default function Home() {
                 'Connect a wallet and enter a deployment address to begin.'}
             </div>
           )}
+          </>}
           <footer>
             Mandate / Account infrastructure{' '}
             <span>Factory + ownership registry + bounded execution</span>
