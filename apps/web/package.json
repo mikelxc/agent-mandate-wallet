@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "bun --bun vinext dev --host 127.0.0.1",
+    "dev:e2e": "VITE_MANDATE_DEV_WALLET=true MANDATE_DEV_WALLET=true bun --bun vinext dev --host 127.0.0.1",
+    "e2e:sepolia": "MANDATE_RUN_SEPOLIA_E2E=true playwright test",
     "build": "bun --bun vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
@@ -42,6 +44,7 @@
     "@cloudflare/vite-plugin": "1.37.1",
     "@cloudflare/workers-types": "4.20260515.1",
     "@openai/sites-vite-plugin": "0.2.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

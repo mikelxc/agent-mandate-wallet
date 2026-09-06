@@ -7,7 +7,7 @@ import { decodeEventLog, encodeFunctionData, formatEther, formatUnits, isAddress
 import { sepoliaDeployment as d, kernelAccountFactoryAbi, entryPointAbi, mockUSDCAbi, ownerAuthorization, ownerPayment, packedPair, setupCalls, usdc, validLabel } from '@mandate/sdk';
 
 export function KernelWorkspace() {
-  const { address, chainId } = useAccount();
+  const { address, chainId, connector } = useAccount();
   const { data: wallet } = useWalletClient();
   const client = usePublicClient({ chainId: sepolia.id });
   const switcher = useSwitchChain();
@@ -98,10 +98,16 @@ export function KernelWorkspace() {
   }
   async function loadAccount() {
     if (!/^\d+$/.test(recoverId)) throw new Error('Enter a numeric account ID.');
-    const { client } = await context();
+    const { client, wallet } = await context();
     const tokenId = BigInt(recoverId);
     const a = await client.readContract({ address: d.registry, abi: kernelAccountFactoryAbi, functionName: 'accountOf', args: [tokenId] });
     if (/^0x0{40}$/i.test(a) || !(await client.getCode({ address: a }))) throw new Error('No registered account found.');
+    if (connector?.id === 'mandate-dev-wallet') {
+      await wallet.request({
+        method: 'mandate_registerAccount' as never,
+        params: [{ account: a, tokenId: tokenId.toString() }] as never,
+      });
+    }
     setAccount(a); setId(tokenId); setMessage(`Account #${tokenId} loaded. Only its current owner can spend; any wallet can revoke its own allowance.`);
   }
   async function pay() {
@@ -128,6 +134,12 @@ export function KernelWorkspace() {
     const actionHash = await client.readContract({ address: d.entryPoint, abi: entryPointAbi, functionName: 'getUserOpHash', args: [op] });
     const c = await context();
     setMessage('Sign the payment authorization, then confirm its submission.');
+    if (connector?.id === 'mandate-dev-wallet') {
+      await c.wallet.request({
+        method: 'mandate_prepareUserOperation' as never,
+        params: [op] as never,
+      });
+    }
     op.signature = await c.wallet.signTypedData({ account: owner, ...ownerAuthorization(sepolia.id, d.validator, a, tokenId, epoch, actionHash) });
     await owned();
     const before = await client.readContract({ address: d.token, abi: mockUSDCAbi, functionName: 'balanceOf', args: [recipient] });

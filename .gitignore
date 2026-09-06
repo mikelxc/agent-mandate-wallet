@@ -13,6 +13,8 @@ packages/contracts/broadcast/
 .DS_Store
 
 *.tsbuildinfo
+apps/web/test-results/
+apps/web/playwright-report/
 
 # Local testnet keystore and password; never commit.
 .secrets/

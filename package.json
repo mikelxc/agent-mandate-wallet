@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "dev": "bun run --cwd apps/web dev",
+    "dev:e2e": "bun run --cwd apps/web dev:e2e",
+    "e2e:sepolia": "bun run --cwd apps/web e2e:sepolia",
     "build": "bun run contracts:build && bun run abi && bun run --cwd apps/web build",
     "contracts:build": "cd packages/contracts && forge build",
     "test:contracts": "cd packages/contracts && forge test",

@@ -51,6 +51,20 @@ bun run check       # production build, types, SDK + contract tests
 bun run smoke       # requires Anvil running; deploys isolated demo contracts
 ```
 
+### Local browser E2E wallet
+
+`bun run dev:e2e` enables an opt-in Wagmi connector for exercising the Sepolia UI with the ignored encrypted test keystore in `.secrets/`. The private key is never sent to or bundled into the browser. The local Vite server exposes a same-origin wallet endpoint only while this command is running; ordinary development and production builds do not enable it.
+
+The endpoint is chain-locked to Sepolia and allowlists only this deployment's checked account creation, bounded demo-token mint/approval, fixed gas deposit, and validated single-payment UserOperation. The UI must register the complete UserOperation before its short-lived action hash can be signed. Treat the signer as a hot test key: never fund it with mainnet assets or reuse it for production authority.
+
+Run the real browser regression explicitly—it spends Sepolia test gas:
+
+```sh
+bun run e2e:sepolia
+```
+
+The test creates and reloads an account through the UI, mints demo tokens, funds the EntryPoint deposit, submits and verifies a payment, and revokes the remaining allowance.
+
 Anvil accounts are publicly known development accounts. Never fund them on a public network.
 
 ## Implemented

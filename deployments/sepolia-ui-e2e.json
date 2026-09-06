@@ -1,0 +1,29 @@
+{
+  "chainId": 11155111,
+  "runAt": "2026-09-06T02:21:53Z",
+  "runner": "Playwright through the opt-in local Wagmi wallet",
+  "owner": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "accountId": "3",
+  "account": "0x65832bC3c8829229D2C9b514c6b9a39dfAf1C0da",
+  "recipient": "0x000000000000000000000000000000000000bEEF",
+  "token": "0x3C14067e0dbD276c083908C1D9D2f2Dc0A65ca41",
+  "paymentAmount": "3000000",
+  "recipientIncrease": "3000000",
+  "userOpHash": "0x3c481bbeb3361679411ea82f4221fff07c793a42403d5381ba58b5305f0ccba0",
+  "userOpSuccess": true,
+  "allowanceAfterRevocation": "0",
+  "transactions": {
+    "createAccount": "0x5b468871f49e935593ef2ad170a9731b2d880782d094c953eb157917bfb3478d",
+    "approveAllowance": "0xe33fb22a518954f1df0d0b1f32ef16ea10db860e5bf62173f61fb48f4056a926",
+    "mintDemoToken": "0x30c975966433b65c3063476213869511d740964958c87ff0a991a47c57f2b47a",
+    "depositGas": "0x10d2dd7d40dac24ac5edf197ab9acfa80001ac65e245d62a2b46bf062e63289c",
+    "executePayment": "0x892d91b04dfe7094abe503132e174f15e70c658663ed48bcb51f20b5080a141e",
+    "revokeAllowance": "0x4081670d0c6b89084f2865dc2dff71aa63ccb16adccecf5e0c02c3e8db156c29"
+  },
+  "interruptedRunCleanup": {
+    "accountId": "2",
+    "account": "0xCa54936367f24e8bBDd63DF6a745DA41Aa153f7C",
+    "revocationTransaction": "0x81bc53acbada0bc32d76ecf7f92d7ede751c28b41be1a234f30f641522b1e055",
+    "allowanceAfterRevocation": "0"
+  }
+}

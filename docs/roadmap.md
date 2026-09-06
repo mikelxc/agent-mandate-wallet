@@ -1,5 +1,7 @@
 # Delivery plan
 
+Current next-step plan: [Agent access and human control panel](plans/agent-control-plane.md). It supersedes the sequencing below: deliver authenticated agent proposals and a durable approval inbox first, then reliable submission, bounded autonomy, and service delivery. The items below preserve the original demo/integration backlog.
+
 1. **Foundation (this commit):** Bun workspaces, Foundry factory/account/ENS adapter, generated SDK ABIs, wagmi connection, real create/grant UI, policy sandbox, automated checks.
 2. **One complete local workflow:** Bun service with a durable operation ledger; agent receives structured payment tools; mock paid service delivers a report; distinguish paid-but-undelivered and retry delivery without paying again.
 3. **Identity integration:** supply parent ENS name and verify live Sepolia registration/resolution, expiration and parent roles. Keep NFT ownership and name ownership from diverging.

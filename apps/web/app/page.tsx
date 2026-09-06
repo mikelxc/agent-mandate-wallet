@@ -5,6 +5,7 @@ import { usePolicyTools } from '../hooks/use-policy-tools';
 import {
   useAccount,
   useConnect,
+  useConnectors,
   useDisconnect,
   usePublicClient,
   useWriteContract,
@@ -54,10 +55,14 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const wallet = useAccount();
   const connect = useConnect();
+  const connectors = useConnectors();
   const disconnect = useDisconnect();
   const switchChain = useSwitchChain();
   const client = usePublicClient();
   const write = useWriteContract();
+  const preferredConnector =
+    connectors.find((connector) => connector.id === 'mandate-dev-wallet') ??
+    connectors[0];
   usePolicyTools(
     {
       recipient: 'approved-provider',
@@ -220,12 +225,13 @@ export default function Home() {
             onClick={() =>
               wallet.isConnected
                 ? disconnect.mutate()
-                : connect.mutate({ connector: connect.connectors[0] })
+                : preferredConnector &&
+                  connect.mutate({ connector: preferredConnector })
             }
-            disabled={!wallet.isConnected && !connect.connectors.length}
+            disabled={!wallet.isConnected && !preferredConnector}
           >
             {wallet.address
-              ? `${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)}`
+              ? `${wallet.connector?.id === 'mandate-dev-wallet' ? 'LOCAL TEST · ' : ''}${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)}`
               : 'Connect wallet'}{' '}
             <ArrowUpRight size={14} />
           </button>
