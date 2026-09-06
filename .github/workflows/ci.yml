@@ -17,6 +17,8 @@ jobs:
       - run: bun run check
       - name: Generated ABIs are current
         run: git diff --exit-code -- packages/sdk/src/generated
+      - name: Agent gateway integration
+        run: bun run smoke:gateway
       - name: Local integration
         run: |
           anvil --silent &

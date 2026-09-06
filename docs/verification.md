@@ -21,3 +21,7 @@ ENS tests use a mock registry; live registration and Universal Resolver behavior
 - The reference Anvil deployment smoke still passes. The Kernel deployment and signed owner-balance transfer were additionally executed on Sepolia; see deployments/sepolia.json and deployments/sepolia-smoke.json.
 - The updated local frontend returned HTTP 200. Injected-wallet interaction, EIP-5792 batch submission, ERC-1271 owners, third-party policy modules, and visual QA remain unverified.
 - The demo allowance was independently read back as zero after the smoke test. The account retains its remaining gas deposit.
+
+## Agent request and approval milestone
+
+See [agent access](agent-access.md) for the implementation and limits. New checks cover the durable service, authentication/isolation, signed recovery, and the actual MCP transport against a simulated chain adapter. These are distinct from the existing public Sepolia payment evidence. The new approval UI has not been browser-wallet-tested in this milestone.

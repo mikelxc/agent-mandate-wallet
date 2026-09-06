@@ -86,3 +86,9 @@ The ENS adapter has unit tests against an ABI-compatible mock. Live ENSv2 regist
 Arc, Circle Agent Stack, Ledger, service delivery, reconciliation persistence, and onchain approval escalation are next milestones. No public-chain deployment or paid service integration is included yet. This is unaudited prototype code; payment limits assume ordinary six-decimal stablecoins, not rebasing or fee-on-transfer assets.
 
 See [architecture](docs/architecture.md), [ENSv2 integration](docs/ens-v2.md), and [delivery plan](docs/roadmap.md).
+
+## Agent control panel
+
+The first agent-access milestone is implemented locally. Run `bun run gateway` alongside `bun run dev`, then use the Agent control tab to sign in, issue a scoped connection key, and review requests. Every payment requires the owner's exact signature; autonomous session policies and hosted bundling are still pending. See [usage and boundaries](docs/agent-access.md) and [MCP setup](packages/agent-tools/README.md).
+
+Run `bun run smoke:gateway` to test real MCP/HTTP communication with simulated chain data and no funds moving.

@@ -15,12 +15,15 @@
     "contracts:build": "cd packages/contracts && forge build",
     "test:contracts": "cd packages/contracts && forge test",
     "abi": "bun scripts/generate-abi.ts",
-    "typecheck": "bun run --cwd apps/web typecheck",
-    "test": "bun test packages/sdk && bun run test:contracts",
+    "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/gateway typecheck && bun run --cwd packages/agent-tools typecheck",
+    "test": "bun test packages/sdk packages/protocol packages/agent-tools apps/gateway/src && bun run test:contracts",
     "check": "bun run build && bun run typecheck && bun run test",
     "chain": "anvil",
     "deploy:local": "cd packages/contracts && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "smoke": "bun scripts/smoke.ts"
+    "smoke": "bun scripts/smoke.ts",
+    "gateway": "bun run --cwd apps/gateway dev",
+    "agent:mcp": "bun packages/agent-tools/src/server.ts",
+    "smoke:gateway": "bun scripts/gateway-smoke.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

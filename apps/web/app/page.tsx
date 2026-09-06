@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { AgentControl } from '../components/agent-control';
 import { KernelWorkspace } from '../components/kernel-workspace';
 import { usePolicyTools } from '../hooks/use-policy-tools';
 import {
@@ -38,7 +39,7 @@ type Receipt = {
   detail: string;
 };
 export default function Home() {
-  const [tab, setTab] = useState<'preview' | 'live' | 'kernel'>('kernel');
+  const [tab, setTab] = useState<'preview' | 'live' | 'kernel' | 'agents'>('agents');
   const [label, setLabel] = useState('research-desk');
   const [limit, setLimit] = useState('5');
   const [budget, setBudget] = useState('20');
@@ -250,6 +251,7 @@ export default function Home() {
             </span>
           </div>
           <div className="tabs">
+            <button className={tab === 'agents' ? 'selected' : ''} onClick={() => setTab('agents')}>Agent control</button>
             <button className={tab === 'kernel' ? 'selected' : ''} onClick={() => setTab('kernel')}>Sepolia wallet</button>
             <button
               className={tab === 'preview' ? 'selected' : ''}
@@ -264,7 +266,7 @@ export default function Home() {
               Reference contracts <ArrowUpRight size={14} />
             </button>
           </div>
-          {tab === 'kernel' ? <KernelWorkspace key={`${wallet.address}-${wallet.chainId}`} /> : <>
+          {tab === 'agents' ? <AgentControl key={`agent-${wallet.address}-${wallet.chainId}`} /> : tab === 'kernel' ? <KernelWorkspace key={`${wallet.address}-${wallet.chainId}`} /> : <>
           <div className="account-banner">
             <div className="account-icon">
               <Fingerprint size={30} />

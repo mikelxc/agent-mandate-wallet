@@ -47,9 +47,10 @@ export default defineConfig(async () => {
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
+      proxy: { '/gateway': { target: 'http://127.0.0.1:3001', changeOrigin: true, rewrite: (path: string) => path.replace(/^\/gateway/, '') } },
+    },
     plugins: [
       devWalletPlugin(process.env.MANDATE_DEV_WALLET === 'true'),
       vinext(),

@@ -1,0 +1,25 @@
+{
+  "name": "@mandate/agent-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "mandate-agent-tools": "./src/server.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/client.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "dependencies": {
+    "@mandate/protocol": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "5.9.3"
+  }
+}
