@@ -1,6 +1,8 @@
-# Mandate
+# Wayleave
 
-Configurable operating accounts for agents: owner-controlled accounts, bounded payment authority, and explicit outcomes.
+**Your intent. Your account. Your rules.**
+
+Wayleave turns human intent into accountable onchain actions. It combines customizable smart accounts, NFT-based ownership, and an agent interface with a human approval dashboard. An agent requests a payment, the owner approves its exact terms, and both can inspect the transaction outcome.
 
 This is the initial ETHOnline monorepo. It includes a working contract core and wallet-connected frontend, plus a clearly labeled policy simulation. It is not yet the complete Circle/Ledger agent workflow.
 
@@ -17,7 +19,10 @@ The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT own
 ## Workspace
 
 ```text
-apps/web/                Configuration UI, policy playground, wallet connection
+apps/web/                Human control panel, approval inbox, wallet connection
+apps/gateway/            Local authenticated API and durable operation ledger
+packages/protocol/       Shared payment intent schemas and validation
+packages/agent-tools/    Local MCP adapter for scoped agent access
 packages/contracts/     Foundry contracts, tests, local deployment
 packages/sdk/           Generated contract ABIs, shared amount/policy helpers
 scripts/                ABI generation and local integration smoke test
@@ -44,7 +49,7 @@ bun run chain
 bun run deploy:local
 ```
 
-Connect an injected browser wallet to Anvil (chain 31337). Use an **Anvil development account only**. Enter the printed factory address in Contract workspace, create an account, and grant a mandate using the demo token address. Token funding and agent payment execution are demonstrated by `bun run smoke` and can also be performed using Foundry/viem. The UI currently supports account creation and mandate creation; it does not yet expose every contract function.
+Connect an injected browser wallet to Anvil (chain 31337). Use an **Anvil development account only**. Enter the printed factory address in Reference contracts, create an account, and grant a mandate using the demo token address. Token funding and agent payment execution are demonstrated by `bun run smoke` and can also be performed using Foundry/viem. The Reference contracts tab supports this original payment-account workflow. The Sepolia wallet and Agent control tabs use the newer Kernel integration.
 
 ```sh
 bun run check       # production build, types, SDK + contract tests
@@ -67,7 +72,7 @@ The test creates and reloads an account through the UI, mints demo tokens, funds
 
 Anvil accounts are publicly known development accounts. Never fund them on a public network.
 
-## Implemented
+## Reference account implementation
 
 - Factory doubles as the ERC-721 account ownership registry.
 - One isolated payment account per token; onchain NFT metadata embeds its account address.
@@ -79,11 +84,11 @@ Anvil accounts are publicly known development accounts. Never fund them on a pub
 
 ## Boundaries
 
-The payment account is deliberately narrow and is **not an ERC-4337/7579 implementation or a complete ERC-7978 conformance claim**. Its ownership and policy interfaces establish a first product slice; a modular smart-account implementation can replace it after the execution guarantees are tested.
+The original OperatingAccount is a narrow policy reference. The deployed Sepolia wallet uses Kernel v4 and EntryPoint 0.9 with our NFT owner validator. The reference account's agent-policy limits do not automatically apply to Kernel root operations. This prototype does not claim complete ERC-7978 conformance.
 
-The ENS adapter has unit tests against an ABI-compatible mock. Live ENSv2 registration and Universal Resolver compatibility must be verified against the current beta deployment before claiming a sponsor integration. An actual parent name and registry permissions are required. Local deployment disables ENS explicitly; it does not mint fake ENS names.
+The optional ENS adapter has unit tests against an ABI-compatible mock. Parent-name configuration, live registration, and resolver verification are tracked in [ENSv2 integration](docs/ens-v2.md); mock tests alone do not establish a live integration. Keep the parent namespace configurable as Wayleave identity support develops.
 
-Arc, Circle Agent Stack, Ledger, service delivery, reconciliation persistence, and onchain approval escalation are next milestones. No public-chain deployment or paid service integration is included yet. This is unaudited prototype code; payment limits assume ordinary six-decimal stablecoins, not rebasing or fee-on-transfer assets.
+The local gateway persists agent requests, signed approvals, and verified inclusion receipts. Sepolia deployment and payment evidence are recorded in [the deployment guide](docs/sepolia.md). Autonomous agent policies, hosted bundling, reorg-aware reconciliation, paid-service delivery, Arc, Circle Agent Stack, and Ledger remain later milestones. This is unaudited prototype code; payment limits assume ordinary six-decimal stablecoins, not rebasing or fee-on-transfer assets.
 
 See [architecture](docs/architecture.md), [ENSv2 integration](docs/ens-v2.md), and [delivery plan](docs/roadmap.md).
 
@@ -92,3 +97,5 @@ See [architecture](docs/architecture.md), [ENSv2 integration](docs/ens-v2.md), a
 The first agent-access milestone is implemented locally. Run `bun run gateway` alongside `bun run dev`, then use the Agent control tab to sign in, issue a scoped connection key, and review requests. Every payment requires the owner's exact signature; autonomous session policies and hosted bundling are still pending. See [usage and boundaries](docs/agent-access.md) and [MCP setup](packages/agent-tools/README.md).
 
 Run `bun run smoke:gateway` to test real MCP/HTTP communication with simulated chain data and no funds moving.
+
+The public project name is Wayleave. Existing `@mandate/*` package names, `MANDATE_*` environment variables, repository paths, and deployed signature domains retain their technical identifiers.

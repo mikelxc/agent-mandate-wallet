@@ -1,6 +1,6 @@
-# Mandate agent tools
+# Wayleave agent tools
 
-This package is a local stdio MCP adapter for the Mandate gateway. It connects to the gateway at `http://127.0.0.1:3001` and sends the agent token as a bearer credential.
+This package is a local stdio MCP adapter for the Wayleave gateway. It connects to the gateway at `http://127.0.0.1:3001` and sends the agent token as a bearer credential.
 
 ## Connect an MCP host
 
@@ -57,3 +57,5 @@ bun run agent:mcp
 ```
 
 The gateway's development server is also available through `bun run --cwd apps/gateway dev`. Creating files in this repository does not connect this chat to the tools. A compatible MCP host must be configured and reconnected before it can invoke the server.
+
+Wayleave is the public project name. The package and `MANDATE_*` environment variable names remain unchanged for compatibility.
