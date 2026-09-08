@@ -1,6 +1,7 @@
 import { parseUnits } from 'viem';
 export * from './kernel';
 export * from './sepolia';
+export * from './ens';
 export { kernelAccountFactoryAbi } from './generated/KernelAccountFactory';
 export { nFTOwnerValidatorAbi } from './generated/NFTOwnerValidator';
 export { kernelAbi } from './generated/Kernel';

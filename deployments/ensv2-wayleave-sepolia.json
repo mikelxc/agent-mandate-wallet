@@ -1,0 +1,35 @@
+{
+  "deployment": "ETHOnline 2026 ENSv2 hackathon",
+  "chainId": 11155111,
+  "name": "wayleave.eth",
+  "label": "wayleave",
+  "owner": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "registry": "0x1d78834d97c1d7b1a38c1dedbd1a287cfed3971e",
+  "registrar": "0x7d1b7f586a62ac3f54b9a396849757814283270b",
+  "universalResolver": "0xd26f2040d083af1cd2962ba303f4bea0c4faf142",
+  "paymentToken": "0xcbfd80f74375c54e545af34788ff465f96f66f05",
+  "price": "8000021",
+  "duration": "31536000",
+  "expiry": "1820342508",
+  "registrationTransaction": "0xd033f58bdbc9ffcbe5a01d700026a0ee80e1ec591cb8d3184a765c35230ecdd6",
+  "registrationBlock": "11655975",
+  "remainingRegistrarAllowance": "0",
+  "transactions": [
+    {
+      "purpose": "ENS commitment confirmed",
+      "hash": "0xafc0db45afd78968e4f2ddc5b3ef65a7c4add05d043cb04e698a5a27abd42154"
+    },
+    {
+      "purpose": "Test USDC minted",
+      "hash": "0x58ef033c3e55b0d12dd700287c9a0c6bdeb46a5d5b9062f44a59a97632b48399"
+    },
+    {
+      "purpose": "Exact registrar allowance granted",
+      "hash": "0x0cdb20447d5c983283b0406c67b5a5248b1d14eec28221966eaca67579e95dca"
+    },
+    {
+      "purpose": "ENS registration confirmed",
+      "hash": "0xd033f58bdbc9ffcbe5a01d700026a0ee80e1ec591cb8d3184a765c35230ecdd6"
+    }
+  ]
+}

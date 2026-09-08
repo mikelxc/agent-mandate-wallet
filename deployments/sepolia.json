@@ -62,6 +62,22 @@
       "transactionHash": "0xbf2827b54ee8ad7f0cb2b5e3a390aafcae8a87fb7c12aaaded1b12015003537a",
       "blockNumber": "11643321",
       "codeHash": "0x2f79547223ee42e2a5a5abd5356650c605457363c9d12a193c18498745a1e717"
+    },
+    {
+      "name": "ENSV2IdentityAdapter",
+      "type": "CREATE",
+      "address": "0x03aecb257c931a5eb18f18ccad9f6d9b584ad44b",
+      "transactionHash": "0x528b6847481f06c21f28dc045c77a4bbbcd6592c7efb4e1452c8c0d150d5c148",
+      "blockNumber": "11658183",
+      "codeHash": "0xf79f14af9307d74aba99d417336d65daf982b0cf8f12d0e448b6d23c0b48c788"
+    },
+    {
+      "name": "KernelAccountFactoryWayleave",
+      "type": "CREATE",
+      "address": "0xf0c862d40ee1e9637a6b8634e75ebc86aecca3de",
+      "transactionHash": "0x1a1bb8dfd15f0057114b6c297dce2d19ce7c8a19b9bf190481e2055715e9d3ce",
+      "blockNumber": "11658184",
+      "codeHash": "0x70845e8abd037591893088103af71cd659feeee83b85e0c4930f6d36bcb60fcb"
     }
   ],
   "explorerSourceVerification": false,
@@ -73,13 +89,43 @@
   },
   "sourceSHA256": {
     "packages/contracts/src/AccountFactory.sol": "9080afb9049a03c9d13508559b1cb810cd8cd920bc7c864fd02b47ae43f56607",
+    "packages/contracts/src/ENSV2IdentityAdapter.sol": "1097bf5a68051102ff90b9f1e5dc898bcc9c6c3760dda8b749778bfba5b63468",
     "packages/contracts/src/KernelAccountFactory.sol": "5740c8693a3ed1ca80af54fc0f0e4b1233c85df703bd670cf7757d65b5dd0d31",
     "packages/contracts/src/NFTOwnerValidator.sol": "63253dc55be925369739e4398c04c083eebd71f494dfa071405efafc090bcd61",
     "packages/contracts/src/MockUSDC.sol": "69def1aa7633c78f60e03ec72a29989d7b4975dbcd2e7803afdb9be3abebf9ae"
   },
+  "ensV2": {
+    "deployment": "ETHOnline 2026 ENSv2 hackathon",
+    "parentName": "wayleave.eth",
+    "resolver": {
+      "address": "0x44974A0CD84A563BC599Af7ff573B85137B172CB",
+      "implementation": "0xa9d3814AB151BF6E37A427432795371a8361614e",
+      "codeHash": "0xe0e04be5b5f33214186b29eb11adc23c6dfd547565bfe1259b8eca299d17fd15",
+      "transactionHash": "0x5215185abee35c95aa751897dd9275a9a75f4861291897c073d4bf73dd7ef0b1"
+    },
+    "userRegistry": {
+      "address": "0xBBfc3F1f529593ca1aa4D727121Ad4896e66fA34",
+      "implementation": "0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546",
+      "codeHash": "0xe6c293647acccb9baf5226056c01d34362b8e2c8a5bb69324d90201f4c172eaa",
+      "transactionHash": "0x9f7e9be2cef52393549fb1d5187b67f0af69e93659402a0bc115466b8319785d"
+    },
+    "identityAdapter": "0x03AEcb257c931A5eB18F18cCAD9f6d9B584ad44b",
+    "productFactory": "0xf0C862D40eE1E9637a6B8634E75ebc86aeCCa3dE",
+    "setupTransactionHashes": [
+      "0x71df1724acfb945f7950e78ce2906a8305f20fbdcac146d9215b5cd730c960c6",
+      "0xf21f90027c7f16a4e43438ef698ce11e3bb68e925cebe19308a0c7b8123c4055",
+      "0x8e05b94ffd97e806c8a3949e33cf9b122d502609f378cce3c9aa4e896373ce11",
+      "0x470457c398d99e84428ac9b8ba7e10d52ae4783166b41e9b1790e79fbb9bce06",
+      "0x0aa35f89574b5476fa513f8b7b622b881fe416f2889030a099564015ca9b0305",
+      "0x8556ce492c78504a2648a4b8d79e6946e4a477ac14607ea50941f4310e4dcbbf"
+    ]
+  },
   "demoAccount": {
-    "address": "0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d",
+    "address": "0x2f86Ce1feCa9b2B722Bab2b402c9fA24F613b60A",
     "tokenId": "1",
+    "ensName": "research-desk.wayleave.eth",
+    "transactionHash": "0x301e424d5f10ee1a0b27d5344dc6d8141ef9f6066168778e379f376997ef12e3",
+    "blockNumber": "11658202",
     "codeHash": "0xaaa52c8cc8a0e3fd27ce756cc6b4e70c51423e9b597b11f32d3e49f8b1fc890d"
   }
 }

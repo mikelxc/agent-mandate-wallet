@@ -2,14 +2,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { foundry, sepolia } from 'wagmi/chains';
+import { foundry } from 'wagmi/chains';
 import { useState } from 'react';
+import { hackathonSepolia } from '@mandate/sdk';
 import { getDevWalletProvider } from '../lib/dev-wallet';
 
 const devWalletEnabled =
   import.meta.env.DEV && import.meta.env.VITE_MANDATE_DEV_WALLET === 'true';
 const config = createConfig({
-  chains: [foundry, sepolia],
+  chains: [foundry, hackathonSepolia],
   connectors: [
     ...(devWalletEnabled
       ? [
@@ -27,7 +28,7 @@ const config = createConfig({
   ],
   transports: {
     [foundry.id]: http('http://127.0.0.1:8545'),
-    [sepolia.id]: http(),
+    [hackathonSepolia.id]: http(),
   },
   ssr: true,
 });

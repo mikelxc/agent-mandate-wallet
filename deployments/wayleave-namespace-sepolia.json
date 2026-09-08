@@ -1,0 +1,23 @@
+{
+  "deployment": "ETHOnline 2026 ENSv2 hackathon",
+  "chainId": 11155111,
+  "parentName": "wayleave.eth",
+  "parentOwner": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "parentAddress": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "resolver": "0x44974A0CD84A563BC599Af7ff573B85137B172CB",
+  "resolverImplementation": "0xa9d3814AB151BF6E37A427432795371a8361614e",
+  "userRegistry": "0xBBfc3F1f529593ca1aa4D727121Ad4896e66fA34",
+  "registryImplementation": "0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546",
+  "identityAdapter": "0x03AEcb257c931A5eB18F18cCAD9f6d9B584ad44b",
+  "identityAdapterRoles": [
+    "ROLE_REGISTRAR"
+  ],
+  "productFactory": "0xf0C862D40eE1E9637a6B8634E75ebc86aeCCa3dE",
+  "agentName": "research-desk.wayleave.eth",
+  "nfatTokenId": "1",
+  "nfatOwner": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "account": "0x2f86Ce1feCa9b2B722Bab2b402c9fA24F613b60A",
+  "resolvedAddress": "0x2f86Ce1feCa9b2B722Bab2b402c9fA24F613b60A",
+  "creationTransaction": "0x301e424d5f10ee1a0b27d5344dc6d8141ef9f6066168778e379f376997ef12e3",
+  "creationBlock": "11658202"
+}

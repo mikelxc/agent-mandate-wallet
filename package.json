@@ -23,6 +23,9 @@
     "smoke": "bun scripts/smoke.ts",
     "gateway": "bun run --cwd apps/gateway dev",
     "agent:mcp": "bun packages/agent-tools/src/server.ts",
+    "ens:status": "bun scripts/ens-status.ts",
+    "ens:register": "bun scripts/register-ens-name.ts",
+    "ens:smoke": "bun scripts/wayleave-smoke.ts",
     "smoke:gateway": "bun scripts/gateway-smoke.ts"
   },
   "devDependencies": {
