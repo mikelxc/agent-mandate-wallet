@@ -13,7 +13,8 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e:ui": "bun --bun playwright test tests/workspace-ui.spec.ts tests/onboarding-ui.spec.ts"
   },
   "dependencies": {
     "react": "19.2.6",

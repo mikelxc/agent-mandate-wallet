@@ -5,7 +5,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test('mobile onboarding starts with the agent and generates host-specific MCP setup', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/advanced');
   await page.waitForLoadState('networkidle');
 
   await expect(

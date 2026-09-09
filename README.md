@@ -10,6 +10,9 @@ The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT own
 
 The new [passkey root factory](docs/passkey-accounts.md) supports deterministic Kernel accounts with self-owned identity NFTs and an account-owned ENS adapter. Contracts and SDK helpers are implemented; browser onboarding and a passkey Sepolia deployment are pending.
 
+The default UI now follows **Job → Authority → Activity → Result**, with an explicitly labeled interactive example. Accounts provides wallet and agent access; Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
+
+
 ## Stack
 
 - **Bun 1.4.1** — workspace package manager, frontend tooling runtime, SDK tests and scripts.

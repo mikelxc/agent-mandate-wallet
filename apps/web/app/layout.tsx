@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Providers from './providers';
 import './globals.css';
 export const metadata: Metadata = {
-  title: 'Mandate · Agent control',
-  description: 'Onboard agents with scoped, owner-approved financial access.',
+  title: 'Wayleave · Agent workspace',
+  description: 'Assign a job, review its authority, and follow the results.',
 };
 export default function RootLayout({
   children,

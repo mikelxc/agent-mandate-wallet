@@ -31,7 +31,7 @@ test('creates, recovers, funds, pays, verifies, and revokes through the UI', asy
     args: [recipient],
   });
 
-  await page.goto('/');
+  await page.goto('/advanced');
   await page.getByRole('button', { name: 'Connect wallet' }).click();
   await expect(page.getByRole('button', { name: /LOCAL TEST/ })).toBeVisible();
 
