@@ -6,8 +6,12 @@ The local link and downloaded environment files are ignored by Git.
 
 ## Build and release
 
-`apps/web/vercel.json` selects Next.js, installs with Bun's frozen lockfile,
-and runs `bun run build`. Next.js is the single frontend build and development
+`apps/web/vercel.json` selects Next.js and explicitly runs installation and
+the build with Bun 1.4.1 through `bunx bun@1.4.1`. Vercel's default Bun 1.3.14
+cannot read this repository's version-2 lockfile; the `packageManager` field
+alone does not select the hosted Bun binary. The install keeps the lockfile
+frozen, following [Vercel's version-pinning guidance](https://vercel.com/kb/guide/how-to-pin-a-specific-bun-version-for-vercel-builds).
+Next.js is the single frontend build and development
 system, running under Bun as described in
 [Bun's Next.js guide](https://bun.com/guides/ecosystem/nextjs). It uses the standard
 `.next` output and `tsconfig.json`; the old Vinext/Vite/Cloudflare tooling has
