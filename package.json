@@ -26,7 +26,8 @@
     "ens:status": "bun scripts/ens-status.ts",
     "ens:register": "bun scripts/register-ens-name.ts",
     "ens:smoke": "bun scripts/wayleave-smoke.ts",
-    "smoke:gateway": "bun scripts/gateway-smoke.ts"
+    "smoke:gateway": "bun scripts/gateway-smoke.ts",
+    "smoke:passkey": "bun scripts/passkey-smoke.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

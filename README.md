@@ -8,6 +8,8 @@ This is the initial ETHOnline monorepo. It includes a working contract core and 
 
 The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT owner validator. It can spend demo ERC-20 tokens directly from the owner through a capped allowance. See [deployment evidence](docs/sepolia.md) and [current architecture](docs/kernel.md). The original OperatingAccount remains a reference for agent-policy behavior.
 
+The new [passkey root factory](docs/passkey-accounts.md) supports deterministic Kernel accounts with self-owned identity NFTs and an account-owned ENS adapter. Contracts and SDK helpers are implemented; browser onboarding and a passkey Sepolia deployment are pending.
+
 ## Stack
 
 - **Bun 1.4.1** — workspace package manager, frontend tooling runtime, SDK tests and scripts.

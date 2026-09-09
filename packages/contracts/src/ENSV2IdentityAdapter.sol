@@ -49,8 +49,13 @@ contract ENSV2IdentityAdapter is IIdentityAdapter, ERC1155Holder {
         node = keccak256(abi.encodePacked(parentNode, keccak256(bytes(label))));
         if (addresses[node] != address(0)) revert InvalidConfiguration();
         addresses[node] = account;
-        uint256 ensId = ensRegistry.register(label, address(this), address(0), address(this), 0, expiry);
+        uint256 ensId = _registerName(label, account);
         emit IdentityRegistered(node, account, ensId);
+    }
+
+    function _registerName(string calldata label, address account) internal virtual returns (uint256 ensId) {
+        account;
+        ensId = ensRegistry.register(label, address(this), address(0), address(this), 0, expiry);
     }
 
     function addr(bytes32 node) external view returns (address) {

@@ -6,6 +6,9 @@ for (const name of [
   "MockUSDC",
   "KernelAccountFactory",
   "NFTOwnerValidator",
+  "PasskeyAccountFactory",
+  "WebAuthnValidator",
+  "AccountOwnedENSV2IdentityAdapter",
   "Kernel",
   "EntryPoint",
 ]) {

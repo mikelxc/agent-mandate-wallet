@@ -2,26 +2,30 @@
 pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {ENSV2IdentityAdapter, IENSV2Registry} from "../src/ENSV2IdentityAdapter.sol";
+import {AccountOwnedENSV2IdentityAdapter} from "../src/AccountOwnedENSV2IdentityAdapter.sol";
 import {AccountFactory} from "../src/AccountFactory.sol";
 import {IIdentityAdapter} from "../src/interfaces/IAccountRegistry.sol";
 
 contract MockENSRegistry is IENSV2Registry {
     bool public fail;
     address public owner;
+    address public subregistry;
     address public resolver;
+    uint256 public roles;
 
     function setFail(bool value) external {
         fail = value;
     }
 
-    function register(string calldata, address owner_, address, address resolver_, uint256 roles, uint64)
+    function register(string calldata, address owner_, address subregistry_, address resolver_, uint256 roles_, uint64)
         external
         returns (uint256)
     {
         require(!fail, "ENS unavailable");
-        require(roles == 0);
         owner = owner_;
+        subregistry = subregistry_;
         resolver = resolver_;
+        roles = roles_;
         return 1;
     }
 }
@@ -66,5 +70,38 @@ contract IdentityTest is Test {
     function testBindingCannotChange() public {
         vm.expectRevert(ENSV2IdentityAdapter.Unauthorized.selector);
         adapter.bindFactory(alice);
+    }
+
+    function testAccountOwnedNameUsesAccountOwnerAndScopedSubregistryRole() public {
+        AccountOwnedENSV2IdentityAdapter accountOwned = new AccountOwnedENSV2IdentityAdapter(
+            ens, parent, uint64(block.timestamp + 365 days)
+        );
+        AccountFactory accountFactory = new AccountFactory(IIdentityAdapter(address(accountOwned)));
+        accountOwned.bindFactory(address(accountFactory));
+
+        vm.prank(alice);
+        (, address account) = accountFactory.createAccount("passkey");
+
+        assertEq(ens.owner(), account);
+        assertEq(ens.resolver(), address(accountOwned));
+        assertEq(ens.subregistry(), address(0));
+        assertEq(ens.roles(), accountOwned.ROLE_SET_SUBREGISTRY());
+    }
+
+    function testAccountOwnedBindingAndENSFailureAreAtomic() public {
+        AccountOwnedENSV2IdentityAdapter accountOwned = new AccountOwnedENSV2IdentityAdapter(
+            ens, parent, uint64(block.timestamp + 365 days)
+        );
+        AccountFactory accountFactory = new AccountFactory(IIdentityAdapter(address(accountOwned)));
+        accountOwned.bindFactory(address(accountFactory));
+        vm.expectRevert(ENSV2IdentityAdapter.Unauthorized.selector);
+        accountOwned.bindFactory(alice);
+
+        ens.setFail(true);
+        vm.prank(alice);
+        vm.expectRevert("ENS unavailable");
+        accountFactory.createAccount("passkey");
+        assertEq(accountFactory.nextTokenId(), 1);
+        assertFalse(accountFactory.registeredLabels(keccak256("passkey")));
     }
 }

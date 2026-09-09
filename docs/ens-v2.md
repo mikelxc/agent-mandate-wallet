@@ -99,6 +99,14 @@ The adapter's fixed ASCII label grammar avoids Unicode normalization ambiguity.
 Its child expiry is fixed at deployment and cannot exceed the parent lifetime;
 renewal support is a follow-up before long-lived accounts.
 
+Account-owned ENS names use the Kernel account as the ENSv2 owner and the
+identity adapter as their fixed resolver. The account receives only the
+scoped `ROLE_SET_SUBREGISTRY` permission, so it may attach a child registry
+when explicitly requested; no child registry is installed during registration.
+This ENS ownership policy is separate from the product NFAT policy: ENS names
+retain their normal ENSv2 transfer and role semantics even when the product's
+NFAT is designed to be immovable.
+
 ## Chain boundary
 
 This integration is Sepolia-only. Do not configure these addresses on Arc or

@@ -28,3 +28,6 @@ export function usdc(value: string): bigint {
   return parseUnits(value, 6);
 }
 export function validLabel(value: string): boolean { return /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(value); }
+
+export * from "./passkey";
+export { passkeyAccountFactoryAbi } from "./generated/PasskeyAccountFactory";

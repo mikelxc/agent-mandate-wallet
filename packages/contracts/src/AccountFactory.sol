@@ -32,34 +32,40 @@ contract AccountFactory is ERC721, ReentrancyGuard {
         identityAdapter = adapter;
     }
 
-    function createAccount(string calldata label) public nonReentrant returns (uint256 id, address account) {
+    function createAccount(string calldata label) public virtual nonReentrant returns (uint256 id, address account) {
+        account = _deployAccount(nextTokenId);
+        id = _registerAccount(label, account, msg.sender);
+    }
+
+    function _registerAccount(string calldata label, address account, address nftOwner) internal returns (uint256 id) {
         bytes memory value = bytes(label);
         if (value.length < 3 || value.length > 32) revert InvalidLabel();
         for (uint256 i; i < value.length; ++i) {
             bytes1 c = value[i];
             if (!((c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || (c == 0x2d && i > 0 && i < value.length - 1)))
-            revert InvalidLabel();
+            {
+                revert InvalidLabel();
+            }
         }
         bytes32 labelHash = keccak256(value);
         if (registeredLabels[labelHash]) revert LabelTaken();
         registeredLabels[labelHash] = true;
         id = nextTokenId++;
-        account = _deployAccount(id);
         accountOf[id] = account;
         isOperatingAccount[account] = true;
         labelOf[id] = label;
         ownershipEpoch[id] = 1;
-        _safeMint(msg.sender, id);
+        _safeMint(nftOwner, id);
         bytes32 node;
         if (address(identityAdapter) != address(0)) node = identityAdapter.register(label, account);
-        emit AccountCreated(id, msg.sender, account, label, node);
+        emit AccountCreated(id, nftOwner, account, label, node);
     }
 
     function _deployAccount(uint256 id) internal virtual returns (address) {
         return address(new OperatingAccount{salt: bytes32(id)}(IAccountRegistry(address(this)), id));
     }
 
-    function proposeHandover(uint256 id, address recipient) external {
+    function proposeHandover(uint256 id, address recipient) external virtual {
         if (msg.sender != ownerOf(id)) revert Unauthorized();
         // Disallow accounts from this factory as owners to prevent local ownership cycles.
         if (
@@ -70,12 +76,12 @@ contract AccountFactory is ERC721, ReentrancyGuard {
         emit HandoverProposed(id, recipient);
     }
 
-    function cancelHandover(uint256 id) external {
+    function cancelHandover(uint256 id) external virtual {
         if (msg.sender != ownerOf(id)) revert Unauthorized();
         delete pendingOwner[id];
     }
 
-    function acceptHandover(uint256 id) external nonReentrant {
+    function acceptHandover(uint256 id) external virtual nonReentrant {
         if (pendingOwner[id] != msg.sender) revert Unauthorized();
         address previous = ownerOf(id);
         delete pendingOwner[id];
