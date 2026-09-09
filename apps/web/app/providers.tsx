@@ -9,7 +9,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState(false);
   useEffect(() => {
     let active = true;
-    // AppKit's browser SDK must not be evaluated in the Cloudflare SSR worker.
+    // AppKit's browser SDK must not be evaluated during server rendering.
     void import('../lib/wallet-config')
       .then(({ walletConfig }) => {
         if (active) setConfig(walletConfig);

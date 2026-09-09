@@ -12,7 +12,7 @@ The new [passkey root factory](docs/passkey-accounts.md) supports deterministic 
 
 The default UI opens a dismissible walkthrough: **Wallet → MCP client → Approval-only policy → Named account transaction → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
 
-Owner connection uses Reown AppKit with wagmi, supporting injected wallets and WalletConnect QR/mobile links. The public Reown project ID is configured in `apps/web/lib/wallet-config.ts`. Connecting does not authenticate the gateway: the owner explicitly verifies with the existing login signature afterward. AppKit loads in the browser so its SDK is not evaluated in the Cloudflare SSR worker.
+Owner connection uses Reown AppKit with wagmi, supporting injected wallets and WalletConnect QR/mobile links. The public Reown project ID is configured in `apps/web/lib/wallet-config.ts`. Connecting does not authenticate the gateway: the owner explicitly verifies with the existing login signature afterward. AppKit loads in the browser so its SDK is not evaluated during server rendering.
 
 
 
@@ -21,7 +21,7 @@ Owner connection uses Reown AppKit with wagmi, supporting injected wallets and W
 - **Bun 1.4.1** — workspace package manager, frontend tooling runtime, SDK tests and scripts.
 - **Foundry 1.4.2 / Solidity 0.8.33** — contracts, deployment scripts and tests.
 - **wagmi 3.7.7** — latest stable npm release checked during setup on September 5, 2026; pinned with the Bun lockfile.
-- React 19, TypeScript, viem, TanStack Query, Vinext/Vite, shadcn primitives.
+- React 19, Next.js 16, TypeScript, viem, TanStack Query, shadcn primitives. Next.js development, builds, and local production serving run under Bun; Vercel functions use Node.js 24.
 - OpenZeppelin 5.4.0; vendored forge-std v1.9.7.
 
 ## Workspace
@@ -38,6 +38,9 @@ docs/                   Architecture, ENS setup and delivery plan
 ```
 
 ## Run
+
+For the Vercel frontend build, linking, and gateway hosting requirements, see
+[Vercel deployment](docs/vercel.md).
 
 Install Bun and Foundry, then:
 
@@ -66,7 +69,7 @@ bun run smoke       # requires Anvil running; deploys isolated demo contracts
 
 ### Local browser E2E wallet
 
-`bun run dev:e2e` enables an opt-in Wagmi connector for exercising the Sepolia UI with the ignored encrypted test keystore in `.secrets/`. The private key is never sent to or bundled into the browser. The local Vite server exposes a same-origin wallet endpoint only while this command is running; ordinary development and production builds do not enable it.
+`bun run dev:e2e` enables an opt-in Wagmi connector for exercising the Sepolia UI with the ignored encrypted test keystore in `.secrets/`. The private key is never sent to or bundled into the browser. A loopback-only Next.js development launcher exposes a same-origin wallet endpoint only while this command is running; ordinary development and production builds do not enable it. The launcher refuses production mode and Vercel environments.
 
 The endpoint is chain-locked to Sepolia and allowlists only this deployment's checked account creation, bounded demo-token mint/approval, fixed gas deposit, and validated single-payment UserOperation. The UI must register the complete UserOperation before its short-lived action hash can be signed. Treat the signer as a hot test key: never fund it with mainnet assets or reuse it for production authority.
 

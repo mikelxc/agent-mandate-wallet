@@ -13,7 +13,7 @@ import {
   type Hex,
 } from 'viem';
 import { sepolia } from 'viem/chains';
-import type { Plugin } from 'vite';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   entryPointAbi,
   kernelAbi,
@@ -58,7 +58,7 @@ function bigint(value: unknown) {
   throw new Error('Invalid integer value.');
 }
 
-function localRequest(req: import('node:http').IncomingMessage) {
+function localRequest(req: IncomingMessage) {
   if (req.headers['x-mandate-dev-wallet'] !== '1') return false;
   const host = req.headers.host;
   const origin = req.headers.origin;
@@ -78,7 +78,7 @@ async function cast(args: string[]) {
   return stdout.trim();
 }
 
-async function readBody(req: import('node:http').IncomingMessage) {
+async function readBody(req: IncomingMessage) {
   let body = '';
   for await (const chunk of req) {
     body += chunk;
@@ -116,8 +116,9 @@ function decodeAccountExecution(callData: Hex, owner: Address) {
     throw new Error('Payment is outside the local test-wallet limits.');
 }
 
-export function devWalletPlugin(enabled: boolean): Plugin | undefined {
-  if (!enabled) return undefined;
+export function createDevWalletHandler(enabled: boolean) {
+  if (!enabled || process.env.NODE_ENV !== 'development' || process.env.VERCEL)
+    return undefined;
   const allowedAccounts = new Set<string>([
     deployment.demoAccount.toLowerCase(),
   ]);
@@ -173,7 +174,8 @@ export function devWalletPlugin(enabled: boolean): Plugin | undefined {
     for (const [key, expiry] of preparedActions) {
       if (expiry <= Date.now()) preparedActions.delete(key);
     }
-    if (preparedActions.size >= 128) throw new Error("Too many pending test signatures.");
+    if (preparedActions.size >= 128)
+      throw new Error('Too many pending test signatures.');
     preparedActions.set(hash.toLowerCase(), Date.now() + 60_000);
     return hash;
   }
@@ -199,7 +201,8 @@ export function devWalletPlugin(enabled: boolean): Plugin | undefined {
       client.getCode({ address: account }),
     ]);
     if (
-      !code || code === "0x" ||
+      !code ||
+      code === '0x' ||
       !isAddressEqual(registered, account) ||
       !isAddressEqual(currentOwner, expectedOwner)
     )
@@ -350,54 +353,48 @@ export function devWalletPlugin(enabled: boolean): Plugin | undefined {
     ]);
   }
 
-  return {
-    name: 'mandate-local-dev-wallet',
-    apply: 'serve',
-    configureServer(server) {
-      server.middlewares.use('/__mandate_dev_wallet', async (req, res) => {
-        res.setHeader('content-type', 'application/json');
-        res.setHeader('cache-control', 'no-store');
-        let request: RpcRequest = {};
-        try {
-          if (req.method !== 'POST' || !localRequest(req))
-            throw new Error('Local app origin required.');
-          request = await readBody(req);
-          const expectedOwner = await owner();
-          let result: unknown;
-          if (request.method === 'eth_chainId') result = '0xaa36a7';
-          else if (
-            request.method === 'eth_accounts' ||
-            request.method === 'eth_requestAccounts'
-          )
-            result = [expectedOwner];
-          else if (request.method === 'mandate_registerAccount')
-            result = await registerAccount(request.params, expectedOwner);
-          else if (request.method === 'mandate_prepareUserOperation')
-            result = await prepareOperation(request.params, expectedOwner);
-          else if (request.method === 'eth_signTypedData_v4')
-            result = await signTypedData(request.params, expectedOwner);
-          else if (request.method === 'eth_sendTransaction')
-            result = await sendTransaction(request.params, expectedOwner);
-          else
-            throw Object.assign(
-              new Error(`Unsupported wallet method: ${String(request.method)}`),
-              { code: -32601 },
-            );
-          res.end(
-            JSON.stringify({ jsonrpc: '2.0', id: request.id ?? null, result }),
-          );
-        } catch (error) {
-          const value = error as Error & { code?: number };
-          res.statusCode = 400;
-          res.end(
-            JSON.stringify({
-              jsonrpc: '2.0',
-              id: request.id ?? null,
-              error: { code: value.code ?? -32000, message: value.message },
-            }),
-          );
-        }
-      });
-    },
+  return async (req: IncomingMessage, res: ServerResponse) => {
+    res.setHeader('content-type', 'application/json');
+    res.setHeader('cache-control', 'no-store');
+    let request: RpcRequest = {};
+    try {
+      if (req.method !== 'POST' || !localRequest(req))
+        throw new Error('Local app origin required.');
+      request = await readBody(req);
+      const expectedOwner = await owner();
+      let result: unknown;
+      if (request.method === 'eth_chainId') result = '0xaa36a7';
+      else if (
+        request.method === 'eth_accounts' ||
+        request.method === 'eth_requestAccounts'
+      )
+        result = [expectedOwner];
+      else if (request.method === 'mandate_registerAccount')
+        result = await registerAccount(request.params, expectedOwner);
+      else if (request.method === 'mandate_prepareUserOperation')
+        result = await prepareOperation(request.params, expectedOwner);
+      else if (request.method === 'eth_signTypedData_v4')
+        result = await signTypedData(request.params, expectedOwner);
+      else if (request.method === 'eth_sendTransaction')
+        result = await sendTransaction(request.params, expectedOwner);
+      else
+        throw Object.assign(
+          new Error(`Unsupported wallet method: ${String(request.method)}`),
+          { code: -32601 },
+        );
+      res.end(
+        JSON.stringify({ jsonrpc: '2.0', id: request.id ?? null, result }),
+      );
+    } catch (error) {
+      const value = error as Error & { code?: number };
+      res.statusCode = 400;
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: request.id ?? null,
+          error: { code: value.code ?? -32000, message: value.message },
+        }),
+      );
+    }
   };
 }

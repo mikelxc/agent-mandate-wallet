@@ -1,8 +1,6 @@
 node_modules/
 dist/
 .next/
-.vinext/
-.wrangler/
 .env
 .env.*
 !.env.example
@@ -21,3 +19,4 @@ apps/web/playwright-report/
 
 # Local gateway sessions, credentials, signed payloads and operation database
 .local/
+.vercel

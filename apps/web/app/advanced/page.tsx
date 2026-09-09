@@ -263,7 +263,6 @@ export default function AdvancedWorkspace() {
   return (
     <div className="workspace">
       <aside className="sidebar">
-        {/* oxlint-disable-next-line next/no-html-link-for-pages -- Vinext's Next Link shim duplicates React during development. */}
         <a className="brand" href="/">
           <span className="brandmark">
             <ShieldCheck size={18} />

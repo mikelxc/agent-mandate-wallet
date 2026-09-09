@@ -9,7 +9,8 @@ import { getDevWalletProvider } from './dev-wallet';
 // Public project identifier, not a wallet credential or signing key.
 const projectId = '74fcd78221a94fe49836612d214f6e3e';
 const devWalletEnabled =
-  import.meta.env.DEV && import.meta.env.VITE_MANDATE_DEV_WALLET === 'true';
+  process.env.NODE_ENV === 'development' &&
+  process.env.NEXT_PUBLIC_MANDATE_DEV_WALLET === 'true';
 const adapter = new WagmiAdapter({
   projectId,
   networks: [hackathonSepolia, foundry],
