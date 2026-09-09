@@ -1,60 +1,60 @@
 import { expect, test } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 } });
+test.setTimeout(30_000);
 
-test('mobile onboarding starts with the agent and generates host-specific MCP setup', async ({
+test('walkthrough explains real authority and identity without simulating completion', async ({
   page,
 }) => {
-  await page.goto('/advanced');
-  await page.waitForLoadState('networkidle');
-
-  await expect(
-    page.getByRole('heading', { name: 'Where does your agent work?' }),
-  ).toBeVisible();
-  const cursorHost = page.getByRole('button', {
-    name: 'CR Cursor Editor · Agent',
-  });
-  await cursorHost.click();
-  await expect(cursorHost).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Continue with Cursor' }).click();
+  await page.goto('/');
   await expect(
     page.getByRole('heading', { name: 'Prove it’s yours.' }),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Go to step 2', exact: true }).click();
+  const cursor = page.getByRole('button', { name: 'CR Cursor Editor · Agent' });
+  await cursor.click();
+  await expect(cursor).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Continue with Cursor' }).click();
   await expect(
-    page.getByRole('button', {
-      name: /connect & verify owner|verify ownership/i,
-    }),
+    page.getByRole('heading', { name: 'You approve every payment.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Go to step 3' }).click();
+  await page.getByRole('button', { name: 'Use approval-only policy' }).click();
   await expect(
     page.getByRole('heading', { name: 'Give the account a name.' }),
   ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Create named account' }),
+  ).toBeDisabled();
   await expect(page.getByLabel('Account name')).toHaveValue('my-agent');
-  await expect(page.locator('.nfat-card')).toContainText(
-    'my-agent.wayleave.eth',
-  );
-  await expect(page.locator('.ens-preview-note')).toContainText('ENSv2');
-  await page.getByRole('button', { name: 'Go to step 4' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Select the NFAT.' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Go to step 5' }).click();
+  await page.getByRole('button', { name: 'Go to step 6', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Bring the lane into Cursor.' }),
   ).toBeVisible();
   await expect(page.locator('.mobile-config-preview')).toContainText(
-    '"mcpServers"',
+    'mcpServers',
   );
-  await expect(page.locator('.mobile-config-preview')).toContainText(
-    'MANDATE_AGENT_TOKEN',
-  );
-
-  await page.getByRole('button', { name: 'PRO MODE' }).click();
   await expect(
-    page.getByRole('heading', { name: 'An agent can ask. It cannot spend.' }),
+    page.getByRole('button', { name: 'Copy Cursor setup' }),
+  ).toBeDisabled();
+  await page
+    .getByRole('button', { name: 'Explore your account identity' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'One account. Any client.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Minimal setup' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Bring the lane into Cursor.' }),
+    page.getByRole('button', { name: 'Verify NFT → account' }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText('Verified on Sepolia:', { exact: false }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Open my dashboard' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Your accounts & requests.' }),
   ).toBeVisible();
 });

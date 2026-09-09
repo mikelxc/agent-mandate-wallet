@@ -1704,6 +1704,20 @@ footer {
     padding: 8px 12px;
     font-size: 0.72rem;
   }
+
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Shared walkthrough visuals; desktop visibility is opt-in on account home. */
   .mobile-agent-onboarding {
     position: relative;
     display: flex;
@@ -2486,14 +2500,4 @@ footer {
     text-align: center;
     font-size: 0.67rem;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+@media (min-width: 721px) { .mobile-agent-onboarding { display: none; } }

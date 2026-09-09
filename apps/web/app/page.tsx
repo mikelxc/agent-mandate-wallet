@@ -1,10 +1,18 @@
-import { WorkspaceShell } from '../components/workspace-shell';
-import JobWorkspace from '../components/job-workspace';
+import { AgentControl } from '../components/agent-control';
+import { KernelWorkspace } from '../components/kernel-workspace';
+import './account-home.css';
 
 export default function Home() {
   return (
-    <WorkspaceShell active="job">
-      <JobWorkspace />
-    </WorkspaceShell>
+    <main className="account-home">
+      <AgentControl />
+      <details className="account-tools">
+        <summary>Account funding &amp; settings</summary>
+        <KernelWorkspace />
+      </details>
+      <a className="account-tools" href="/advanced">
+        Developer tools
+      </a>
+    </main>
   );
 }

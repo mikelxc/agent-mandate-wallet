@@ -1,25 +1,28 @@
-# Wayleave workspace flow
+# Wayleave account flow
 
-The primary experience is Job → Authority → Activity → Result. Account setup is
-available through Accounts, and existing contract/payment tooling remains under
-Developer tools. A user starts with the desired work instead of choosing an
-implementation or sponsor tab.
+The main product is the human control panel for real accounts and requests. The
+previous persistent simulated job workspace has been removed from the home route.
+`/` and `/accounts` both preserve the original mobile account interface.
 
-## Design decisions
+## Guided setup
 
-- One primary action per stage, with an editable summary before a run.
-- Provider permissions and budget remain visible while reviewing authority.
-- Freeze the approved terms during a run; changing settings must never rewrite
-  historical payment evidence.
-- Put receipts and technical configuration behind disclosure controls.
-- Represent pending, rejected, revoked, paid and delivered as distinct states.
-- Retain a persistent example label on local scenarios. No example item is
-  represented as a chain receipt, authenticated gateway event, ENS lookup or
-  hardware-device approval.
-- Real operations remain available in Accounts and Developer tools. UI completion
-  does not establish Circle, Arc, Ledger or passkey deployment readiness.
-- Use warm white, dark ink and a restrained green accent. Text and spacing carry
-  the interface. Layout must work at 320px and with keyboard navigation.
+1. Connect the owner wallet and verify it with a login signature.
+2. Choose an MCP client. Its credential can only be issued after an account exists.
+3. Select the existing approval-only policy: read and propose, with an exact owner
+   signature for every payment. This does not deploy an autonomous policy module.
+4. Create the NFAT and its ENS name in one real Sepolia transaction. This is the
+   first test transaction: only testnet gas, no invented name fee or token approval.
+5. Issue a revocable, scoped connection for that account.
+6. Copy the actual one-time credential configuration into the chosen MCP client.
+7. Read the live validator binding, registry account and NFT owner, then compare
+   the account with `get_account` in the MCP client. Never infer a connection from
+   copied configuration. Additional clients get separate revocable credentials.
+
+Setup can be skipped or reopened. Only the dismissal preference is saved locally;
+there are no persistent sample payments, balances or pretend completed jobs.
+Funding and capped allowances remain in account settings. A token allowance and
+an agent's proposal access are separate from the owner's execution signature.
+No new onchain permission or unrestricted signing is introduced by this UI.
 
 ## Mobbin references
 
@@ -37,11 +40,11 @@ patterns, not their branding or exact layout:
 
 ## E2E boundaries
 
-Local UI checks cover brief editing, validation, authority review, example
-execution, rejection/revocation, delivery/result, reset, responsive navigation,
-and graceful account-service failure. Existing wallet tests target `/advanced`
-so the original live execution path remains independently testable.
+Browser checks cover wallet-first entry on mobile and desktop, dismissal across
+reload, reopening, client-specific MCP configuration, policy explanation,
+transaction gating without a wallet, and NFT verification without fabricated
+success. These checks do not sign or submit transactions.
 
-The sponsor E2E gate remains a separate exercise: confirmed identity lookup,
-actual bounded policy authorization, Circle Agent Stack transaction on Arc,
-Ledger-backed authority or secrets boundary, and paid-service delivery evidence.
+Live owner signing, ENS creation, MCP readback and sponsor integration execution
+remain separate end-to-end checks. Circle/Arc and Ledger are not represented as
+live based on this onboarding change.

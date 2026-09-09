@@ -4,13 +4,13 @@
 
 Wayleave turns human intent into accountable onchain actions. It combines customizable smart accounts, NFT-based ownership, and an agent interface with a human approval dashboard. An agent requests a payment, the owner approves its exact terms, and both can inspect the transaction outcome.
 
-This is the initial ETHOnline monorepo. It includes a working contract core and wallet-connected frontend, plus a clearly labeled policy simulation. It is not yet the complete Circle/Ledger agent workflow.
+This is the initial ETHOnline monorepo. It includes a working contract core and wallet-connected frontend, plus wallet-first guided onboarding. It is not yet the complete Circle/Ledger agent workflow.
 
 The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT owner validator. It can spend demo ERC-20 tokens directly from the owner through a capped allowance. See [deployment evidence](docs/sepolia.md) and [current architecture](docs/kernel.md). The original OperatingAccount remains a reference for agent-policy behavior.
 
 The new [passkey root factory](docs/passkey-accounts.md) supports deterministic Kernel accounts with self-owned identity NFTs and an account-owned ENS adapter. Contracts and SDK helpers are implemented; browser onboarding and a passkey Sepolia deployment are pending.
 
-The default UI now follows **Job → Authority → Activity → Result**, with an explicitly labeled interactive example. Accounts provides wallet and agent access; Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
+The default UI opens a dismissible walkthrough: **Wallet → MCP client → Approval-only policy → Named account transaction → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
 
 
 ## Stack

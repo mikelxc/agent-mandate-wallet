@@ -40,6 +40,7 @@ import {
   ownerPayment,
   entryPointAbi,
   kernelAccountFactoryAbi,
+  nFTOwnerValidatorAbi,
   sepoliaDeployment as d,
   agentEnsName,
   ensV2RegistryAbi,
@@ -122,8 +123,31 @@ export function AgentControl() {
   >();
   const [recoveryHash, setRecoveryHash] = useState('');
   const [renderTime, setRenderTime] = useState(() => Date.now());
-  const [mobileStep, setMobileStep] = useState(0);
+  const [mobileStep, setMobileStep] = useState(1);
   const [mobilePro, setMobilePro] = useState(false);
+  const [policyAccepted, setPolicyAccepted] = useState(false);
+  const [identityProof, setIdentityProof] = useState('');
+  const [creationHash, setCreationHash] = useState<Hex>();
+  const [uiReady, setUiReady] = useState(false);
+  useEffect(() => {
+    try {
+      setMobilePro(
+        localStorage.getItem('wayleave.walkthrough.dismissed') === 'true',
+      );
+    } catch {
+      /* Storage is optional. */
+    }
+    setUiReady(true);
+  }, []);
+  function showDashboard(show: boolean) {
+    setMobilePro(show);
+    try {
+      localStorage.setItem('wayleave.walkthrough.dismissed', String(show));
+    } catch {
+      /* Storage is optional. */
+    }
+  }
+  const walkthroughOrder = [1, 0, 6, 2, 3, 4, 5];
   const [agentHost, setAgentHost] = useState<AgentHost>('codex');
   const [authStage, setAuthStage] = useState<
     'idle' | 'connecting' | 'network' | 'signing' | 'verifying'
@@ -163,7 +187,8 @@ export function AgentControl() {
           args: [BigInt(keccak256(toHex(identityLabel)))],
         })
         .then((status) => {
-          if (!cancelled) setEnsAvailability(status === 0 ? 'available' : 'taken');
+          if (!cancelled)
+            setEnsAvailability(status === 0 ? 'available' : 'taken');
         })
         .catch(() => {
           if (!cancelled) setEnsAvailability('error');
@@ -287,7 +312,7 @@ export function AgentControl() {
         setMessage(
           'Owner verified. Your agent can only read and propose until you approve an exact action.',
         );
-        setMobileStep(2);
+        setMobileStep(0);
       }
     } finally {
       if (active.current) setAuthStage('idle');
@@ -306,7 +331,9 @@ export function AgentControl() {
       args: [BigInt(keccak256(toHex(identityLabel)))],
     });
     if (status !== 0)
-      throw new Error(`${agentEnsName(identityLabel)} is already taken. Choose another name.`);
+      throw new Error(
+        `${agentEnsName(identityLabel)} is already taken. Choose another name.`,
+      );
     const [tokenId, predicted] = await c.client.readContract({
       address: d.registry,
       abi: kernelAccountFactoryAbi,
@@ -348,6 +375,7 @@ export function AgentControl() {
     )
       throw new Error('Created NFAT did not match its live Wayleave name.');
     if (active.current) {
+      setCreationHash(hash);
       setAccount(predicted);
       setNfatId(tokenId);
       setEnsAvailability('registered');
@@ -500,6 +528,9 @@ export function AgentControl() {
   const selectedAccount =
     account || activeAgents[0]?.account || agents[0]?.account || '';
   const hasAccount = isAddress(selectedAccount);
+  useEffect(() => {
+    setIdentityProof('');
+  }, [address, selectedAccount]);
   const setupSteps = [
     true,
     signedIn,
@@ -556,21 +587,21 @@ MANDATE_AGENT_TOKEN = "${credential}"`
   return (
     <>
       <section
-        className={`mobile-agent-onboarding ${mobilePro ? 'hidden' : ''}`}
+        className={`mobile-agent-onboarding ${mobilePro || !uiReady ? 'hidden' : ''}`}
       >
         <div className="mobile-grid-glow" aria-hidden="true" />
         <div className="mobile-onboarding-top">
           <span className="mobile-wordmark">
-            <ShieldCheck size={15} /> MANDATE
+            <ShieldCheck size={15} /> WAYLEAVE
           </span>
-          <button onClick={() => setMobilePro(true)}>PRO MODE</button>
+          <button onClick={() => showDashboard(true)}>Skip setup</button>
         </div>
 
         <div className="mobile-stage">
           <div className="mobile-step-meta">
-            <span>0{mobileStep + 1}</span>
+            <span>0{walkthroughOrder.indexOf(mobileStep) + 1}</span>
             <i />
-            <small>05</small>
+            <small>07</small>
           </div>
 
           {mobileStep === 0 && (
@@ -586,7 +617,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <span className="orbit-chip chip-agent">MCP</span>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">YOUR AGENT / 01</span>
+                <span className="mobile-kicker">LINK MCP / 02</span>
                 <h2>Where does your agent work?</h2>
                 <p>
                   Choose its home. We’ll create the exact MCP setup for that
@@ -611,7 +642,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               </div>
               <button
                 className="mobile-primary"
-                onClick={() => setMobileStep(1)}
+                onClick={() => setMobileStep(6)}
               >
                 Continue with {selectedHost.name} <ArrowRight size={17} />
               </button>
@@ -632,7 +663,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <span className="boundary-ray ray-three" />
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">OWNER CHECK / 02</span>
+                <span className="mobile-kicker">CONNECT WALLET / 01</span>
                 <h2>Prove it’s yours.</h2>
                 <p>
                   Connect your wallet and sign a login message. This verifies
@@ -654,7 +685,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               ) : (
                 <button
                   className="mobile-primary"
-                  onClick={() => setMobileStep(2)}
+                  onClick={() => setMobileStep(0)}
                 >
                   Owner verified <Check size={17} />
                 </button>
@@ -662,6 +693,149 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               <p className="mobile-trust">
                 <LockKeyhole size={14} /> No transaction · no token approval
               </p>
+            </div>
+          )}
+
+          {mobileStep === 6 && (
+            <div className="mobile-step-content">
+              <div className="mobile-copy">
+                <span className="mobile-kicker">AUTHORITY / 03</span>
+                <h2>You approve every payment.</h2>
+                <p>
+                  Your first policy is approval-only. MCP can read this account
+                  and propose a payment. It receives no signing key. Each
+                  payment requires your signature over its exact details.
+                </p>
+              </div>
+              <div className="mobile-permissions">
+                <span>
+                  <Check size={14} /> Read account
+                </span>
+                <span>
+                  <Check size={14} /> Propose payment
+                </span>
+                <span className="off">
+                  <X size={14} /> Spend without approval
+                </span>
+              </div>
+              <p className="mobile-trust">
+                A token allowance is separate. Creating the account grants no
+                allowance. You can set or revoke a capped allowance in account
+                settings.
+              </p>
+              <button
+                className="mobile-primary"
+                onClick={() => {
+                  setPolicyAccepted(true);
+                  setMobileStep(2);
+                }}
+              >
+                Use approval-only policy <ArrowRight size={17} />
+              </button>
+              <p className="mobile-trust">
+                This selects the existing owner-signature flow; it does not
+                install an autonomous policy module.
+              </p>
+            </div>
+          )}
+
+          {mobileStep === 5 && (
+            <div className="mobile-step-content">
+              <div className="mobile-copy">
+                <span className="mobile-kicker">INTEROPERABILITY / 07</span>
+                <h2>One account. Any client.</h2>
+                <p>
+                  The NFAT identifies the same onchain account from your
+                  dashboard or an MCP client. Changing clients does not create a
+                  new wallet or move your funds.
+                </p>
+              </div>
+              <div className="mobile-config-preview">
+                <div>
+                  <span>Sepolia · NFAT registry</span>
+                </div>
+                <pre>
+                  {d.registry}
+                  {'\n'}Account:{' '}
+                  {selectedAccount || 'Create or select an account first'}
+                  {nfatId !== undefined ? `\nNFAT #${nfatId}` : ''}
+                </pre>
+              </div>
+              {creationHash && (
+                <a
+                  className="mobile-link"
+                  href={`https://sepolia.etherscan.io/tx/${creationHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View account creation receipt
+                </a>
+              )}
+              <button
+                className="mobile-primary"
+                disabled={busy || !signedIn || !hasAccount}
+                onClick={() =>
+                  void run(async () => {
+                    const c = await context();
+                    const [registry, foundId] = await c.client.readContract({
+                      address: d.validator,
+                      abi: nFTOwnerValidatorAbi,
+                      functionName: 'bindings',
+                      args: [selectedAccount as Address],
+                    });
+                    if (registry.toLowerCase() !== d.registry.toLowerCase())
+                      throw new Error('Account is outside this registry.');
+                    const [registered, owner] = await Promise.all([
+                      c.client.readContract({
+                        address: d.registry,
+                        abi: kernelAccountFactoryAbi,
+                        functionName: 'accountOf',
+                        args: [foundId],
+                      }),
+                      c.client.readContract({
+                        address: d.registry,
+                        abi: kernelAccountFactoryAbi,
+                        functionName: 'ownerOf',
+                        args: [foundId],
+                      }),
+                    ]);
+                    if (
+                      registered.toLowerCase() !==
+                        selectedAccount.toLowerCase() ||
+                      owner.toLowerCase() !== c.address.toLowerCase()
+                    )
+                      throw new Error(
+                        'The account or NFT owner no longer matches.',
+                      );
+                    await context();
+                    setIdentityProof(
+                      `Verified on Sepolia: NFAT #${foundId} maps to ${registered}. Your connected wallet owns the NFT.`,
+                    );
+                  })
+                }
+              >
+                Verify NFT → account <ArrowRight size={17} />
+              </button>
+              {identityProof && (
+                <p className="mobile-trust" role="status">
+                  {identityProof}
+                </p>
+              )}
+              <p className="mobile-trust">
+                In your MCP client, call get_account and compare its account
+                address with this one. A configuration file alone does not prove
+                the client is connected. Give each additional client its own
+                revocable connection.
+              </p>
+              <button className="mobile-link" onClick={() => setMobileStep(4)}>
+                View MCP configuration
+              </button>
+              <button
+                className="mobile-primary"
+                onClick={() => showDashboard(true)}
+              >
+                Open my dashboard <ArrowRight size={17} />
+              </button>
             </div>
           )}
 
@@ -679,11 +853,12 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <small>OWNER CONTROLLED ACCOUNT</small>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">CREATE ACCOUNT / 03</span>
+                <span className="mobile-kicker">FIRST TRANSACTION / 04</span>
                 <h2>Give the account a name.</h2>
                 <p>
-                  Mint the NFAT that owns your agent account. You keep the NFT;
-                  the agent only receives the access you grant later.
+                  Your first real test transaction creates an NFAT and registers
+                  its ENS name together. Sepolia gas only; no invented name fee.
+                  The NFT identifies the account and its owner controls it.
                 </p>
               </div>
               <label className="mobile-field nfat-name-field">
@@ -723,13 +898,14 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                   disabled={
                     busy ||
                     !signedIn ||
+                    !policyAccepted ||
                     !validLabel(identityLabel) ||
                     ensAvailability === 'checking' ||
                     ensAvailability === 'taken'
                   }
                   onClick={() => void run(createNfat)}
                 >
-                  Mint my NFAT <ArrowRight size={17} />
+                  Create named account <ArrowRight size={17} />
                 </button>
               )}
               <p className="mobile-trust">
@@ -753,7 +929,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 </span>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">GRANT ACCESS / 04</span>
+                <span className="mobile-kicker">LINK MCP / 05</span>
                 <h2>Select the NFAT.</h2>
                 <p>
                   Give {selectedHost.name} one revocable, 24-hour connection to
@@ -842,13 +1018,20 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <i />
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">INSTALL MCP / 05</span>
+                <span className="mobile-kicker">LINK MCP / 06</span>
                 <h2>Bring the lane into {selectedHost.name}.</h2>
                 <p>
                   {mcpDestination}. Then restart {selectedHost.name} and ask it
                   to read the account.
                 </p>
               </div>
+              {!token && (
+                <p className="mobile-trust">
+                  Create a connection to receive its one-time key. Existing keys
+                  cannot be retrieved; create a separate connection when adding
+                  another client.
+                </p>
+              )}
               <div className="mobile-mcp-recipe">
                 <div>
                   <small>01</small>
@@ -882,6 +1065,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               </div>
               <button
                 className="mobile-primary"
+                disabled={!token}
                 onClick={() =>
                   void navigator.clipboard
                     .writeText(mcpConfig)
@@ -893,22 +1077,19 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               >
                 <Clipboard size={16} /> Copy {selectedHost.name} setup
               </button>
-              <button
-                className="mobile-link"
-                onClick={() => setMobilePro(true)}
-              >
-                Open approval console
+              <button className="mobile-link" onClick={() => setMobileStep(5)}>
+                Explore your account identity
               </button>
             </div>
           )}
         </div>
 
         <div className="mobile-step-nav" aria-label="Onboarding steps">
-          {[0, 1, 2, 3, 4].map((step) => (
+          {walkthroughOrder.map((step, index) => (
             <button
               key={step}
               className={mobileStep === step ? 'active' : ''}
-              aria-label={`Go to step ${step + 1}`}
+              aria-label={`Go to step ${index + 1}`}
               onClick={() => setMobileStep(step)}
             />
           ))}
@@ -917,20 +1098,20 @@ MANDATE_AGENT_TOKEN = "${credential}"`
       </section>
 
       <div
-        className={`agent-shell desktop-agent-pro ${mobilePro ? 'show-on-mobile' : ''}`}
+        className={`agent-shell desktop-agent-pro ${mobilePro && uiReady ? 'show-on-mobile' : ''}`}
       >
-        <button className="mobile-return" onClick={() => setMobilePro(false)}>
-          Minimal setup
+        <button className="mobile-return" onClick={() => showDashboard(false)}>
+          Open walkthrough
         </button>
         <section className="agent-overview panel">
           <div className="overview-copy">
             <span className="status">
               <ShieldCheck size={13} /> Human approval required
             </span>
-            <h2>An agent can ask. It cannot spend.</h2>
+            <h2>Your accounts & requests.</h2>
             <p>
-              Mandate gives your agent a narrow lane: inspect the account,
-              propose a payment, and wait for your exact signature.
+              Review your connected agents and real payment requests. Every
+              payment needs your exact signature.
             </p>
           </div>
           <div

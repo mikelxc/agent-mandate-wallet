@@ -1,0 +1,46 @@
+/* Use the existing account walkthrough on both mobile and desktop. */
+@media (min-width: 721px) {
+  .account-home .mobile-agent-onboarding:not(.hidden) {
+    display: flex;
+    max-width: 560px;
+    margin: 32px auto;
+    border-radius: 24px;
+    min-height: 850px;
+  }
+}
+.account-home {
+  margin: 0 !important;
+  min-height: 100dvh;
+  background: #050806;
+}
+.account-home .desktop-agent-pro {
+  display: none;
+}
+.account-home .desktop-agent-pro.show-on-mobile {
+  display: grid;
+  padding: clamp(18px, 4vw, 48px);
+  margin: 0 auto;
+  max-width: 1240px;
+  background: #f4f6f3;
+}
+.account-home .mobile-return {
+  display: inline-flex;
+  width: fit-content;
+}
+.account-home:has(.mobile-agent-onboarding:not(.hidden)) > .account-tools {
+  display: none;
+}
+.account-tools {
+  display: block;
+  background: #f4f6f3;
+  padding: 20px;
+  margin: 0 auto;
+  max-width: 1240px;
+}
+.account-home .mobile-config-preview pre {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.account-home .mobile-trust {
+  overflow-wrap: anywhere;
+}
