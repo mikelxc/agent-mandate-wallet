@@ -6,7 +6,8 @@ previous persistent simulated job workspace has been removed from the home route
 
 ## Guided setup
 
-1. Connect the owner wallet and verify it with a login signature.
+1. Choose an injected or WalletConnect wallet in AppKit, then explicitly verify
+   ownership with a login signature. Closing the picker never authenticates.
 2. Choose an MCP client. Its credential can only be issued after an account exists.
 3. Select the existing approval-only policy: read and propose, with an exact owner
    signature for every payment. This does not deploy an autonomous policy module.
@@ -42,7 +43,8 @@ patterns, not their branding or exact layout:
 
 Browser checks cover wallet-first entry on mobile and desktop, dismissal across
 reload, reopening, client-specific MCP configuration, policy explanation,
-transaction gating without a wallet, and NFT verification without fabricated
+transaction gating without a wallet, real WalletConnect QR display and cancellation
+on mobile/desktop, and NFT verification without fabricated
 success. These checks do not sign or submit transactions.
 
 Live owner signing, ENS creation, MCP readback and sponsor integration execution

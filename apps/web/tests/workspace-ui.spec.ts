@@ -61,3 +61,37 @@ test('accounts route restores the same wallet-first entry', async ({
     0,
   );
 });
+
+for (const width of [390, 1280]) {
+  test(`WalletConnect picker opens without an injected wallet at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    let authRequests = 0;
+    await page.route('**/gateway/auth/challenge', (route) => {
+      authRequests++;
+      return route.abort();
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Connect & verify owner' }).click();
+    const modal = page.locator('w3m-modal');
+    await expect(
+      modal.getByText('Connect Wallet', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      modal.getByText('WalletConnect', { exact: true }),
+    ).toBeVisible();
+    await modal.getByText('WalletConnect', { exact: true }).click();
+    await expect(modal.locator('wui-qr-code')).toBeVisible({ timeout: 20_000 });
+    expect(authRequests).toBe(0);
+    await page.keyboard.press('Escape');
+    await expect(
+      page.getByRole('button', { name: 'Connect & verify owner' }),
+    ).toBeEnabled();
+    await page.getByRole('button', { name: 'Connect & verify owner' }).click();
+    await expect(
+      modal.getByText('Connect Wallet', { exact: true }),
+    ).toBeVisible();
+    expect(authRequests).toBe(0);
+  });
+}

@@ -252,15 +252,18 @@ export function AgentControl() {
     let owner = address;
     let connectedChain = chainId;
     try {
-      await api('/health');
       if (!owner) {
-        const connector =
-          connectors.find((item) => item.id === 'mandate-dev-wallet') ??
-          connectors[0];
-        if (!connector)
-          throw new Error(
-            'No wallet is available in this browser. Open the preview in a wallet-enabled browser.',
+        const connector = connectors.find(
+          (item) => item.id === 'mandate-dev-wallet',
+        );
+        if (!connector) {
+          const { openWalletPicker } = await import('../lib/wallet-config');
+          await openWalletPicker();
+          setMessage(
+            'Choose a wallet, then verify ownership with a login signature.',
           );
+          return;
+        }
         setAuthStage('connecting');
         setMessage('Choose an account in your wallet…');
         const connection = await connect
@@ -274,6 +277,7 @@ export function AgentControl() {
         connectedChain = connection.chainId;
       }
       if (!owner) throw new Error('The wallet did not return an account.');
+      await api('/health');
       if (connectedChain !== sepolia.id) {
         setAuthStage('network');
         setMessage('Switching the wallet to Sepolia…');

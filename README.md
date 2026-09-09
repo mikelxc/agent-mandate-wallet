@@ -12,6 +12,9 @@ The new [passkey root factory](docs/passkey-accounts.md) supports deterministic 
 
 The default UI opens a dismissible walkthrough: **Wallet → MCP client → Approval-only policy → Named account transaction → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
 
+Owner connection uses Reown AppKit with wagmi, supporting injected wallets and WalletConnect QR/mobile links. The public Reown project ID is configured in `apps/web/lib/wallet-config.ts`. Connecting does not authenticate the gateway: the owner explicitly verifies with the existing login signature afterward. AppKit loads in the browser so its SDK is not evaluated in the Cloudflare SSR worker.
+
+
 
 ## Stack
 
