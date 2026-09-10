@@ -37,7 +37,11 @@ test('walkthrough explains real authority and identity without simulating comple
   await expect(page.locator('.mobile-config-preview')).toContainText(
     '"wayleave"',
   );
-  await expect(page.locator('.mobile-config-preview')).toContainText('--cwd');
+  await expect(page.locator('.mobile-config-preview')).toContainText('bunx');
+  await expect(page.locator('.mobile-config-preview')).toContainText(
+    'wayleave-mcp@0.1.0',
+  );
+  await expect(page.getByLabel('Wayleave checkout path')).toHaveCount(0);
   const codex = page.getByRole('button', {
     name: 'CX Codex Desktop · CLI · IDE',
   });

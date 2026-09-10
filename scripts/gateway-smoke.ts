@@ -130,8 +130,8 @@ try {
   const agent = (await agentResponse.json()) as { agent: { id: string }; token: string };
 
   transport = new StdioClientTransport({
-    command: "bun",
-    args: ["packages/agent-tools/src/server.ts"],
+    command: "node",
+    args: ["packages/agent-tools/dist/cli.js"],
     env: {
       ...process.env,
       WAYLEAVE_AGENT_TOKEN: agent.token,

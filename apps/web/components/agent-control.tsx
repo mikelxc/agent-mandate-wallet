@@ -71,6 +71,7 @@ const agentHosts: Array<{
   { id: 'claude', mark: 'CL', name: 'Claude', detail: 'Desktop · Code' },
   { id: 'cursor', mark: 'CR', name: 'Cursor', detail: 'Editor · Agent' },
 ];
+const mcpPackage = 'wayleave-mcp@0.1.0';
 async function api<T>(path: string, data?: unknown): Promise<T> {
   const response = await fetch(`/gateway${path}`, {
     method: data === undefined ? 'GET' : 'POST',
@@ -118,7 +119,6 @@ export function AgentControl() {
   const [account, setAccount] = useState('');
   const [token, setToken] = useState('');
   const [tokenHost, setTokenHost] = useState<AgentHost>();
-  const [repositoryPath, setRepositoryPath] = useState('');
   const [selected, setSelected] = useState<string>();
   const [prepared, setPrepared] = useState<
     Prepared & { preparedUntil: number }
@@ -129,6 +129,7 @@ export function AgentControl() {
   const [mobilePro, setMobilePro] = useState(false);
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [identityProof, setIdentityProof] = useState('');
+  const [identityLoadError, setIdentityLoadError] = useState('');
   const [creationHash, setCreationHash] = useState<Hex>();
   const [uiReady, setUiReady] = useState(false);
   useEffect(() => {
@@ -209,6 +210,7 @@ export function AgentControl() {
     };
   }, [address]);
   useEffect(() => {
+    if (isAddress(account) && nfatId !== undefined) return;
     if (!client || !validLabel(identityLabel)) {
       setEnsAvailability('idle');
       return;
@@ -235,7 +237,7 @@ export function AgentControl() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [client, identityLabel]);
+  }, [account, client, identityLabel, nfatId]);
   async function refresh() {
     const [a, o] = await Promise.all([
       api<AgentConnection[]>('/agents'),
@@ -435,6 +437,7 @@ export function AgentControl() {
       setCreationHash(hash);
       setAccount(predicted);
       setNfatId(tokenId);
+      setIdentityLoadError('');
       setEnsAvailability('registered');
       setMessage(
         `NFAT #${tokenId} created. ${agentEnsName(identityLabel)} now resolves to ${predicted}.`,
@@ -588,6 +591,71 @@ export function AgentControl() {
   useEffect(() => {
     setIdentityProof('');
   }, [address, selectedAccount]);
+  useEffect(() => {
+    if (!client || !isAddress(selectedAccount)) return;
+    let cancelled = false;
+    void (async () => {
+      const [registry, tokenId] = await client.readContract({
+        address: d.validator,
+        abi: nFTOwnerValidatorAbi,
+        functionName: 'bindings',
+        args: [selectedAccount],
+      });
+      if (registry.toLowerCase() !== d.registry.toLowerCase())
+        throw new Error(
+          'This account is not bound to the Wayleave NFAT registry.',
+        );
+      const [registered, owner, label] = await Promise.all([
+        client.readContract({
+          address: d.registry,
+          abi: kernelAccountFactoryAbi,
+          functionName: 'accountOf',
+          args: [tokenId],
+        }),
+        client.readContract({
+          address: d.registry,
+          abi: kernelAccountFactoryAbi,
+          functionName: 'ownerOf',
+          args: [tokenId],
+        }),
+        client.readContract({
+          address: d.registry,
+          abi: kernelAccountFactoryAbi,
+          functionName: 'labelOf',
+          args: [tokenId],
+        }),
+      ]);
+      if (
+        registered.toLowerCase() !== selectedAccount.toLowerCase() ||
+        (address && owner.toLowerCase() !== address.toLowerCase()) ||
+        !validLabel(label)
+      )
+        throw new Error(
+          'The NFAT identity no longer matches this owner and account.',
+        );
+      const ensName = agentEnsName(label);
+      const resolved = await client.getEnsAddress({ name: ensName });
+      if (resolved?.toLowerCase() !== selectedAccount.toLowerCase())
+        throw new Error(`${ensName} does not resolve to this NFAT account.`);
+      if (!cancelled && active.current) {
+        setAccount(registered);
+        setNfatId(tokenId);
+        setIdentityLabel(label);
+        setIdentityLoadError('');
+        setEnsAvailability('registered');
+      }
+    })().catch((error: unknown) => {
+      if (!cancelled && active.current)
+        setIdentityLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Could not load the NFAT ENSv2 identity.',
+        );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, client, selectedAccount]);
   const setupSteps = [
     true,
     signedIn,
@@ -615,10 +683,6 @@ export function AgentControl() {
   const credential = hasCurrentCredential
     ? token
     : `<create-a-${agentHost}-connection>`;
-  const checkoutPath =
-    repositoryPath.trim() || '<absolute-path-to-agent-mandate-wallet>';
-  const checkoutPathIsAbsolute =
-    checkoutPath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(checkoutPath);
   const agentGateway =
     uiReady && !['localhost', '127.0.0.1'].includes(window.location.hostname)
       ? 'https://way-leave.vercel.app/gateway'
@@ -627,8 +691,8 @@ export function AgentControl() {
     {
       mcpServers: {
         wayleave: {
-          command: 'bun',
-          args: ['run', '--cwd', checkoutPath, 'agent:mcp'],
+          command: 'bunx',
+          args: [mcpPackage],
           env: {
             WAYLEAVE_AGENT_TOKEN: credential,
             WAYLEAVE_GATEWAY_URL: agentGateway,
@@ -642,8 +706,8 @@ export function AgentControl() {
   const mcpConfig =
     agentHost === 'codex'
       ? `[mcp_servers.wayleave]
-command = "bun"
-args = ["run", "--cwd", ${JSON.stringify(checkoutPath)}, "agent:mcp"]
+command = "bunx"
+args = ["${mcpPackage}"]
 
 [mcp_servers.wayleave.env]
 WAYLEAVE_AGENT_TOKEN = "${credential}"
@@ -656,6 +720,13 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         ? 'Save as .cursor/mcp.json in your project'
         : 'Add to claude_desktop_config.json';
   const identityName = agentEnsName(identityLabel);
+  const identityLoaded =
+    hasAccount && nfatId !== undefined && !identityLoadError;
+  const identityDisplay = identityLoaded
+    ? identityName
+    : identityLoadError
+      ? 'ENSv2 identity unavailable'
+      : 'Loading ENSv2 identity…';
   return (
     <>
       <section
@@ -922,48 +993,91 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 <div className="nfat-glyph">
                   <ShieldCheck size={28} />
                 </div>
-                <strong>{identityName}</strong>
+                <strong>{hasAccount ? identityDisplay : identityName}</strong>
                 <small>OWNER CONTROLLED ACCOUNT</small>
               </div>
               <div className="mobile-copy">
                 <span className="mobile-kicker">FIRST TRANSACTION / 03</span>
-                <h2>Give the account a name.</h2>
-                <p>
-                  Your first real test transaction creates an NFAT and registers
-                  its ENS name together. Sepolia gas only; no invented name fee.
-                  The NFT identifies the account and its owner controls it.
-                </p>
+                <h2>
+                  {hasAccount
+                    ? 'Your ENSv2 identity.'
+                    : 'Give the account a name.'}
+                </h2>
+                {hasAccount ? (
+                  <p>
+                    This domain was registered with the NFAT. Wayleave loads it
+                    from Sepolia and does not offer a second name or rename
+                    here.
+                  </p>
+                ) : (
+                  <p>
+                    Your first real test transaction creates an NFAT and
+                    registers its ENS name together. Sepolia gas only; no
+                    invented name fee. The NFT identifies the account and its
+                    owner controls it.
+                  </p>
+                )}
               </div>
-              <label className="mobile-field nfat-name-field">
-                Account name
-                <span>
-                  <input
-                    value={identityLabel}
-                    onChange={(event) => setIdentityLabel(event.target.value)}
-                    aria-describedby="ens-preview-note"
-                  />
-                  <b>.{ensV2HackathonDeployment.parentName}</b>
-                </span>
-              </label>
-              <p className="ens-preview-note" id="ens-preview-note">
-                {ensAvailability === 'checking'
-                  ? 'Checking ENSv2 availability…'
-                  : ensAvailability === 'taken'
-                    ? 'Already registered on ENSv2 · choose another name'
-                    : ensAvailability === 'registered'
-                      ? 'Live on hackathon ENSv2 · resolves to this account'
-                      : ensAvailability === 'available'
-                        ? 'Available on ENSv2 · registered atomically with the NFAT'
-                        : ensAvailability === 'error'
-                          ? 'ENSv2 check unavailable · verified again before minting'
-                          : 'Live hackathon ENSv2 name · registered with the NFAT'}
-              </p>
-              {isAddress(account) && nfatId !== undefined ? (
+              {hasAccount ? (
+                <>
+                  <div
+                    className="nfat-selector selected"
+                    aria-label="ENSv2 identity"
+                  >
+                    <span>ENS</span>
+                    <div>
+                      <strong>{identityDisplay}</strong>
+                      <small>
+                        {identityLoaded
+                          ? `Resolves to ${selectedAccount.slice(0, 6)}…${selectedAccount.slice(-4)}`
+                          : 'Reading the NFAT registry and resolver'}
+                      </small>
+                    </div>
+                    {identityLoaded && <Check size={15} />}
+                  </div>
+                  {identityLoadError && (
+                    <p className="ens-preview-note" role="alert">
+                      {identityLoadError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <label className="mobile-field nfat-name-field">
+                    Account name
+                    <span>
+                      <input
+                        value={identityLabel}
+                        onChange={(event) =>
+                          setIdentityLabel(event.target.value)
+                        }
+                        aria-describedby="ens-preview-note"
+                      />
+                      <b>.{ensV2HackathonDeployment.parentName}</b>
+                    </span>
+                  </label>
+                  <p className="ens-preview-note" id="ens-preview-note">
+                    {ensAvailability === 'checking'
+                      ? 'Checking ENSv2 availability…'
+                      : ensAvailability === 'taken'
+                        ? 'Already registered on ENSv2 · choose another name'
+                        : ensAvailability === 'available'
+                          ? 'Available on ENSv2 · registered atomically with the NFAT'
+                          : ensAvailability === 'error'
+                            ? 'ENSv2 check unavailable · verified again before minting'
+                            : 'Live hackathon ENSv2 name · registered with the NFAT'}
+                  </p>
+                </>
+              )}
+              {hasAccount ? (
                 <button
                   className="mobile-primary"
                   onClick={() => setMobileStep(0)}
                 >
-                  NFAT #{nfatId.toString()} created <Check size={17} />
+                  {nfatId === undefined
+                    ? 'NFAT created'
+                    : `NFAT #${nfatId.toString()} created`}{' '}
+                  <Check size={17} />
                 </button>
               ) : (
                 <button
@@ -1016,7 +1130,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               >
                 <span>NF</span>
                 <div>
-                  <strong>{identityName}</strong>
+                  <strong>{identityDisplay}</strong>
                   <small>
                     NFAT {nfatId === undefined ? 'account' : `#${nfatId}`}
                   </small>
@@ -1121,20 +1235,11 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   connection for every client you add.
                 </p>
               )}
-              <label className="mobile-field">
-                Wayleave checkout path
-                <input
-                  value={repositoryPath}
-                  onChange={(event) => setRepositoryPath(event.target.value)}
-                  placeholder="/absolute/path/to/agent-mandate-wallet"
-                  spellCheck="false"
-                />
-              </label>
               <div className="mobile-mcp-recipe">
                 <div>
                   <small>01</small>
-                  <span>Use a local checkout</span>
-                  <code>github.com/mikelxc/agent-mandate-wallet</code>
+                  <span>Run the pinned package</span>
+                  <code>bunx {mcpPackage}</code>
                 </div>
                 <div>
                   <small>02</small>
@@ -1163,7 +1268,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </div>
               <button
                 className="mobile-primary"
-                disabled={!hasCurrentCredential || !checkoutPathIsAbsolute}
+                disabled={!hasCurrentCredential}
                 onClick={() =>
                   void navigator.clipboard
                     .writeText(mcpConfig)
@@ -1319,41 +1424,67 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 </p>
                 {signedIn && (
                   <div className="connection-form nfat-create-form">
-                    <label className="desktop-name-field">
-                      Account name
-                      <span>
-                        <input
-                          value={identityLabel}
-                          onChange={(e) => setIdentityLabel(e.target.value)}
-                        />
-                        <b>.{ensV2HackathonDeployment.parentName}</b>
-                      </span>
-                    </label>
-                    <button
-                      className="primary"
-                      disabled={
-                        busy ||
-                        hasAccount ||
-                        !validLabel(identityLabel) ||
-                        ensAvailability === 'checking' ||
-                        ensAvailability === 'taken'
-                      }
-                      onClick={() => void run(createNfat)}
-                    >
-                      {hasAccount ? (
-                        <Check size={14} />
-                      ) : (
-                        <KeyRound size={14} />
-                      )}
-                      {hasAccount ? 'NFAT created' : 'Mint NFAT'}
-                    </button>
-                    <p className="ens-rollout-note">
-                      {ensAvailability === 'taken'
-                        ? 'That Wayleave name is already registered. Choose another.'
-                        : ensAvailability === 'checking'
-                          ? 'Checking the live Wayleave registry…'
-                          : 'The NFAT, smart account, and Wayleave ENSv2 subname are created together.'}
-                    </p>
+                    {hasAccount ? (
+                      <>
+                        <div
+                          className="desktop-nfat-selected"
+                          aria-label="ENSv2 identity"
+                        >
+                          <span>ENS</span>
+                          <div>
+                            <strong>{identityDisplay}</strong>
+                            <small>
+                              {identityLoaded
+                                ? `NFAT #${nfatId}`
+                                : 'Loading from Sepolia'}
+                            </small>
+                          </div>
+                          <code>
+                            {selectedAccount.slice(0, 6)}…
+                            {selectedAccount.slice(-4)}
+                          </code>
+                        </div>
+                        <p
+                          className="ens-rollout-note"
+                          role={identityLoadError ? 'alert' : undefined}
+                        >
+                          {identityLoadError ||
+                            'Loaded from the NFAT registry and verified with the ENSv2 resolver. This identity is not editable here.'}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <label className="desktop-name-field">
+                          Account name
+                          <span>
+                            <input
+                              value={identityLabel}
+                              onChange={(e) => setIdentityLabel(e.target.value)}
+                            />
+                            <b>.{ensV2HackathonDeployment.parentName}</b>
+                          </span>
+                        </label>
+                        <button
+                          className="primary"
+                          disabled={
+                            busy ||
+                            !validLabel(identityLabel) ||
+                            ensAvailability === 'checking' ||
+                            ensAvailability === 'taken'
+                          }
+                          onClick={() => void run(createNfat)}
+                        >
+                          <KeyRound size={14} /> Mint NFAT
+                        </button>
+                        <p className="ens-rollout-note">
+                          {ensAvailability === 'taken'
+                            ? 'That Wayleave name is already registered. Choose another.'
+                            : ensAvailability === 'checking'
+                              ? 'Checking the live Wayleave registry…'
+                              : 'The NFAT, smart account, and Wayleave ENSv2 subname are created together.'}
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -1400,7 +1531,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     <div className="desktop-nfat-selected">
                       <span>NF</span>
                       <div>
-                        <strong>{identityName}</strong>
+                        <strong>{identityDisplay}</strong>
                         <small>
                           {nfatId === undefined
                             ? 'Owned NFAT'
@@ -1459,8 +1590,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   <div className="setup-details-body">
                     <ol>
                       <li>
-                        Use a local checkout of this repository and enter its
-                        absolute path below.
+                        {selectedHost.name} runs the pinned {mcpPackage} package
+                        from npm. No Wayleave checkout is required.
                       </li>
                       <li>{mcpDestination}.</li>
                       <li>
@@ -1468,24 +1599,11 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         <code>get_account</code>.
                       </li>
                     </ol>
-                    <label>
-                      Wayleave checkout path
-                      <input
-                        value={repositoryPath}
-                        onChange={(event) =>
-                          setRepositoryPath(event.target.value)
-                        }
-                        placeholder="/absolute/path/to/agent-mandate-wallet"
-                        spellCheck="false"
-                      />
-                    </label>
                     <div className="code-block">
                       <pre>{mcpConfig}</pre>
                       <button
                         aria-label="Copy MCP configuration"
-                        disabled={
-                          !hasCurrentCredential || !checkoutPathIsAbsolute
-                        }
+                        disabled={!hasCurrentCredential}
                         onClick={() =>
                           void navigator.clipboard
                             .writeText(mcpConfig)

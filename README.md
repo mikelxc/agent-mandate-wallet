@@ -107,6 +107,7 @@ The first agent-access milestone is implemented locally. Run `bun run gateway` a
 
 Run `bun run smoke:gateway` to test real MCP/HTTP communication with simulated chain data and no funds moving.
 
-The public project, agent-tools package, and MCP server name is Wayleave. MCP
-setups use `WAYLEAVE_*` environment variables. The onchain protocol keeps its
-mandate terminology and existing deployed signature domains.
+The public project and MCP server name is Wayleave. MCP hosts run the pinned
+`wayleave-mcp` npm package with `bunx` or `npx`; setups use `WAYLEAVE_*`
+environment variables. The onchain protocol keeps its mandate terminology and
+existing deployed signature domains.

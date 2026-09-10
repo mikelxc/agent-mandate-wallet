@@ -6,7 +6,7 @@ Implemented September 6, 2026. This is the local human-approval flow from docs/p
 
 Run `bun run gateway` and `bun run dev` in separate terminals. Use the existing frontend at http://localhost:3000, choose Agent control, connect a Sepolia wallet, and sign the sign-in challenge. The local test-wallet adapter intentionally does not provide the new login signing interface; use a normal injected wallet. A login signature grants no spending authority.
 
-Enter an existing Kernel account you own and create a named connection. Copy the one-time connection key into a compatible MCP host's environment using WAYLEAVE_AGENT_TOKEN. Connection credentials expire after 24 hours and are revocable. Follow [the adapter setup guide](../packages/agent-tools/README.md). Creating these files does not register tools in an already-running agent conversation; configure/reconnect the client explicitly.
+Enter an existing Kernel account you own and create a named connection. Copy the one-time connection key into a compatible MCP host's environment using WAYLEAVE_AGENT_TOKEN. Connection credentials expire after 24 hours and are revocable. Follow [the adapter setup guide](../packages/agent-tools/README.md). The host runs the pinned `wayleave-mcp` package with `bunx` or `npx`; no repository checkout is required. Configuration does not register tools in an already-running agent conversation, so reconnect the client explicitly.
 
 Tools: get_account, propose_payment, get_operation. A proposal returns a durable operation ID and an approval URL. The agent can inspect its own requests; it cannot approve, sign or obtain owner signatures. Only the deployed demo USDC is currently accepted.
 

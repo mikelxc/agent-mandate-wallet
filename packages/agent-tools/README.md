@@ -1,20 +1,20 @@
-# Wayleave agent tools
+# Wayleave MCP
 
-This package is a local stdio MCP adapter for the Wayleave gateway. It connects to the gateway at `http://127.0.0.1:3001` and sends the agent token as a bearer credential.
+`wayleave-mcp` is the stdio MCP adapter for the Wayleave gateway. MCP hosts can
+run the published package without cloning the Wayleave repository.
 
 ## Connect an MCP host
 
 Set `WAYLEAVE_AGENT_TOKEN` to the one-time agent key from the dashboard. Keep the value in the MCP host's environment; do not place it in source files, prompts, logs, or configuration committed to the repository.
 
-Configure a compatible MCP host with this server command. Replace the checkout
-path with the absolute path to this repository:
+Configure a compatible MCP host with the version-pinned package:
 
 ```json
 {
   "mcpServers": {
     "wayleave": {
-      "command": "bun",
-      "args": ["run", "--cwd", "/absolute/path/to/agent-mandate-wallet", "agent:mcp"],
+      "command": "bunx",
+      "args": ["wayleave-mcp@0.1.0"],
       "env": {
         "WAYLEAVE_AGENT_TOKEN": "<one-time dashboard key>",
         "WAYLEAVE_GATEWAY_URL": "https://way-leave.vercel.app/gateway"
@@ -28,17 +28,18 @@ Codex uses the equivalent TOML shape:
 
 ```toml
 [mcp_servers.wayleave]
-command = "bun"
-args = ["run", "--cwd", "/absolute/path/to/agent-mandate-wallet", "agent:mcp"]
+command = "bunx"
+args = ["wayleave-mcp@0.1.0"]
 
 [mcp_servers.wayleave.env]
 WAYLEAVE_AGENT_TOKEN = "<one-time dashboard key>"
 WAYLEAVE_GATEWAY_URL = "https://way-leave.vercel.app/gateway"
 ```
 
-The `--cwd` value is explicit so the setup does not depend on which directory
-the MCP host happens to start in. The dashboard does not enable copying until an
-absolute checkout path and a fresh client-specific credential are present.
+The equivalent npm runner command is `npx -y wayleave-mcp@0.1.0`. The dashboard
+uses a fixed version instead of `latest` because the process receives a bearer
+credential. It enables copying only after a fresh client-specific credential is
+created.
 
 For a local gateway, replace the gateway URL with `http://127.0.0.1:3001` and
 keep `bun run gateway` running from the repository root.
@@ -79,9 +80,15 @@ From the repository root, start the gateway and then the MCP server:
 
 ```sh
 bun run gateway
-bun run agent:mcp
+bun run --cwd packages/agent-tools build
+WAYLEAVE_AGENT_TOKEN="<local key>" \
+WAYLEAVE_GATEWAY_URL="http://127.0.0.1:3001" \
+node packages/agent-tools/dist/cli.js
 ```
 
-The gateway's development server is also available through `bun run --cwd apps/gateway dev`. Creating files in this repository does not connect this chat to the tools. A compatible MCP host must be configured and reconnected before it can invoke the server.
+The source entry point remains available through `bun run agent:mcp`. Creating
+files in this repository does not connect an already-running chat to the tools;
+configure and reconnect the MCP host before invoking the server.
 
-Wayleave is the public project, package, and MCP server name.
+Wayleave is the public project and MCP server name. The npm package is
+`wayleave-mcp`.

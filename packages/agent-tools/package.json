@@ -1,25 +1,48 @@
 {
-  "name": "@wayleave/agent-tools",
+  "name": "wayleave-mcp",
   "version": "0.1.0",
-  "private": true,
+  "description": "Scoped MCP tools for Wayleave agent accounts",
   "bin": {
-    "wayleave-agent-tools": "./src/server.ts"
+    "wayleave-mcp": "./dist/cli.js"
   },
   "type": "module",
-  "exports": {
-    ".": "./src/client.ts",
-    "./schema": "./src/schema.ts"
-  },
+  "files": [
+    "dist/cli.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "bun build src/server.ts --target=node --outfile=dist/cli.js --production --reject-unresolved",
+    "prepack": "bun run build",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
+  "devDependencies": {
     "@mandate/protocol": "workspace:*",
     "@modelcontextprotocol/sdk": "1.30.0",
+    "@types/bun": "latest",
+    "typescript": "5.9.3",
     "zod": "4.5.4"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "5.9.3"
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "wayleave",
+    "agent"
+  ],
+  "license": "MIT",
+  "homepage": "https://way-leave.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikelxc/agent-mandate-wallet.git",
+    "directory": "packages/agent-tools"
+  },
+  "bugs": {
+    "url": "https://github.com/mikelxc/agent-mandate-wallet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
