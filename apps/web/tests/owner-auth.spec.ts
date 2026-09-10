@@ -117,9 +117,7 @@ for (const validSignature of [true, false])
     );
     try {
       await page.goto('/');
-      await page
-        .getByRole('button', { name: 'Connect & verify owner' })
-        .click();
+      await page.getByRole('button', { name: 'Connect wallet' }).click();
       const modal = page.locator('w3m-modal');
       await modal.getByText('Ownership Test Wallet', { exact: true }).click();
       // Injected wallets use Reown's sign-in view; native WalletConnect authentication

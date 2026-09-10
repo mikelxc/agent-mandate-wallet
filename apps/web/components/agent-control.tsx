@@ -150,7 +150,14 @@ export function AgentControl() {
       /* Storage is optional. */
     }
   }
-  const walkthroughOrder = [1, 6, 2, 0, 3, 4, 5];
+  const walkthroughOrder = [1, 6, 2, 4, 5];
+  const walkthroughLabels = [
+    'Connect',
+    'Permissions',
+    'Name',
+    'Link agent',
+    'Ready',
+  ];
   const [agentHost, setAgentHost] = useState<AgentHost>('codex');
   const [authStage, setAuthStage] = useState<
     'idle' | 'connecting' | 'network' | 'signing' | 'verifying'
@@ -442,7 +449,7 @@ export function AgentControl() {
       setMessage(
         `NFAT #${tokenId} created. ${agentEnsName(identityLabel)} now resolves to ${predicted}.`,
       );
-      setMobileStep(0);
+      setMobileStep(4);
     }
   }
   async function review(op: Row) {
@@ -674,10 +681,10 @@ export function AgentControl() {
           : authStage === 'verifying'
             ? 'Verifying signature…'
             : !address
-              ? 'Connect & verify owner'
+              ? 'Connect wallet'
               : chainId !== sepolia.id
-                ? 'Switch & verify owner'
-                : 'Verify ownership';
+                ? 'Switch to Sepolia'
+                : 'Sign in with wallet';
   const selectedHost = agentHosts.find((host) => host.id === agentHost)!;
   const hasCurrentCredential = !!token && tokenHost === agentHost;
   const credential = hasCurrentCredential
@@ -731,70 +738,60 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
     <>
       <section
         className={`mobile-agent-onboarding ${mobilePro || !uiReady ? 'hidden' : ''}`}
+        data-step={mobileStep}
       >
-        <div className="mobile-grid-glow" aria-hidden="true" />
+        <aside className="welcome-story">
+          <h1>
+            A way to pay.
+            <br />
+            <em>With your say.</em>
+          </h1>
+          <p>
+            Connect your AI agent to request payments. You approve who gets paid
+            and how much. Your wallet keys stay with you.
+          </p>
+          <details className="name-story">
+            <summary>Why Wayleave?</summary>
+            <p>
+              A wayleave is permission to cross someone’s land. Here, you give
+              your agent a way to pay—one approval at a time.
+            </p>
+          </details>
+          <div className="friendly-scene" aria-hidden="true">
+            <span className="scene-spark spark-one">✳</span>
+            <span className="scene-spark spark-two">✦</span>
+            <div className="scene-agent">
+              <span className="scene-eyes" />
+              <span className="scene-smile" />
+            </div>
+            <div className="scene-card">
+              <ShieldCheck size={27} />
+              <span>You’re in control</span>
+              <i>
+                <Check size={18} />
+              </i>
+            </div>
+            <span className="scene-ground" />
+          </div>
+        </aside>
         <div className="mobile-onboarding-top">
-          <span className="mobile-wordmark">
-            <ShieldCheck size={15} /> WAYLEAVE
-          </span>
-          <button onClick={() => showDashboard(true)}>Skip setup</button>
+          <span className="mobile-wordmark">Sepolia · test funds only</span>
+          <button onClick={() => showDashboard(true)}>
+            View dashboard <ArrowRight size={14} />
+          </button>
         </div>
 
-        <div className="mobile-stage">
+        <div className="mobile-stage" key={mobileStep}>
           <div className="mobile-step-meta">
-            <span>0{walkthroughOrder.indexOf(mobileStep) + 1}</span>
+            <span>
+              Step {walkthroughOrder.indexOf(mobileStep) + 1} of{' '}
+              {walkthroughOrder.length}
+            </span>
             <i />
-            <small>07</small>
+            <small>
+              {walkthroughLabels[walkthroughOrder.indexOf(mobileStep)]}
+            </small>
           </div>
-
-          {mobileStep === 0 && (
-            <div className="mobile-step-content host-step">
-              <div className="agent-orbit" aria-hidden="true">
-                <span className="orbit-ring ring-one" />
-                <span className="orbit-ring ring-two" />
-                <span className="orbit-tracer" />
-                <span className="orbit-core">
-                  <Bot size={30} />
-                </span>
-                <span className="orbit-chip chip-you">OWNER</span>
-                <span className="orbit-chip chip-agent">MCP</span>
-              </div>
-              <div className="mobile-copy">
-                <span className="mobile-kicker">CHOOSE CLIENT / 04</span>
-                <h2>Where does your agent work?</h2>
-                <p>
-                  Now that the NFAT exists, choose the first client to connect.
-                  You can return at step 6 to add another client with its own
-                  revocable key.
-                </p>
-              </div>
-              <div className="agent-host-picker" aria-label="Agent host">
-                {agentHosts.map((host) => (
-                  <button
-                    key={host.id}
-                    type="button"
-                    aria-pressed={agentHost === host.id}
-                    className={agentHost === host.id ? 'selected' : ''}
-                    onClick={() => setAgentHost(host.id)}
-                  >
-                    <span>{host.mark}</span>
-                    <strong>{host.name}</strong>
-                    <small>{host.detail}</small>
-                    {agentHost === host.id && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="mobile-primary"
-                onClick={() => setMobileStep(3)}
-              >
-                Continue with {selectedHost.name} <ArrowRight size={17} />
-              </button>
-              <p className="mobile-trust">
-                <PlugZap size={14} /> One MCP connection · three scoped tools
-              </p>
-            </div>
-          )}
 
           {mobileStep === 1 && (
             <div className="mobile-step-content">
@@ -808,10 +805,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </div>
               <div className="mobile-copy">
                 <span className="mobile-kicker">CONNECT WALLET / 01</span>
-                <h2>Prove it’s yours.</h2>
+                <h2>Try Wayleave.</h2>
                 <p>
-                  Connect your wallet and sign a login message. This verifies
-                  ownership—it cannot move funds or grant agent access.
+                  Connect your wallet, name an account, and link your agent.
                 </p>
               </div>
               {!signedIn ? (
@@ -835,7 +831,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 </button>
               )}
               <p className="mobile-trust">
-                <LockKeyhole size={14} /> No transaction · no token approval
+                <LockKeyhole size={14} /> Signing in won’t move money.
               </p>
             </div>
           )}
@@ -846,9 +842,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 <span className="mobile-kicker">AUTHORITY / 02</span>
                 <h2>You approve every payment.</h2>
                 <p>
-                  Your first policy is approval-only. MCP can read this account
-                  and propose a payment. It receives no signing key. Each
-                  payment requires your signature over its exact details.
+                  Check the amount and recipient before you sign. Your agent
+                  never gets your signing key.
                 </p>
               </div>
               <div className="mobile-permissions">
@@ -863,9 +858,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 </span>
               </div>
               <p className="mobile-trust">
-                A token allowance is separate. Creating the account grants no
-                allowance. You can set or revoke a capped allowance in account
-                settings.
+                Funding is separate. Set or remove a spending allowance in
+                Account.
               </p>
               <button
                 className="mobile-primary"
@@ -874,12 +868,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   setMobileStep(2);
                 }}
               >
-                Use approval-only policy <ArrowRight size={17} />
+                Use these permissions <ArrowRight size={17} />
               </button>
-              <p className="mobile-trust">
-                This selects the existing owner-signature flow; it does not
-                install an autonomous policy module.
-              </p>
+              <p className="mobile-trust">Disconnect your agent at any time.</p>
             </div>
           )}
 
@@ -887,92 +878,90 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             <div className="mobile-step-content">
               <div className="mobile-copy">
                 <span className="mobile-kicker">INTEROPERABILITY / 07</span>
-                <h2>One account. Any client.</h2>
+                <h2>Your account.</h2>
                 <p>
-                  The NFAT identifies the same onchain account from your
-                  dashboard or an MCP client. Changing clients does not create a
-                  new wallet or move your funds.
+                  Use this account across your agents. A setup file alone
+                  doesn’t confirm a connection; check it from your agent’s app.
                 </p>
               </div>
-              <div className="mobile-config-preview">
-                <div>
-                  <span>Sepolia · NFAT registry</span>
+              <details className="connection-details">
+                <summary>Account details &amp; verification</summary>
+                <div className="mobile-config-preview">
+                  <div>
+                    <span>Sepolia · NFAT registry</span>
+                  </div>
+                  <pre>
+                    {d.registry}
+                    {'\n'}Account:{' '}
+                    {selectedAccount || 'Create or select an account first'}
+                    {nfatId !== undefined ? `\nNFAT #${nfatId}` : ''}
+                  </pre>
                 </div>
-                <pre>
-                  {d.registry}
-                  {'\n'}Account:{' '}
-                  {selectedAccount || 'Create or select an account first'}
-                  {nfatId !== undefined ? `\nNFAT #${nfatId}` : ''}
-                </pre>
-              </div>
-              {creationHash && (
-                <a
-                  className="mobile-link"
-                  href={`https://sepolia.etherscan.io/tx/${creationHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View account creation receipt
-                </a>
-              )}
-              <button
-                className="mobile-primary"
-                disabled={busy || !signedIn || !hasAccount}
-                onClick={() =>
-                  void run(async () => {
-                    const c = await context();
-                    const [registry, foundId] = await c.client.readContract({
-                      address: d.validator,
-                      abi: nFTOwnerValidatorAbi,
-                      functionName: 'bindings',
-                      args: [selectedAccount as Address],
-                    });
-                    if (registry.toLowerCase() !== d.registry.toLowerCase())
-                      throw new Error('Account is outside this registry.');
-                    const [registered, owner] = await Promise.all([
-                      c.client.readContract({
-                        address: d.registry,
-                        abi: kernelAccountFactoryAbi,
-                        functionName: 'accountOf',
-                        args: [foundId],
-                      }),
-                      c.client.readContract({
-                        address: d.registry,
-                        abi: kernelAccountFactoryAbi,
-                        functionName: 'ownerOf',
-                        args: [foundId],
-                      }),
-                    ]);
-                    if (
-                      registered.toLowerCase() !==
-                        selectedAccount.toLowerCase() ||
-                      owner.toLowerCase() !== c.address.toLowerCase()
-                    )
-                      throw new Error(
-                        'The account or NFT owner no longer matches.',
+                {creationHash && (
+                  <a
+                    className="mobile-link"
+                    href={`https://sepolia.etherscan.io/tx/${creationHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View account creation receipt
+                  </a>
+                )}
+                <button
+                  className="mobile-primary"
+                  disabled={busy || !signedIn || !hasAccount}
+                  onClick={() =>
+                    void run(async () => {
+                      const c = await context();
+                      const [registry, foundId] = await c.client.readContract({
+                        address: d.validator,
+                        abi: nFTOwnerValidatorAbi,
+                        functionName: 'bindings',
+                        args: [selectedAccount as Address],
+                      });
+                      if (registry.toLowerCase() !== d.registry.toLowerCase())
+                        throw new Error('Account is outside this registry.');
+                      const [registered, owner] = await Promise.all([
+                        c.client.readContract({
+                          address: d.registry,
+                          abi: kernelAccountFactoryAbi,
+                          functionName: 'accountOf',
+                          args: [foundId],
+                        }),
+                        c.client.readContract({
+                          address: d.registry,
+                          abi: kernelAccountFactoryAbi,
+                          functionName: 'ownerOf',
+                          args: [foundId],
+                        }),
+                      ]);
+                      if (
+                        registered.toLowerCase() !==
+                          selectedAccount.toLowerCase() ||
+                        owner.toLowerCase() !== c.address.toLowerCase()
+                      )
+                        throw new Error(
+                          'The account or NFT owner no longer matches.',
+                        );
+                      await context();
+                      setIdentityProof(
+                        `Verified on Sepolia: NFAT #${foundId} maps to ${registered}. Your connected wallet owns the NFT.`,
                       );
-                    await context();
-                    setIdentityProof(
-                      `Verified on Sepolia: NFAT #${foundId} maps to ${registered}. Your connected wallet owns the NFT.`,
-                    );
-                  })
-                }
-              >
-                Verify NFT → account <ArrowRight size={17} />
-              </button>
-              {identityProof && (
-                <p className="mobile-trust" role="status">
-                  {identityProof}
+                    })
+                  }
+                >
+                  Verify NFT → account <ArrowRight size={17} />
+                </button>
+                {identityProof && (
+                  <output className="mobile-trust">{identityProof}</output>
+                )}
+                <p className="mobile-trust">
+                  Ask your agent to call get_account. Its account address should
+                  match this one.
                 </p>
-              )}
-              <p className="mobile-trust">
-                In your MCP client, call get_account and compare its account
-                address with this one. A configuration file alone does not prove
-                the client is connected. Give each additional client its own
-                revocable connection.
-              </p>
+              </details>
               <button className="mobile-link" onClick={() => setMobileStep(4)}>
-                View MCP configuration
+                Back to connection settings
               </button>
               <button
                 className="mobile-primary"
@@ -1004,17 +993,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     : 'Give the account a name.'}
                 </h2>
                 {hasAccount ? (
-                  <p>
-                    This domain was registered with the NFAT. Wayleave loads it
-                    from Sepolia and does not offer a second name or rename
-                    here.
-                  </p>
+                  <p>This name belongs to your account on Sepolia.</p>
                 ) : (
                   <p>
-                    Your first real test transaction creates an NFAT and
-                    registers its ENS name together. Sepolia gas only; no
-                    invented name fee. The NFT identifies the account and its
-                    owner controls it.
+                    Choose a name. Your wallet will create the account and its
+                    ownership NFT on Sepolia. You’ll need test ETH for the
+                    network fee.
                   </p>
                 )}
               </div>
@@ -1058,21 +1042,21 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   </label>
                   <p className="ens-preview-note" id="ens-preview-note">
                     {ensAvailability === 'checking'
-                      ? 'Checking ENSv2 availability…'
+                      ? 'Checking this name…'
                       : ensAvailability === 'taken'
-                        ? 'Already registered on ENSv2 · choose another name'
+                        ? 'Name taken. Try another.'
                         : ensAvailability === 'available'
-                          ? 'Available on ENSv2 · registered atomically with the NFAT'
+                          ? 'Available. Registered when you create the account.'
                           : ensAvailability === 'error'
-                            ? 'ENSv2 check unavailable · verified again before minting'
-                            : 'Live hackathon ENSv2 name · registered with the NFAT'}
+                            ? 'Couldn’t check availability. We’ll check again before creating.'
+                            : 'Your account’s ENS name on Sepolia.'}
                   </p>
                 </>
               )}
               {hasAccount ? (
                 <button
                   className="mobile-primary"
-                  onClick={() => setMobileStep(0)}
+                  onClick={() => setMobileStep(4)}
                 >
                   {nfatId === undefined
                     ? 'NFAT created'
@@ -1102,70 +1086,6 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             </div>
           )}
 
-          {mobileStep === 3 && (
-            <div className="mobile-step-content">
-              <div className="connection-signal" aria-hidden="true">
-                <span>
-                  <ShieldCheck size={25} />
-                </span>
-                <i>
-                  <b />
-                </i>
-                <span>
-                  <Bot size={21} />
-                </span>
-              </div>
-              <div className="mobile-copy">
-                <span className="mobile-kicker">SELECT ACCOUNT / 05</span>
-                <h2>Select the NFAT.</h2>
-                <p>
-                  This is the account each client can read from and propose
-                  payments for. Clients never receive its signing authority.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="nfat-selector selected"
-                aria-pressed="true"
-              >
-                <span>NF</span>
-                <div>
-                  <strong>{identityDisplay}</strong>
-                  <small>
-                    NFAT {nfatId === undefined ? 'account' : `#${nfatId}`}
-                  </small>
-                </div>
-                <Check size={15} />
-              </button>
-              <button
-                className="mobile-primary"
-                disabled={!isAddress(selectedAccount)}
-                onClick={() => setMobileStep(4)}
-              >
-                Configure MCP clients <ArrowRight size={17} />
-              </button>
-              <div className="mobile-permissions">
-                <span>
-                  <Check size={14} /> Read account
-                </span>
-                <span>
-                  <Check size={14} /> Propose payment
-                </span>
-                <span className="off">
-                  <X size={14} /> Sign transaction
-                </span>
-              </div>
-              {!isAddress(selectedAccount) && (
-                <button
-                  className="mobile-link"
-                  onClick={() => setMobileStep(2)}
-                >
-                  Create the NFAT first
-                </button>
-              )}
-            </div>
-          )}
-
           {mobileStep === 4 && (
             <div className="mobile-step-content">
               <div className="mcp-host-badge" aria-hidden="true">
@@ -1178,10 +1098,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </div>
               <div className="mobile-copy">
                 <span className="mobile-kicker">LINK MCP / 06</span>
-                <h2>Bring the lane into {selectedHost.name}.</h2>
+                <h2>Connect {selectedHost.name}.</h2>
                 <p>
-                  Choose a client, create a separate 24-hour key for it, and
-                  copy a setup tied to this NFAT.
+                  Choose an app. Create a connection, then copy the setup into
+                  it. Access lasts 24 hours.
                 </p>
               </div>
               <div className="agent-host-picker" aria-label="Agent host">
@@ -1231,41 +1151,46 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </button>
               {!hasCurrentCredential && (
                 <p className="mobile-trust">
-                  Existing keys cannot be retrieved. Create a separate
-                  connection for every client you add.
+                  Use a separate connection for each app.
                 </p>
               )}
-              <div className="mobile-mcp-recipe">
-                <div>
-                  <small>01</small>
-                  <span>Run the pinned package</span>
-                  <code>bunx {mcpPackage}</code>
-                </div>
-                <div>
-                  <small>02</small>
-                  <span>Add configuration</span>
-                  <code>
-                    {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
-                  </code>
-                </div>
-                <div>
-                  <small>03</small>
-                  <span>Test the lane</span>
-                  <code>get_account</code>
-                </div>
-              </div>
-              <div
-                className="mobile-config-preview"
-                aria-label={`${selectedHost.name} MCP configuration`}
+              <details
+                className="connection-details"
+                open={hasCurrentCredential}
               >
-                <div>
-                  <span>
-                    {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
-                  </span>
-                  <small>WAYLEAVE / STDIO</small>
+                <summary>Connection settings</summary>
+                <div className="mobile-mcp-recipe">
+                  <div>
+                    <small>01</small>
+                    <span>Run the pinned package</span>
+                    <code>bunx {mcpPackage}</code>
+                  </div>
+                  <div>
+                    <small>02</small>
+                    <span>Add configuration</span>
+                    <code>
+                      {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
+                    </code>
+                  </div>
+                  <div>
+                    <small>03</small>
+                    <span>Check the connection</span>
+                    <code>get_account</code>
+                  </div>
                 </div>
-                <pre>{mcpConfig}</pre>
-              </div>
+                <div
+                  className="mobile-config-preview"
+                  aria-label={`${selectedHost.name} MCP configuration`}
+                >
+                  <div>
+                    <span>
+                      {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
+                    </span>
+                    <small>WAYLEAVE / STDIO</small>
+                  </div>
+                  <pre>{mcpConfig}</pre>
+                </div>
+              </details>
               <button
                 className="mobile-primary"
                 disabled={!hasCurrentCredential}
@@ -1287,7 +1212,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   : 'This setup uses the hosted Wayleave gateway.'}
               </p>
               <button className="mobile-link" onClick={() => setMobileStep(5)}>
-                Explore your account identity
+                Continue to account
               </button>
             </div>
           )}
@@ -1299,29 +1224,32 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               key={step}
               className={mobileStep === step ? 'active' : ''}
               aria-label={`Go to step ${index + 1}`}
+              aria-current={mobileStep === step ? 'step' : undefined}
+              title={walkthroughLabels[index]}
               onClick={() => setMobileStep(step)}
             />
           ))}
         </div>
-        <output className="mobile-status">{message}</output>
+        <output className="mobile-status" aria-live="polite">
+          {message !== 'Sign in to connect an agent and review its requests.'
+            ? message
+            : ''}
+        </output>
       </section>
 
       <div
         className={`agent-shell desktop-agent-pro ${mobilePro && uiReady ? 'show-on-mobile' : ''}`}
       >
         <button className="mobile-return" onClick={() => showDashboard(false)}>
-          Open walkthrough
+          Set up an agent
         </button>
         <section className="agent-overview panel">
           <div className="overview-copy">
             <span className="status">
               <ShieldCheck size={13} /> Human approval required
             </span>
-            <h2>Your accounts & requests.</h2>
-            <p>
-              Review your connected agents and real payment requests. Every
-              payment needs your exact signature.
-            </p>
+            <h2>Your agents.</h2>
+            <p>Approve payments and manage who can request them.</p>
           </div>
           <div
             className="agent-flow"
@@ -1358,7 +1286,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         </section>
 
         <div className="agent-grid">
-          <section className="panel setup-panel">
+          <details className="panel setup-panel">
+            <summary className="setup-disclosure">
+              Agent setup <ChevronDown size={16} />
+            </summary>
             <div className="setup-head">
               <div>
                 <div className="eyebrow">GET STARTED</div>
@@ -1417,10 +1348,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 {hasAccount ? <Check size={15} /> : <span>3</span>}
               </span>
               <div>
-                <strong>Create the NFAT account</strong>
+                <strong>Name your account</strong>
                 <p>
-                  Mint the owner-controlled NFT first. Its readable identity is
-                  used everywhere else in the setup.
+                  Create a named account that you own. This uses Sepolia test
+                  ETH.
                 </p>
                 {signedIn && (
                   <div className="connection-form nfat-create-form">
@@ -1474,7 +1405,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           }
                           onClick={() => void run(createNfat)}
                         >
-                          <KeyRound size={14} /> Mint NFAT
+                          <KeyRound size={14} /> Create account
                         </button>
                         <p className="ens-rollout-note">
                           {ensAvailability === 'taken'
@@ -1497,10 +1428,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 {activeAgents.length ? <Check size={15} /> : <span>4</span>}
               </span>
               <div>
-                <strong>Choose an MCP client and grant access</strong>
+                <strong>Connect your agent</strong>
                 <p>
-                  Create a separate revocable 24-hour key for every client you
-                  connect to this NFAT.
+                  Each agent gets a separate connection that you can revoke.
                 </p>
                 {signedIn && hasAccount && (
                   <div className="connection-form">
@@ -1641,7 +1571,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 </details>
               </div>
             </div>
-          </section>
+          </details>
 
           <div className="agent-side">
             <section className="panel connections-panel">
@@ -1655,7 +1585,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   <Bot size={19} />
                   <div>
                     <strong>No agents yet</strong>
-                    <p>Finish step 3 to create a connection.</p>
+                    <p>Set up an agent to get started.</p>
                   </div>
                 </div>
               ) : (
@@ -1774,10 +1704,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             <div>
               <div className="eyebrow">OWNER INBOX</div>
               <h2>Requests and activity</h2>
-              <p>
-                Every request keeps its purpose, exact amount, destination, and
-                evidence together.
-              </p>
+              <p>Check the recipient and amount before approving.</p>
             </div>
             {signedIn && (
               <div className="inbox-actions">
@@ -1819,10 +1746,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 <ShieldCheck size={20} />
               </span>
               <strong>No requests waiting</strong>
-              <p>
-                Once the agent proposes a payment, it will appear here for an
-                exact review.
-              </p>
+              <p>Payment requests from your agent will appear here.</p>
             </div>
           ) : (
             <div className="operation-list">
@@ -2037,10 +1961,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           )}
         </section>
 
-        <output className="status-toast">
-          <span className="signal-dot" />
-          {message}
-        </output>
+        {message !== 'Sign in to connect an agent and review its requests.' && (
+          <output className="status-toast">
+            <span className="signal-dot" />
+            {message}
+          </output>
+        )}
       </div>
     </>
   );

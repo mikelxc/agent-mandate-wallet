@@ -155,6 +155,7 @@ export function KernelWorkspace() {
   return <section className="panel">
     <div className="panel-heading"><h3>Spend from your balance</h3><span>SEPOLIA</span></div>
     <p className="footnote">Kernel v4 · NFT owner validator · EntryPoint 0.9. Demo tokens only. Payments currently require your signature; agent policies are not installed.</p>
+    {!address && <p className="account-connect-hint"><a href="/">Connect your wallet in My agents →</a></p>}
     {chainId !== sepolia.id && <button className="secondary" onClick={() => switcher.mutate({ chainId: sepolia.id })} disabled={!address}>Switch to Sepolia</button>}
     <fieldset disabled={!ready || busy} style={{ border: 0, padding: 0, minWidth: 0 }}>
       <div className="field-row"><label>Account label<input value={label} onChange={e => setLabel(e.target.value)} /></label><label>Allowance · demo USDC<input value={budget} onChange={e => setBudget(e.target.value)} /></label></div>

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Providers from './providers';
 import './globals.css';
+import './account-home.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   title: 'Wayleave · Agent workspace',
-  description: 'Assign a job, review its authority, and follow the results.',
+  description: 'Give your agent a way to pay. You approve every payment.',
 };
 export default function RootLayout({
   children,

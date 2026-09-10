@@ -8,13 +8,13 @@ test('walkthrough explains real authority and identity without simulating comple
 }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: 'Prove it’s yours.' }),
+    page.getByRole('heading', { name: 'Try Wayleave.' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Go to step 2', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'You approve every payment.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Use approval-only policy' }).click();
+  await page.getByRole('button', { name: 'Use these permissions' }).click();
   await expect(
     page.getByRole('heading', { name: 'Give the account a name.' }),
   ).toBeVisible();
@@ -26,14 +26,10 @@ test('walkthrough explains real authority and identity without simulating comple
   const cursor = page.getByRole('button', { name: 'CR Cursor Editor · Agent' });
   await cursor.click();
   await expect(cursor).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Continue with Cursor' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Select the NFAT.' }),
+    page.getByRole('heading', { name: 'Connect Cursor.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Go to step 6', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Bring the lane into Cursor.' }),
-  ).toBeVisible();
+  await page.getByText('Connection settings', { exact: true }).click();
   await expect(page.locator('.mobile-config-preview')).toContainText(
     '"wayleave"',
   );
@@ -48,7 +44,7 @@ test('walkthrough explains real authority and identity without simulating comple
   await codex.click();
   await expect(codex).toHaveAttribute('aria-pressed', 'true');
   await expect(
-    page.getByRole('heading', { name: 'Bring the lane into Codex.' }),
+    page.getByRole('heading', { name: 'Connect Codex.' }),
   ).toBeVisible();
   await expect(page.locator('.mobile-config-preview')).toContainText(
     'mcp_servers.wayleave',
@@ -56,12 +52,13 @@ test('walkthrough explains real authority and identity without simulating comple
   await expect(
     page.getByRole('button', { name: 'Copy Codex setup' }),
   ).toBeDisabled();
-  await page
-    .getByRole('button', { name: 'Explore your account identity' })
-    .click();
+  await page.getByRole('button', { name: 'Continue to account' }).click();
   await expect(
-    page.getByRole('heading', { name: 'One account. Any client.' }),
+    page.getByRole('heading', { name: 'Your account.' }),
   ).toBeVisible();
+  await page
+    .getByText('Account details & verification', { exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: 'Verify NFT → account' }),
   ).toBeDisabled();
@@ -75,6 +72,6 @@ test('walkthrough explains real authority and identity without simulating comple
   ).toBe(true);
   await page.getByRole('button', { name: 'Open my dashboard' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Your accounts & requests.' }),
+    page.getByRole('heading', { name: 'Your agents.' }),
   ).toBeVisible();
 });
