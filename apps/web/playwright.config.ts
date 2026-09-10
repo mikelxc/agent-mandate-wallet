@@ -19,7 +19,10 @@ export default defineConfig({
   webServer: externalBaseUrl
     ? undefined
     : {
-        command: 'bun run dev:e2e',
+        command:
+          process.env.MANDATE_RUN_SEPOLIA_E2E === 'true'
+            ? 'bun run dev:e2e'
+            : 'bun run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: true,
         timeout: 120_000,

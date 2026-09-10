@@ -37,7 +37,7 @@ test("sends bearer auth and exact intent to gateway", async () => {
   expect(JSON.parse(String(seen?.init?.body))).toEqual(intent);
 });
 
-test("rejects nonlocal gateway URLs and does not echo token in failures", async () => {
+test("rejects untrusted gateway URLs and does not echo token in failures", async () => {
   expect(() =>
     createGatewayClient({ token: "super-secret", baseUrl: "https://example.com" }),
   ).toThrow("local HTTP");
@@ -47,4 +47,26 @@ test("rejects nonlocal gateway URLs and does not echo token in failures", async 
   });
   await expect(client.getAccount()).rejects.toThrow("Gateway request failed (401)");
   await expect(client.getAccount()).rejects.not.toThrow("super-secret");
+});
+
+test("uses only approved HTTPS deployment hosts and never follows bearer-token redirects", async () => {
+  const client = createGatewayClient({
+    token: "secret",
+    baseUrl: "https://way-leave.vercel.app/gateway",
+    fetchImpl: fakeFetch((url, init) => {
+      expect(url).toBe("https://way-leave.vercel.app/gateway/agent/account");
+      expect(init?.redirect).toBe("error");
+      return Response.json({});
+    }),
+  });
+  await client.getAccount();
+  for (const baseUrl of [
+    "http://way-leave.vercel.app/gateway",
+    "https://way-leave.vercel.app.evil.example/gateway",
+    "https://way-leave.vercel.app/gateway?token=x",
+    "https://name:secret@way-leave.vercel.app/gateway",
+    "https://way-leave.vercel.app:8080/gateway",
+  ]) {
+    expect(() => createGatewayClient({ token: "secret", baseUrl })).toThrow("trusted Wayleave");
+  }
 });

@@ -7,6 +7,7 @@ const dir = resolve(import.meta.dir, "../../../.local/gateway");
 mkdirSync(dir, { recursive: true, mode: 0o700 });
 chmodSync(dir, 0o700);
 const store = new Store(`${dir}/mandate.sqlite`);
+await store.db.ready;
 chmodSync(`${dir}/mandate.sqlite`, 0o600);
 const server = Bun.serve({
   hostname: "127.0.0.1",

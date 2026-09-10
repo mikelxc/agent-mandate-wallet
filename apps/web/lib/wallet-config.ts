@@ -5,6 +5,7 @@ import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { hackathonSepolia } from '@mandate/sdk';
 import { getDevWalletProvider } from './dev-wallet';
+import { ownerAuth } from './owner-auth';
 
 // Public project identifier, not a wallet credential or signing key.
 const projectId = '74fcd78221a94fe49836612d214f6e3e';
@@ -42,6 +43,7 @@ const appKit = createAppKit({
   projectId,
   networks: [hackathonSepolia, foundry],
   defaultNetwork: hackathonSepolia,
+  siweConfig: devWalletEnabled ? undefined : ownerAuth,
   metadata: {
     name: 'Wayleave',
     description: 'Your accounts, agents and approvals',
@@ -49,7 +51,10 @@ const appKit = createAppKit({
       typeof window === 'undefined'
         ? 'http://localhost:3000'
         : window.location.origin,
-    icons: [],
+    icons:
+      typeof window === 'undefined'
+        ? []
+        : [`${window.location.origin}/favicon.svg`],
   },
   themeMode: 'dark',
   features: {
@@ -66,4 +71,8 @@ export async function openWalletPicker() {
   if (!appKit)
     throw new Error('Wallet picker is only available in the browser.');
   await appKit.open({ view: 'Connect', namespace: 'eip155' });
+}
+
+export async function verifyConnectedOwner() {
+  return ownerAuth.signIn();
 }

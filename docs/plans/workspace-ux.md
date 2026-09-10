@@ -8,13 +8,15 @@ previous persistent simulated job workspace has been removed from the home route
 
 1. Choose an injected or WalletConnect wallet in AppKit, then explicitly verify
    ownership with a login signature. Closing the picker never authenticates.
-2. Choose an MCP client. Its credential can only be issued after an account exists.
-3. Select the existing approval-only policy: read and propose, with an exact owner
+2. Select the existing approval-only policy: read and propose, with an exact owner
    signature for every payment. This does not deploy an autonomous policy module.
-4. Create the NFAT and its ENS name in one real Sepolia transaction. This is the
+3. Create the NFAT and its ENS name in one real Sepolia transaction. This is the
    first test transaction: only testnet gas, no invented name fee or token approval.
-5. Issue a revocable, scoped connection for that account.
-6. Copy the actual one-time credential configuration into the chosen MCP client.
+4. Only after the NFAT exists, choose an MCP client.
+5. Select the NFAT that client will access.
+6. Issue a separate revocable credential for each client and copy a configuration
+   containing an explicit absolute checkout path. The client can be switched here
+   without changing or reminting the NFAT.
 7. Read the live validator binding, registry account and NFT owner, then compare
    the account with `get_account` in the MCP client. Never infer a connection from
    copied configuration. Additional clients get separate revocable credentials.

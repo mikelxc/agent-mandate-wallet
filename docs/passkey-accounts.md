@@ -70,11 +70,27 @@ The ENS namespace operator must separately grant the adapter registrar rights.
 ENS ownership and its transfer rules are separate from the immovable identity
 NFT. Existing deployed adapters/factories and their names are unchanged.
 
+## Gateway onboarding transport
+
+The gateway exposes wallet-free onboarding when `MANDATE_PASSKEY_FACTORY` and
+the funded `MANDATE_PASSKEY_RELAYER_KEY` are configured. The browser creates a
+resident P-256 credential, asks the gateway for a digest bound to the predicted
+account, label and ten-minute deadline, and makes a second assertion over that
+digest. The gateway accepts only the exact factory call, rate limits the public
+routes, consumes each challenge once in SQLite, and stores the credential ID and
+public key for later login. The relayer key is read only by the gateway process;
+it is never returned to the browser.
+
+Passkey login uses a separate five-minute WebAuthn challenge and verifies the
+assertion's RP hash, origin, user-presence flag, challenge and P-256 signature
+before issuing the existing HttpOnly session cookie. A stored credential is
+metadata for discovery; login still requires the current public key and exact
+origin. The gateway must be served on the same configured origin used to create
+the credential (the local default is `http://localhost:3000`).
+
 ## Remaining onboarding work
 
-- Browser passkey creation and retrieval, credential discovery, exact assertion
-  encoding, origin/RP checks and wallet-free session authentication.
-- A funded relayer or paymaster for creation and UserOperations. Kernel accounts
+- A funded relayer or paymaster for UserOperations. Kernel accounts
   cannot call EntryPoint v0.9 as their own bundler; the transport must be an EOA.
 - A recovery/second-passkey flow and explicit root-rotation UX. NFT handover is
   intentionally unavailable and cannot recover a lost passkey.

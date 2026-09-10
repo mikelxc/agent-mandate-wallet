@@ -68,6 +68,27 @@ for (const width of [390, 1280]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     let authRequests = 0;
+    await page.route('**/gateway/**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/gateway/auth/session')
+        return route.fulfill({ status: 401, json: { error: 'Sign in' } });
+      if (path === '/gateway/auth/siwe/nonce') {
+        const origin = new URL(route.request().url()).origin;
+        return route.fulfill({
+          json: {
+            nonce: 'a'.repeat(64),
+            domain: new URL(origin).host,
+            uri: origin,
+            statement:
+              'Sign in to Wayleave. This grants no spending authority.',
+            issuedAt: new Date().toISOString(),
+            expirationTime: new Date(Date.now() + 300_000).toISOString(),
+          },
+        });
+      }
+      if (path.includes('/verify')) authRequests++;
+      return route.fulfill({ json: { ok: true } });
+    });
     await page.route('**/gateway/auth/challenge', (route) => {
       authRequests++;
       return route.abort();

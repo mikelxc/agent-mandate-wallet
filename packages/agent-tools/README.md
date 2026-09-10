@@ -4,22 +4,48 @@ This package is a local stdio MCP adapter for the Wayleave gateway. It connects 
 
 ## Connect an MCP host
 
-Set `MANDATE_AGENT_TOKEN` to the one-time agent key from the dashboard. Keep the value in the MCP host's environment; do not place it in source files, prompts, logs, or configuration committed to the repository.
+Set `WAYLEAVE_AGENT_TOKEN` to the one-time agent key from the dashboard. Keep the value in the MCP host's environment; do not place it in source files, prompts, logs, or configuration committed to the repository.
 
-Configure a compatible MCP host with this server command, using the repository root as its working directory:
+Configure a compatible MCP host with this server command. Replace the checkout
+path with the absolute path to this repository:
 
 ```json
 {
-  "command": "bun",
-  "args": ["/Users/mikelxc/projects/agent-mandate-wallet/packages/agent-tools/src/server.ts"],
-  "cwd": "/Users/mikelxc/projects/agent-mandate-wallet",
-  "env": {
-    "MANDATE_AGENT_TOKEN": "<one-time dashboard key>"
+  "mcpServers": {
+    "wayleave": {
+      "command": "bun",
+      "args": ["run", "--cwd", "/absolute/path/to/agent-mandate-wallet", "agent:mcp"],
+      "env": {
+        "WAYLEAVE_AGENT_TOKEN": "<one-time dashboard key>",
+        "WAYLEAVE_GATEWAY_URL": "https://way-leave.vercel.app/gateway"
+      }
+    }
   }
 }
 ```
 
-The optional `MANDATE_GATEWAY_URL` may point only to a bare local HTTP origin (`http://127.0.0.1` or `http://localhost`, with an optional port). The default is `http://127.0.0.1:3001`.
+Codex uses the equivalent TOML shape:
+
+```toml
+[mcp_servers.wayleave]
+command = "bun"
+args = ["run", "--cwd", "/absolute/path/to/agent-mandate-wallet", "agent:mcp"]
+
+[mcp_servers.wayleave.env]
+WAYLEAVE_AGENT_TOKEN = "<one-time dashboard key>"
+WAYLEAVE_GATEWAY_URL = "https://way-leave.vercel.app/gateway"
+```
+
+The `--cwd` value is explicit so the setup does not depend on which directory
+the MCP host happens to start in. The dashboard does not enable copying until an
+absolute checkout path and a fresh client-specific credential are present.
+
+For a local gateway, replace the gateway URL with `http://127.0.0.1:3001` and
+keep `bun run gateway` running from the repository root.
+
+The optional `WAYLEAVE_GATEWAY_URL` may point to a bare local HTTP origin
+(`http://127.0.0.1` or `http://localhost`, with an optional port) or the trusted
+hosted Wayleave gateway. The default is `http://127.0.0.1:3001`.
 
 ## Available tools
 
@@ -58,4 +84,4 @@ bun run agent:mcp
 
 The gateway's development server is also available through `bun run --cwd apps/gateway dev`. Creating files in this repository does not connect this chat to the tools. A compatible MCP host must be configured and reconnected before it can invoke the server.
 
-Wayleave is the public project name. The package and `MANDATE_*` environment variable names remain unchanged for compatibility.
+Wayleave is the public project, package, and MCP server name.

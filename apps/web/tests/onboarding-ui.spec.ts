@@ -11,10 +11,6 @@ test('walkthrough explains real authority and identity without simulating comple
     page.getByRole('heading', { name: 'Prove it’s yours.' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Go to step 2', exact: true }).click();
-  const cursor = page.getByRole('button', { name: 'CR Cursor Editor · Agent' });
-  await cursor.click();
-  await expect(cursor).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Continue with Cursor' }).click();
   await expect(
     page.getByRole('heading', { name: 'You approve every payment.' }),
   ).toBeVisible();
@@ -26,15 +22,35 @@ test('walkthrough explains real authority and identity without simulating comple
     page.getByRole('button', { name: 'Create named account' }),
   ).toBeDisabled();
   await expect(page.getByLabel('Account name')).toHaveValue('my-agent');
+  await page.getByRole('button', { name: 'Go to step 4', exact: true }).click();
+  const cursor = page.getByRole('button', { name: 'CR Cursor Editor · Agent' });
+  await cursor.click();
+  await expect(cursor).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Continue with Cursor' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Select the NFAT.' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Go to step 6', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Bring the lane into Cursor.' }),
   ).toBeVisible();
   await expect(page.locator('.mobile-config-preview')).toContainText(
-    'mcpServers',
+    '"wayleave"',
+  );
+  await expect(page.locator('.mobile-config-preview')).toContainText('--cwd');
+  const codex = page.getByRole('button', {
+    name: 'CX Codex Desktop · CLI · IDE',
+  });
+  await codex.click();
+  await expect(codex).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('heading', { name: 'Bring the lane into Codex.' }),
+  ).toBeVisible();
+  await expect(page.locator('.mobile-config-preview')).toContainText(
+    'mcp_servers.wayleave',
   );
   await expect(
-    page.getByRole('button', { name: 'Copy Cursor setup' }),
+    page.getByRole('button', { name: 'Copy Codex setup' }),
   ).toBeDisabled();
   await page
     .getByRole('button', { name: 'Explore your account identity' })

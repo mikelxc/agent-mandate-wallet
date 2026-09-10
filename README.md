@@ -10,11 +10,9 @@ The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT own
 
 The new [passkey root factory](docs/passkey-accounts.md) supports deterministic Kernel accounts with self-owned identity NFTs and an account-owned ENS adapter. Contracts and SDK helpers are implemented; browser onboarding and a passkey Sepolia deployment are pending.
 
-The default UI opens a dismissible walkthrough: **Wallet → MCP client → Approval-only policy → Named account transaction → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
+The default UI opens a dismissible walkthrough: **Wallet → Approval-only policy → Named account transaction → MCP client → NFAT selection → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
 
 Owner connection uses Reown AppKit with wagmi, supporting injected wallets and WalletConnect QR/mobile links. The public Reown project ID is configured in `apps/web/lib/wallet-config.ts`. Connecting does not authenticate the gateway: the owner explicitly verifies with the existing login signature afterward. AppKit loads in the browser so its SDK is not evaluated during server rendering.
-
-
 
 ## Stack
 
@@ -109,4 +107,6 @@ The first agent-access milestone is implemented locally. Run `bun run gateway` a
 
 Run `bun run smoke:gateway` to test real MCP/HTTP communication with simulated chain data and no funds moving.
 
-The public project name is Wayleave. Existing `@mandate/*` package names, `MANDATE_*` environment variables, repository paths, and deployed signature domains retain their technical identifiers.
+The public project, agent-tools package, and MCP server name is Wayleave. MCP
+setups use `WAYLEAVE_*` environment variables. The onchain protocol keeps its
+mandate terminology and existing deployed signature domains.

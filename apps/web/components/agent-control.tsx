@@ -94,7 +94,7 @@ function nowSeconds() {
 }
 
 export function AgentControl() {
-  const { address, chainId } = useConnection();
+  const { address, chainId, connector: currentConnector } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
   const signMessage = useSignMessage();
@@ -117,6 +117,8 @@ export function AgentControl() {
   const [nfatId, setNfatId] = useState<bigint>();
   const [account, setAccount] = useState('');
   const [token, setToken] = useState('');
+  const [tokenHost, setTokenHost] = useState<AgentHost>();
+  const [repositoryPath, setRepositoryPath] = useState('');
   const [selected, setSelected] = useState<string>();
   const [prepared, setPrepared] = useState<
     Prepared & { preparedUntil: number }
@@ -147,7 +149,7 @@ export function AgentControl() {
       /* Storage is optional. */
     }
   }
-  const walkthroughOrder = [1, 0, 6, 2, 3, 4, 5];
+  const walkthroughOrder = [1, 6, 2, 0, 3, 4, 5];
   const [agentHost, setAgentHost] = useState<AgentHost>('codex');
   const [authStage, setAuthStage] = useState<
     'idle' | 'connecting' | 'network' | 'signing' | 'verifying'
@@ -161,15 +163,50 @@ export function AgentControl() {
     };
   }, []);
   useEffect(() => {
-    void api<{ address: string }>('/auth/session')
+    let cancelled = false;
+    setSession('');
+    void api<{ address: string; chainId: number }>('/auth/session')
       .then((s) => {
         if (
+          !cancelled &&
           active.current &&
+          s.chainId === sepolia.id &&
           s.address.toLowerCase() === address?.toLowerCase()
-        )
-          setSession(s.address);
+        ) {
+          // Native WalletConnect can authenticate before wagmi publishes the account.
+          // Recover the verified state here if its earlier sign-in event was missed.
+          setSession(s.address.toLowerCase());
+          setMessage(
+            'Owner verified. Your agent can only read and propose until you approve an exact action.',
+          );
+          setMobileStep((step) => (step === 1 ? 6 : step));
+        }
       })
       .catch(() => {});
+    function sessionChanged(event: Event) {
+      const signedIn = (
+        event as CustomEvent<{ address: string; chainId: number } | null>
+      ).detail;
+      if (!signedIn) {
+        setSession('');
+        return;
+      }
+      if (
+        signedIn.chainId === sepolia.id &&
+        signedIn.address.toLowerCase() === address?.toLowerCase()
+      ) {
+        setSession(signedIn.address.toLowerCase());
+        setMessage(
+          'Owner verified. Your agent can only read and propose until you approve an exact action.',
+        );
+        setMobileStep(6);
+      }
+    }
+    window.addEventListener('wayleave:owner-session', sessionChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('wayleave:owner-session', sessionChanged);
+    };
   }, [address]);
   useEffect(() => {
     if (!client || !validLabel(identityLabel)) {
@@ -252,18 +289,34 @@ export function AgentControl() {
     let owner = address;
     let connectedChain = chainId;
     try {
-      if (!owner) {
-        const connector = connectors.find(
-          (item) => item.id === 'mandate-dev-wallet',
-        );
-        if (!connector) {
-          const { openWalletPicker } = await import('../lib/wallet-config');
-          await openWalletPicker();
+      const connector = connectors.find(
+        (item) => item.id === 'mandate-dev-wallet',
+      );
+      if (
+        !connector ||
+        (owner && currentConnector?.id !== 'mandate-dev-wallet')
+      ) {
+        // AppKit continues from connection into SIWE signing and backend verification.
+        // Check service availability before asking the owner to open their wallet.
+        await api('/health');
+        const { openWalletPicker, verifyConnectedOwner } =
+          await import('../lib/wallet-config');
+        if (!owner) {
           setMessage(
-            'Choose a wallet, then verify ownership with a login signature.',
+            'Connect your wallet and approve the sign-in request to verify ownership.',
           );
-          return;
+          await openWalletPicker();
+        } else {
+          if (connectedChain !== sepolia.id) {
+            setAuthStage('network');
+            await switcher.mutateAsync({ chainId: sepolia.id });
+          }
+          setAuthStage('signing');
+          await verifyConnectedOwner();
         }
+        return;
+      }
+      if (!owner) {
         setAuthStage('connecting');
         setMessage('Choose an account in your wallet…');
         const connection = await connect
@@ -316,7 +369,7 @@ export function AgentControl() {
         setMessage(
           'Owner verified. Your agent can only read and propose until you approve an exact action.',
         );
-        setMobileStep(0);
+        setMobileStep(6);
       }
     } finally {
       if (active.current) setAuthStage('idle');
@@ -386,7 +439,7 @@ export function AgentControl() {
       setMessage(
         `NFAT #${tokenId} created. ${agentEnsName(identityLabel)} now resolves to ${predicted}.`,
       );
-      setMobileStep(3);
+      setMobileStep(0);
     }
   }
   async function review(op: Row) {
@@ -558,28 +611,43 @@ export function AgentControl() {
                 ? 'Switch & verify owner'
                 : 'Verify ownership';
   const selectedHost = agentHosts.find((host) => host.id === agentHost)!;
-  const credential = token || '<one-time-key>';
-  const jsonServer = `{
-  "mcpServers": {
-    "mandate": {
-      "command": "bun",
-      "args": ["packages/agent-tools/src/server.ts"],
-      "cwd": "<repository-path>",
-      "env": {
-        "MANDATE_AGENT_TOKEN": "${credential}"
-      }
-    }
-  }
-}`;
+  const hasCurrentCredential = !!token && tokenHost === agentHost;
+  const credential = hasCurrentCredential
+    ? token
+    : `<create-a-${agentHost}-connection>`;
+  const checkoutPath =
+    repositoryPath.trim() || '<absolute-path-to-agent-mandate-wallet>';
+  const checkoutPathIsAbsolute =
+    checkoutPath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(checkoutPath);
+  const agentGateway =
+    uiReady && !['localhost', '127.0.0.1'].includes(window.location.hostname)
+      ? 'https://way-leave.vercel.app/gateway'
+      : 'http://127.0.0.1:3001';
+  const jsonServer = JSON.stringify(
+    {
+      mcpServers: {
+        wayleave: {
+          command: 'bun',
+          args: ['run', '--cwd', checkoutPath, 'agent:mcp'],
+          env: {
+            WAYLEAVE_AGENT_TOKEN: credential,
+            WAYLEAVE_GATEWAY_URL: agentGateway,
+          },
+        },
+      },
+    },
+    null,
+    2,
+  );
   const mcpConfig =
     agentHost === 'codex'
-      ? `[mcp_servers.mandate]
+      ? `[mcp_servers.wayleave]
 command = "bun"
-args = ["packages/agent-tools/src/server.ts"]
-cwd = "<repository-path>"
+args = ["run", "--cwd", ${JSON.stringify(checkoutPath)}, "agent:mcp"]
 
-[mcp_servers.mandate.env]
-MANDATE_AGENT_TOKEN = "${credential}"`
+[mcp_servers.wayleave.env]
+WAYLEAVE_AGENT_TOKEN = "${credential}"
+WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       : jsonServer;
   const mcpDestination =
     agentHost === 'codex'
@@ -621,11 +689,12 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <span className="orbit-chip chip-agent">MCP</span>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">LINK MCP / 02</span>
+                <span className="mobile-kicker">CHOOSE CLIENT / 04</span>
                 <h2>Where does your agent work?</h2>
                 <p>
-                  Choose its home. We’ll create the exact MCP setup for that
-                  agent—nothing broad, nothing permanent.
+                  Now that the NFAT exists, choose the first client to connect.
+                  You can return at step 6 to add another client with its own
+                  revocable key.
                 </p>
               </div>
               <div className="agent-host-picker" aria-label="Agent host">
@@ -646,7 +715,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               </div>
               <button
                 className="mobile-primary"
-                onClick={() => setMobileStep(6)}
+                onClick={() => setMobileStep(3)}
               >
                 Continue with {selectedHost.name} <ArrowRight size={17} />
               </button>
@@ -689,7 +758,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               ) : (
                 <button
                   className="mobile-primary"
-                  onClick={() => setMobileStep(0)}
+                  onClick={() => setMobileStep(6)}
                 >
                   Owner verified <Check size={17} />
                 </button>
@@ -703,7 +772,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
           {mobileStep === 6 && (
             <div className="mobile-step-content">
               <div className="mobile-copy">
-                <span className="mobile-kicker">AUTHORITY / 03</span>
+                <span className="mobile-kicker">AUTHORITY / 02</span>
                 <h2>You approve every payment.</h2>
                 <p>
                   Your first policy is approval-only. MCP can read this account
@@ -857,7 +926,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <small>OWNER CONTROLLED ACCOUNT</small>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">FIRST TRANSACTION / 04</span>
+                <span className="mobile-kicker">FIRST TRANSACTION / 03</span>
                 <h2>Give the account a name.</h2>
                 <p>
                   Your first real test transaction creates an NFAT and registers
@@ -892,7 +961,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               {isAddress(account) && nfatId !== undefined ? (
                 <button
                   className="mobile-primary"
-                  onClick={() => setMobileStep(3)}
+                  onClick={() => setMobileStep(0)}
                 >
                   NFAT #{nfatId.toString()} created <Check size={17} />
                 </button>
@@ -933,20 +1002,13 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 </span>
               </div>
               <div className="mobile-copy">
-                <span className="mobile-kicker">LINK MCP / 05</span>
+                <span className="mobile-kicker">SELECT ACCOUNT / 05</span>
                 <h2>Select the NFAT.</h2>
                 <p>
-                  Give {selectedHost.name} one revocable, 24-hour connection to
-                  {` ${identityName}`}. It may read and propose—never sign.
+                  This is the account each client can read from and propose
+                  payments for. Clients never receive its signing authority.
                 </p>
               </div>
-              <label className="mobile-field">
-                Connection name
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-              </label>
               <button
                 type="button"
                 className="nfat-selector selected"
@@ -961,34 +1023,13 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 </div>
                 <Check size={15} />
               </button>
-              {activeAgents.length ? (
-                <button
-                  className="mobile-primary"
-                  onClick={() => setMobileStep(4)}
-                >
-                  Configure MCP <ArrowRight size={17} />
-                </button>
-              ) : (
-                <button
-                  className="mobile-primary"
-                  disabled={busy || !signedIn || !isAddress(selectedAccount)}
-                  onClick={() =>
-                    void run(async () => {
-                      const result = await api<{
-                        agent: AgentConnection;
-                        token: string;
-                      }>('/agents', { name, account: selectedAccount });
-                      setToken(result.token);
-                      setMessage(
-                        'Connection created. Copy its one-time key now.',
-                      );
-                      setMobileStep(4);
-                    })
-                  }
-                >
-                  Grant scoped access <ArrowRight size={17} />
-                </button>
-              )}
+              <button
+                className="mobile-primary"
+                disabled={!isAddress(selectedAccount)}
+                onClick={() => setMobileStep(4)}
+              >
+                Configure MCP clients <ArrowRight size={17} />
+              </button>
               <div className="mobile-permissions">
                 <span>
                   <Check size={14} /> Read account
@@ -1025,22 +1066,75 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <span className="mobile-kicker">LINK MCP / 06</span>
                 <h2>Bring the lane into {selectedHost.name}.</h2>
                 <p>
-                  {mcpDestination}. Then restart {selectedHost.name} and ask it
-                  to read the account.
+                  Choose a client, create a separate 24-hour key for it, and
+                  copy a setup tied to this NFAT.
                 </p>
               </div>
-              {!token && (
+              <div className="agent-host-picker" aria-label="Agent host">
+                {agentHosts.map((host) => (
+                  <button
+                    key={host.id}
+                    type="button"
+                    aria-pressed={agentHost === host.id}
+                    className={agentHost === host.id ? 'selected' : ''}
+                    onClick={() => setAgentHost(host.id)}
+                  >
+                    <span>{host.mark}</span>
+                    <strong>{host.name}</strong>
+                    <small>{host.detail}</small>
+                    {agentHost === host.id && <Check size={14} />}
+                  </button>
+                ))}
+              </div>
+              <label className="mobile-field">
+                Connection name
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </label>
+              <button
+                className="mobile-primary"
+                disabled={busy || !signedIn || !isAddress(selectedAccount)}
+                onClick={() =>
+                  void run(async () => {
+                    const result = await api<{
+                      agent: AgentConnection;
+                      token: string;
+                    }>('/agents', { name, account: selectedAccount });
+                    setToken(result.token);
+                    setTokenHost(agentHost);
+                    setMessage(
+                      `${selectedHost.name} connection created. Copy its setup now; create another connection for each additional client.`,
+                    );
+                  })
+                }
+              >
+                <PlugZap size={16} />{' '}
+                {hasCurrentCredential
+                  ? `Create another ${selectedHost.name} key`
+                  : `Create ${selectedHost.name} connection`}
+              </button>
+              {!hasCurrentCredential && (
                 <p className="mobile-trust">
-                  Create a connection to receive its one-time key. Existing keys
-                  cannot be retrieved; create a separate connection when adding
-                  another client.
+                  Existing keys cannot be retrieved. Create a separate
+                  connection for every client you add.
                 </p>
               )}
+              <label className="mobile-field">
+                Wayleave checkout path
+                <input
+                  value={repositoryPath}
+                  onChange={(event) => setRepositoryPath(event.target.value)}
+                  placeholder="/absolute/path/to/agent-mandate-wallet"
+                  spellCheck="false"
+                />
+              </label>
               <div className="mobile-mcp-recipe">
                 <div>
                   <small>01</small>
-                  <span>Start gateway</span>
-                  <code>bun run gateway</code>
+                  <span>Use a local checkout</span>
+                  <code>github.com/mikelxc/agent-mandate-wallet</code>
                 </div>
                 <div>
                   <small>02</small>
@@ -1063,13 +1157,13 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                   <span>
                     {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
                   </span>
-                  <small>MANDATE / STDIO</small>
+                  <small>WAYLEAVE / STDIO</small>
                 </div>
                 <pre>{mcpConfig}</pre>
               </div>
               <button
                 className="mobile-primary"
-                disabled={!token}
+                disabled={!hasCurrentCredential || !checkoutPathIsAbsolute}
                 onClick={() =>
                   void navigator.clipboard
                     .writeText(mcpConfig)
@@ -1081,6 +1175,12 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               >
                 <Clipboard size={16} /> Copy {selectedHost.name} setup
               </button>
+              <p className="mobile-trust">
+                {mcpDestination}.{' '}
+                {agentGateway.startsWith('http://127.0.0.1')
+                  ? 'Keep bun run gateway running locally.'
+                  : 'This setup uses the hosted Wayleave gateway.'}
+              </p>
               <button className="mobile-link" onClick={() => setMobileStep(5)}>
                 Explore your account identity
               </button>
@@ -1173,22 +1273,8 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 <Check size={15} />
               </span>
               <div>
-                <strong>Choose where your agent works</strong>
-                <p>The setup adapts to the MCP host you already use.</p>
-                <div className="desktop-host-picker" aria-label="Agent host">
-                  {agentHosts.map((host) => (
-                    <button
-                      key={host.id}
-                      type="button"
-                      aria-pressed={agentHost === host.id}
-                      className={agentHost === host.id ? 'selected' : ''}
-                      onClick={() => setAgentHost(host.id)}
-                    >
-                      <span>{host.mark}</span>
-                      {host.name}
-                    </button>
-                  ))}
-                </div>
+                <strong>Approval-only policy</strong>
+                <p>Clients can read and propose. Only the owner can sign.</p>
               </div>
             </div>
 
@@ -1280,15 +1366,32 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 {activeAgents.length ? <Check size={15} /> : <span>4</span>}
               </span>
               <div>
-                <strong>Grant scoped account access</strong>
+                <strong>Choose an MCP client and grant access</strong>
                 <p>
-                  Give {selectedHost.name} one NFAT, a 24-hour key, and only
-                  read-and-propose tools. It cannot sign.
+                  Create a separate revocable 24-hour key for every client you
+                  connect to this NFAT.
                 </p>
                 {signedIn && hasAccount && (
                   <div className="connection-form">
+                    <div
+                      className="desktop-host-picker"
+                      aria-label="Agent host"
+                    >
+                      {agentHosts.map((host) => (
+                        <button
+                          key={host.id}
+                          type="button"
+                          aria-pressed={agentHost === host.id}
+                          className={agentHost === host.id ? 'selected' : ''}
+                          onClick={() => setAgentHost(host.id)}
+                        >
+                          <span>{host.mark}</span>
+                          {host.name}
+                        </button>
+                      ))}
+                    </div>
                     <label>
-                      Agent name
+                      Connection name
                       <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -1311,7 +1414,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                     </div>
                     <button
                       className="primary"
-                      disabled={busy || activeAgents.length > 0}
+                      disabled={busy}
                       onClick={() =>
                         void run(async () => {
                           const result = await api<{
@@ -1319,13 +1422,17 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                             token: string;
                           }>('/agents', { name, account: selectedAccount });
                           setToken(result.token);
+                          setTokenHost(agentHost);
                           setMessage(
-                            'Connection created for 24 hours. Save its key now; it will not be shown again.',
+                            `${selectedHost.name} connection created for 24 hours. Copy its setup now; create another connection for each additional client.`,
                           );
                         })
                       }
                     >
-                      <PlugZap size={14} /> Grant agent access
+                      <PlugZap size={14} />{' '}
+                      {hasCurrentCredential
+                        ? `Create another ${selectedHost.name} key`
+                        : `Create ${selectedHost.name} connection`}
                     </button>
                   </div>
                 )}
@@ -1339,12 +1446,12 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                 {operations.length ? <Check size={15} /> : <span>5</span>}
               </span>
               <div>
-                <strong>Add the Mandate MCP</strong>
+                <strong>Add the Wayleave MCP</strong>
                 <p>
                   Install the scoped connection in {selectedHost.name}, then
                   prove it works with one read-only call.
                 </p>
-                <details className="setup-details" open={!!token}>
+                <details className="setup-details" open={hasCurrentCredential}>
                   <summary>
                     <TerminalSquare size={14} /> Show MCP setup{' '}
                     <ChevronDown size={14} />
@@ -1352,7 +1459,8 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                   <div className="setup-details-body">
                     <ol>
                       <li>
-                        Run <code>bun run gateway</code> from this repository.
+                        Use a local checkout of this repository and enter its
+                        absolute path below.
                       </li>
                       <li>{mcpDestination}.</li>
                       <li>
@@ -1360,10 +1468,24 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                         <code>get_account</code>.
                       </li>
                     </ol>
+                    <label>
+                      Wayleave checkout path
+                      <input
+                        value={repositoryPath}
+                        onChange={(event) =>
+                          setRepositoryPath(event.target.value)
+                        }
+                        placeholder="/absolute/path/to/agent-mandate-wallet"
+                        spellCheck="false"
+                      />
+                    </label>
                     <div className="code-block">
                       <pre>{mcpConfig}</pre>
                       <button
                         aria-label="Copy MCP configuration"
+                        disabled={
+                          !hasCurrentCredential || !checkoutPathIsAbsolute
+                        }
                         onClick={() =>
                           void navigator.clipboard
                             .writeText(mcpConfig)
@@ -1516,7 +1638,13 @@ MANDATE_AGENT_TOKEN = "${credential}"`
               >
                 <Clipboard size={14} /> Copy key
               </button>
-              <button className="secondary" onClick={() => setToken('')}>
+              <button
+                className="secondary"
+                onClick={() => {
+                  setToken('');
+                  setTokenHost(undefined);
+                }}
+              >
                 Hide
               </button>
             </div>
@@ -1551,6 +1679,7 @@ MANDATE_AGENT_TOKEN = "${credential}"`
                       await api('/auth/logout', {});
                       setSession('');
                       setToken('');
+                      setTokenHost(undefined);
                       setAgents([]);
                       setOperations([]);
                       setMessage('Signed out.');

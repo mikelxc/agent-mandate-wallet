@@ -6,7 +6,6 @@ import { Store } from "./store";
 import { createApp } from "./app";
 import type { Chain, Prepared } from "./chain";
 import type { PaymentIntent } from "@mandate/protocol";
-
 const owner = privateKeyToAccount(
   "0x59c6995e998f97a5a0044976f0945389dc9e86dae88c7a4f6d7e9c8f7d2b7a11",
 );
@@ -44,7 +43,6 @@ const intent = (key = "invoice-01", expiresAt = 1200): PaymentIntent => ({
   idempotencyKey: key,
   expiresAt,
 });
-
 function fixture(clock = 1000) {
   const store = new Store(":memory:");
   let current = clock;
@@ -99,7 +97,10 @@ async function login(app: (r: Request) => Promise<Response>) {
     method: "POST",
     body: JSON.stringify({ address: owner.address }),
   });
-  const data = (await challenge.json()) as { id: string; message: string };
+  const data = (await challenge.json()) as {
+    id: string;
+    message: string;
+  };
   const sig = await owner.signMessage({ message: data.message });
   const verified = await call(app, "/auth/verify", {
     method: "POST",
@@ -107,7 +108,6 @@ async function login(app: (r: Request) => Promise<Response>) {
   });
   return verified.headers.get("set-cookie")!.split(";")[0];
 }
-
 describe("gateway app", () => {
   test("authenticates challenge, rejects replay and expiry", async () => {
     const f = fixture();
@@ -174,9 +174,9 @@ describe("gateway app", () => {
     const result = (await created.json()) as any;
     expect(result.token).toMatch(/^[a-f0-9]{64}$/);
     expect(result.agent).not.toHaveProperty("tokenHash");
-    expect(f.store.authenticateAgent(result.token, 1000)).toBeNull();
+    expect(await f.store.authenticateAgent(result.token, 1000)).toBeNull();
     expect(
-      f.store.authenticateAgent((await import("./app")).hashToken(result.token), 1000)?.id,
+      (await f.store.authenticateAgent((await import("./app")).hashToken(result.token), 1000))?.id,
     ).toBe(result.agent.id);
     f.store.close();
   });
@@ -418,16 +418,42 @@ describe("gateway app", () => {
   test("rejects when the quote expires during signature verification", async () => {
     const f = fixture();
     const cookie = await login(f.app);
-    const created = await call(f.app, "/agents", { method: "POST", headers: { Cookie: cookie }, body: JSON.stringify({ name: "bot", account }) });
-    const a = await created.json() as any;
-    const proposal = await call(f.app, "/agent/operations", { method: "POST", headers: { Authorization: `Bearer ${a.token}` }, body: JSON.stringify(intent("invoice-03", 1500)) }, "");
-    const op = await proposal.json() as any;
-    await call(f.app, `/operations/${op.id}/prepare`, { method: "POST", headers: { Cookie: cookie }, body: "{}" });
-    f.chain.verifyApproval = async () => { f.setNow(1301); return true; };
+    const created = await call(f.app, "/agents", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: JSON.stringify({ name: "bot", account }),
+    });
+    const a = (await created.json()) as any;
+    const proposal = await call(
+      f.app,
+      "/agent/operations",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${a.token}` },
+        body: JSON.stringify(intent("invoice-03", 1500)),
+      },
+      "",
+    );
+    const op = (await proposal.json()) as any;
+    await call(f.app, `/operations/${op.id}/prepare`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: "{}",
+    });
+    f.chain.verifyApproval = async () => {
+      f.setNow(1301);
+      return true;
+    };
     const sig = await owner.signMessage({ message: prepared.actionHash });
-    const response = await call(f.app, `/operations/${op.id}/approve`, { method: "POST", headers: { Cookie: cookie }, body: JSON.stringify({ signature: sig }) });
+    const response = await call(f.app, `/operations/${op.id}/approve`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: JSON.stringify({ signature: sig }),
+    });
     expect(response.status).toBe(409);
-    expect((f.store.operationForOwner(op.id, owner.address.toLowerCase()) as any)?.status).toBe("approval_required");
+    expect(
+      ((await f.store.operationForOwner(op.id, owner.address.toLowerCase())) as any)?.status,
+    ).toBe("approval_required");
     f.store.close();
   });
 });

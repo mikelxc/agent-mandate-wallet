@@ -1,10 +1,13 @@
 import {
   createPublicClient,
+  createWalletClient,
   http,
   isAddressEqual,
   decodeEventLog,
   type Address,
   type Hex,
+  keccak256,
+  stringToHex,
 } from "viem";
 import { sepolia } from "viem/chains";
 import {
@@ -16,7 +19,10 @@ import {
   ownerPayment,
   ownerAuthorization,
   packedPair,
+  passkeyAccountFactoryAbi,
+  type PasskeyPublicKey,
 } from "@mandate/sdk";
+import { privateKeyToAccount } from "viem/accounts";
 import type { PaymentIntent } from "@mandate/protocol";
 
 export type Prepared = {
@@ -58,11 +64,43 @@ export interface Chain {
     success: boolean;
     blockNumber: string;
   }>;
+  passkey?: {
+    factory: Address;
+    accountAddress(key: PasskeyPublicKey): Promise<Address>;
+    registrationDigest(key: PasskeyPublicKey, label: string, deadline: bigint): Promise<Hex>;
+    labelAvailable(label: string): Promise<boolean>;
+    relay(key: PasskeyPublicKey, label: string, deadline: bigint, proof: Hex): Promise<{ transactionHash: Hex; account: Address; tokenId: string }>;
+  };
 }
 export function liveChain(
   rpc = process.env.SEPOLIA_RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com",
 ): Chain {
   const c = createPublicClient({ chain: sepolia, transport: http(rpc) });
+  const factory = process.env.MANDATE_PASSKEY_FACTORY as Address | undefined;
+  const relayerKey = process.env.MANDATE_PASSKEY_RELAYER_KEY as Hex | undefined;
+  const passkey = factory ? {
+    factory,
+    async accountAddress(key: PasskeyPublicKey) {
+      return c.readContract({ address: factory, abi: passkeyAccountFactoryAbi, functionName: "accountAddress", args: [key] }) as Promise<Address>;
+    },
+    async registrationDigest(key: PasskeyPublicKey, label: string, deadline: bigint) {
+      return c.readContract({ address: factory, abi: passkeyAccountFactoryAbi, functionName: "registrationDigest", args: [key, label, deadline] }) as Promise<Hex>;
+    },
+    async labelAvailable(label: string) {
+      return !(await c.readContract({ address: factory, abi: passkeyAccountFactoryAbi, functionName: "registeredLabels", args: [keccak256(stringToHex(label))] }));
+    },
+    async relay(key: PasskeyPublicKey, label: string, deadline: bigint, proof: Hex) {
+      if (!relayerKey) throw new Error("Passkey relayer is not configured");
+      const account = privateKeyToAccount(relayerKey);
+      const wallet = createWalletClient({ account, chain: sepolia, transport: http(rpc) });
+      const hash = await wallet.writeContract({ address: factory, abi: passkeyAccountFactoryAbi, functionName: "createAccount", args: [key, label, deadline, proof] });
+      const receipt = await c.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error("Passkey deployment reverted");
+      const id = receipt.logs.map((log) => { try { const d = decodeEventLog({ abi: passkeyAccountFactoryAbi, ...log }); return d.eventName === "AccountCreated" ? String((d.args as any).id) : null; } catch { return null; } }).find(Boolean) ?? "0";
+      const predicted = await c.readContract({ address: factory, abi: passkeyAccountFactoryAbi, functionName: "accountAddress", args: [key] });
+      return { transactionHash: hash, account: predicted as Address, tokenId: id };
+    },
+  } : undefined;
   async function ownership(account: string) {
     if ((await c.getChainId()) !== sepolia.id) throw new Error("Sepolia RPC required");
     const [registry, id] = await c.readContract({

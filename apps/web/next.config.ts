@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 
-// The gateway needs a persistent Bun host; it is not a Vercel function.
+// Optional external gateway override; production otherwise uses the route handler.
 const gatewayOrigin = process.env.MANDATE_GATEWAY_ORIGIN;
 if (gatewayOrigin) {
   const url = new URL(gatewayOrigin);
@@ -13,7 +13,7 @@ if (gatewayOrigin) {
 }
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@mandate/sdk', '@mandate/protocol'],
+  transpilePackages: ['@mandate/sdk', '@mandate/protocol', '@mandate/gateway'],
   turbopack: {
     // Reown is browser-only. The Base connector's Node entry imports optional
     // server payment SDKs that this wallet does not use.
@@ -24,7 +24,9 @@ const nextConfig: NextConfig = {
 export default function config(phase: string): NextConfig {
   const gateway =
     gatewayOrigin ??
-    (phase === PHASE_DEVELOPMENT_SERVER ? 'http://127.0.0.1:3001' : undefined);
+    (phase === PHASE_DEVELOPMENT_SERVER && !process.env.TURSO_DATABASE_URL
+      ? 'http://127.0.0.1:3001'
+      : undefined);
   return {
     ...nextConfig,
     async rewrites() {

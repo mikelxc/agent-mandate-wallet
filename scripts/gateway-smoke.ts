@@ -132,7 +132,11 @@ try {
   transport = new StdioClientTransport({
     command: "bun",
     args: ["packages/agent-tools/src/server.ts"],
-    env: { ...process.env, MANDATE_AGENT_TOKEN: agent.token, MANDATE_GATEWAY_URL: origin },
+    env: {
+      ...process.env,
+      WAYLEAVE_AGENT_TOKEN: agent.token,
+      WAYLEAVE_GATEWAY_URL: origin,
+    },
   });
   const mcp = new Client({ name: "gateway-smoke", version: "0.1.0" }, {});
   await mcp.connect(transport);

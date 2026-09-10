@@ -15,18 +15,24 @@ function gatewayUrl(value: string | undefined): string {
   try {
     url = new URL(candidate);
   } catch {
-    throw new Error("Gateway URL must be local HTTP");
+    throw new Error("Gateway URL must be local HTTP or a trusted Wayleave HTTPS gateway");
   }
   if (
-    url.protocol !== "http:" ||
     url.username ||
     url.password ||
     url.search ||
     url.hash ||
-    (url.pathname !== "/" && url.pathname !== "") ||
-    (url.hostname !== "127.0.0.1" && url.hostname !== "localhost")
+    !(
+      (url.protocol === "http:" &&
+        ["127.0.0.1", "localhost"].includes(url.hostname) &&
+        url.pathname === "/") ||
+      (url.protocol === "https:" &&
+        !url.port &&
+        ["way-leave.vercel.app", "agent-mandate-wallet-web.vercel.app"].includes(url.hostname) &&
+        ["/gateway", "/gateway/"].includes(url.pathname))
+    )
   ) {
-    throw new Error("Gateway URL must be local HTTP");
+    throw new Error("Gateway URL must be local HTTP or a trusted Wayleave HTTPS gateway");
   }
   return url.toString().replace(/\/$/, "");
 }
@@ -38,10 +44,10 @@ export function createGatewayClient(
     fetchImpl?: GatewayFetch;
   } = {},
 ): GatewayClient {
-  const token = options.token ?? process.env.MANDATE_AGENT_TOKEN;
-  const baseUrl = gatewayUrl(options.baseUrl ?? process.env.MANDATE_GATEWAY_URL);
+  const token = options.token ?? process.env.WAYLEAVE_AGENT_TOKEN;
+  const baseUrl = gatewayUrl(options.baseUrl ?? process.env.WAYLEAVE_GATEWAY_URL);
   const fetchImpl = options.fetchImpl ?? fetch;
-  if (!token) throw new Error("MANDATE_AGENT_TOKEN is required");
+  if (!token) throw new Error("WAYLEAVE_AGENT_TOKEN is required");
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let response: Response;

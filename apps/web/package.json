@@ -14,15 +14,18 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
-    "e2e:ui": "bun --bun playwright test tests/workspace-ui.spec.ts tests/onboarding-ui.spec.ts"
+    "e2e:ui": "bun --bun playwright test tests/workspace-ui.spec.ts tests/onboarding-ui.spec.ts tests/owner-auth.spec.ts"
   },
   "dependencies": {
     "@base-org/account": "2.4.0",
     "@base-ui/react": "1.7.0",
     "@mandate/protocol": "workspace:*",
+    "@mandate/gateway": "workspace:*",
+    "@libsql/client": "0.18.0",
     "@mandate/sdk": "workspace:*",
     "@reown/appkit": "^1.8.23",
     "@reown/appkit-adapter-wagmi": "^1.8.23",
+    "@reown/appkit-siwe": "1.8.23",
     "@shadcn/react": "0.3.0",
     "@tanstack/react-query": "latest",
     "class-variance-authority": "0.7.1",

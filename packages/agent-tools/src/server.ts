@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createGatewayClient } from "./client.js";
 import { paymentIntentSchema, type PaymentIntentInput } from "./schema.js";
 
-const server = new McpServer({ name: "mandate-agent-tools", version: "0.1.0" });
+const server = new McpServer({ name: "wayleave-agent-tools", version: "0.1.0" });
 const client = createGatewayClient();
 const result = (value: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(value) }],

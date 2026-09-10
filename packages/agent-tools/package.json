@@ -1,17 +1,17 @@
 {
-  "name": "@mandate/agent-tools",
+  "name": "@wayleave/agent-tools",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "bin": {
-    "mandate-agent-tools": "./src/server.ts"
+    "wayleave-agent-tools": "./src/server.ts"
   },
-  "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
+  "type": "module",
   "exports": {
     ".": "./src/client.ts",
     "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@mandate/protocol": "workspace:*",
