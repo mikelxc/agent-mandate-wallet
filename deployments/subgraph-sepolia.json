@@ -1,0 +1,23 @@
+{
+  "studioSlug": "wayleave",
+  "version": "v0.1.0",
+  "chainId": 11155111,
+  "endpoint": "https://api.studio.thegraph.com/query/1760154/wayleave/v0.1.0",
+  "deployment": "QmYq9xNZ7EZ1RcMztqj75GnvYMtHtfLY7HhQUubaXmAntv",
+  "manifest": "packages/subgraph/subgraph.yaml",
+  "startBlock": 11658202,
+  "verifiedAt": "2026-09-11T18:01:50.526Z",
+  "indexedBlock": 11683533,
+  "observedRpcHead": 11683534,
+  "hasIndexingErrors": false,
+  "sampleAccount": "0xe4a1b73f7bd68c6f90f8508295515a590921aa3a",
+  "canonicalReceiptVerified": "0xd92c635f38601d9b298ac2eeac192fe333e7b9be56894235d327d2977f78678f",
+  "sampleLogIndex": 218,
+  "sampleAmountBaseUnits": "1000000",
+  "mcpToolsVerified": ["list_payments", "get_payment_context", "summarize_spending"],
+  "mcpAuthentication": "ephemeral_local_fixture",
+  "mcpData": "live_subgraph_and_sepolia_rpc",
+  "hostedGatewayConfigured": false,
+  "arcSubgraphDeployed": false,
+  "decentralizedNetworkPublicationVerified": false
+}

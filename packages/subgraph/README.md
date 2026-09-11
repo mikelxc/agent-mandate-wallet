@@ -1,6 +1,6 @@
 # Wayleave indexed payment history
 
-This package builds a Sepolia subgraph for the deployed Wayleave registry, demo token, and EntryPoint. It is not a live deployment. No Graph endpoint, deployment ID, indexed block or successful RPC reconciliation has been recorded. Arc Testnet indexing is not enabled or claimed.
+This package indexes the deployed Wayleave registry, demo token, and EntryPoint on Sepolia. Studio deployment `wayleave/v0.1.0` is live and verified; see [public deployment evidence](../../deployments/subgraph-sepolia.json). Three MCP history tools passed against live indexed data and Sepolia RPC through a disposable local gateway session. Hosted gateway configuration and decentralized-network publication remain separate steps. Arc Testnet's manifest is built but not deployed.
 
 ## Build and deploy
 
@@ -54,6 +54,6 @@ After deploying and synchronizing, configure the server plus `WAYLEAVE_GRAPH_VER
 bun run --cwd packages/subgraph verify
 ```
 
-This read-only check requires nonempty live results and reconciles up to ten indexed transfers with canonical RPC receipt logs. Record its public output, provider/network identifier, and the deployment instructions used. Then run the MCP client against the configured gateway and demonstrate the reasoning example. Deployment and live-client acceptance remain outstanding until that evidence exists.
+This read-only check requires nonempty live results and reconciles up to ten indexed transfers with canonical RPC receipt logs. The first live check passed on September 11, 2026 for account `0xe4a1b73f7bd68c6f90f8508295515a590921aa3a`. Set `WAYLEAVE_GRAPH_VERIFY_ACCOUNT` to that account to reproduce it. Run `bun packages/agent-tools/scripts/verify-history.ts` from the repository root for the read-only stdio MCP check. It creates a disposable local authentication fixture, verifies actual current ownership via RPC, and invokes all three history tools against the live index. It sends no transactions and does not establish production login or hosted gateway readiness.
 
 References: [Graph manifest](https://thegraph.com/docs/en/subgraphs/developing/creating/subgraph-manifest/), [supported networks](https://thegraph.com/docs/en/supported-networks/).
