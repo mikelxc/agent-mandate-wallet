@@ -170,6 +170,7 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
   const [creationHash, setCreationHash] = useState<Hex>();
   const [uiReady, setUiReady] = useState(false);
   const [setupGuideCopied, setSetupGuideCopied] = useState(false);
+  const [connectionComposerOpen, setConnectionComposerOpen] = useState(false);
   useEffect(() => {
     setUiReady(true);
   }, [connectionsOnly]);
@@ -1306,18 +1307,28 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         className={`agent-shell desktop-agent-pro ${connectionsOnly ? 'connections-workspace' : ''} ${mobilePro && uiReady ? 'show-on-mobile' : ''} ${requestedOperation ? 'focused-payment' : ''}`}
       >
         {connectionsOnly && (
-          <section className="connection-page">
-            <TerminalSquare size={26} strokeWidth={1.4} />
-            <h1>{signedIn ? 'Manage MCP connections' : 'Connect your agent'}</h1>
-            <p>{address
-              ? `Wallet connected: ${address.slice(0, 6)}…${address.slice(-4)}. ${signedIn ? 'Create a separate connection for each agent app, or revoke its access below.' : 'Verify ownership to load and manage your connections.'}`
-              : 'Connect your wallet to create and manage agent connections. Your agent can read and request payments; you approve spending.'}</p>
-            {!signedIn && <button className="primary" disabled={!uiReady || busy || authStage !== 'idle'} onClick={() => void run(login)}>{uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} /></button>}
-            <button className="secondary" onClick={copySetupGuide}>
-              {setupGuideCopied ? <Check size={16} /> : <Clipboard size={16} />}{' '}
-              {setupGuideLabel}
-            </button>
-            <p>The guide contains no connection key. Supports Codex, Claude, Cursor, and generic local stdio MCP clients.</p>
+          <section className={`connection-page ${signedIn ? 'is-ready' : ''}`}>
+            <div className="connection-page-mark" aria-hidden="true">
+              <PlugZap size={20} strokeWidth={1.6} />
+            </div>
+            <div>
+              <span className="eyebrow">CONNECT AN AGENT</span>
+              <h1>{signedIn ? 'Connections' : 'Connect your wallet'}</h1>
+              <p>{address
+                ? signedIn
+                  ? 'Give each agent app its own connection. You can revoke access at any time.'
+                  : `Verify ${address.slice(0, 6)}…${address.slice(-4)} to manage its agent connections.`
+                : 'Verify ownership before creating a connection. Signing in does not move money.'}</p>
+            </div>
+            {!signedIn && (
+              <button
+                className="primary"
+                disabled={!uiReady || busy || authStage !== 'idle'}
+                onClick={() => void run(login)}
+              >
+                {uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} />
+              </button>
+            )}
           </section>
         )}
         {!connectionsOnly && (!requestedOperation || !signedIn) && (
@@ -1337,7 +1348,264 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           />
         )}
 
-        {signedIn && !requestedOperation && (
+        {signedIn && !requestedOperation && connectionsOnly && (
+          <div
+            className={`connections-command-center ${activeAgents.length ? 'has-connections' : 'no-connections'}`}
+          >
+            {!!activeAgents.length && (
+              <section className="panel connection-roster">
+                <div className="connection-roster-head">
+                  <div>
+                    <span className="eyebrow">ACTIVE</span>
+                    <h2>Your connections</h2>
+                  </div>
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      setConnectionComposerOpen((open) => !open);
+                      setToken('');
+                      setTokenHost(undefined);
+                    }}
+                    aria-expanded={connectionComposerOpen || !!token}
+                    aria-controls="new-connection"
+                  >
+                    {connectionComposerOpen || token ? <X size={15} /> : <PlugZap size={15} />}
+                    {connectionComposerOpen || token ? 'Close' : 'Add connection'}
+                  </button>
+                </div>
+                <div className="connection-roster-list">
+                  {activeAgents.map((agent) => (
+                    <div className="connection-roster-row" key={agent.id}>
+                      <span className="agent-avatar" aria-hidden="true">
+                        <Bot size={17} />
+                      </span>
+                      <div>
+                        <strong>{agent.name}</strong>
+                        <p>
+                          Active until{' '}
+                          {new Date(agent.expiresAt * 1000).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <span className="connection-status">Active</span>
+                      <button
+                        className="text-button danger-text"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            await api(`/agents/${agent.id}/revoke`, {});
+                            if (agent.id === tokenAgentId) {
+                              setToken('');
+                              setTokenHost(undefined);
+                            }
+                            setMessage(
+                              'Agent API access revoked. Existing signed payments and token allowances are unchanged.',
+                            );
+                          })
+                        }
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <ArchivedRecords
+                  key={`${archiveKey}.connections`}
+                  title="Past connections"
+                  storageKey={`${archiveKey}.connections`}
+                  records={archivedAgents.map((agent) => ({
+                    id: agent.id,
+                    title: agent.name,
+                    detail: `${agent.revokedAt ? 'Revoked' : 'Expired'} · ${new Date((agent.revokedAt ?? agent.expiresAt) * 1000).toLocaleDateString()}`,
+                  }))}
+                />
+              </section>
+            )}
+
+            {(!activeAgents.length || connectionComposerOpen || !!token) && (
+              <section className="panel connection-composer" id="new-connection">
+                <div className="connection-composer-head">
+                  <div>
+                    <span className="eyebrow">
+                      {token ? 'READY TO INSTALL' : hasAccount ? 'NEW CONNECTION' : 'AGENT WALLET'}
+                    </span>
+                    <h2>
+                      {token
+                        ? `Finish in ${selectedHost.name}`
+                        : hasAccount
+                          ? activeAgents.length
+                            ? 'Connect another app'
+                            : 'Choose where your agent runs'
+                          : 'Name your agent wallet'}
+                    </h2>
+                    <p>
+                      {token
+                        ? `${selectedHost.name} has a private setup ready. Copy it now—it is only shown once.`
+                        : hasAccount
+                          ? 'This connection can read the agent wallet and request payments for 24 hours. You still approve spending.'
+                          : 'Create the onchain wallet your agent will use. Its ownership NFT stays in your wallet.'}
+                    </p>
+                  </div>
+                  <span className="connection-step-pill">
+                    {token ? '3 of 3' : hasAccount ? '2 of 3' : '1 of 3'}
+                  </span>
+                </div>
+
+                {!hasAccount ? (
+                  <div className="connection-current-action">
+                    <label className="desktop-name-field">
+                      Agent wallet name
+                      <span>
+                        <input
+                          value={identityLabel}
+                          onChange={(event) => setIdentityLabel(event.target.value)}
+                        />
+                        <b>.{ensV2HackathonDeployment.parentName}</b>
+                      </span>
+                    </label>
+                    <p className="ens-rollout-note">
+                      {ensAvailability === 'taken'
+                        ? 'That Wayleave name is already registered. Choose another.'
+                        : ensAvailability === 'checking'
+                          ? 'Checking the live Wayleave registry…'
+                          : 'The ownership NFT, agent wallet, and name are created together on Sepolia.'}
+                    </p>
+                    <button
+                      className="primary"
+                      disabled={
+                        busy ||
+                        !validLabel(identityLabel) ||
+                        ensAvailability === 'checking' ||
+                        ensAvailability === 'taken'
+                      }
+                      onClick={() => void run(createNfat)}
+                    >
+                      Create agent wallet <ArrowRight size={15} />
+                    </button>
+                  </div>
+                ) : token ? (
+                  <div className="connection-handoff">
+                    <div className="connection-handoff-destination">
+                      <span className="agent-host-logo" aria-hidden="true">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/agent-logos/${selectedHost.id}.svg`} alt="" width={28} height={28} />
+                      </span>
+                      <div>
+                        <strong>{selectedHost.name}</strong>
+                        <p>{mcpDestination}</p>
+                      </div>
+                    </div>
+                    <div className="code-block connection-setup-code">
+                      <pre>{mcpConfig}</pre>
+                    </div>
+                    <div className="connection-handoff-actions">
+                      <button
+                        className="primary"
+                        onClick={() =>
+                          void copyText(mcpConfig)
+                            .then((copied) => {
+                              if (!copied) throw new Error('Clipboard unavailable');
+                              setMessage(`${selectedHost.name} setup copied.`);
+                            })
+                            .catch(() => setMessage('Select and copy the MCP setup.'))
+                        }
+                      >
+                        <Clipboard size={15} /> Copy {selectedHost.name} setup
+                      </button>
+                      <button
+                        className="secondary"
+                        onClick={() => {
+                          setToken('');
+                          setTokenHost(undefined);
+                          setConnectionComposerOpen(false);
+                        }}
+                      >
+                        Done
+                      </button>
+                    </div>
+                    <p className="connection-secret-note">
+                      The setup includes a one-time key. Keep it in private client settings and out of chat or source control.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="connection-current-action">
+                    <div className="desktop-host-picker connection-host-grid" aria-label="Agent host">
+                      {agentHosts.map((host) => (
+                        <button
+                          key={host.id}
+                          type="button"
+                          aria-pressed={agentHost === host.id}
+                          className={agentHost === host.id ? 'selected' : ''}
+                          onClick={() => {
+                            setAgentHost(host.id);
+                            setSetupGuideCopied(false);
+                          }}
+                        >
+                          <span className="agent-host-logo" aria-hidden="true">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={`/agent-logos/${host.id}.svg`} alt="" width={28} height={28} />
+                          </span>
+                          {host.name}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="connection-label-field">
+                      Connection label <span>Optional</span>
+                      <input
+                        value={name}
+                        placeholder={`${selectedHost.name} on my laptop`}
+                        onChange={(event) => setName(event.target.value)}
+                      />
+                    </label>
+                    <div className="connection-wallet-row">
+                      <div>
+                        <span>Agent wallet</span>
+                        <strong>{identityDisplay}</strong>
+                      </div>
+                      <code>{selectedAccount.slice(0, 6)}…{selectedAccount.slice(-4)}</code>
+                    </div>
+                    <button
+                      className="primary"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(async () => {
+                          const result = await api<{
+                            agent: AgentConnection;
+                            token: string;
+                          }>('/agents', {
+                            name: name.trim() || `${selectedHost.name} connection`,
+                            account: selectedAccount,
+                          });
+                          setToken(result.token);
+                          setTokenAgentId(result.agent.id);
+                          setTokenHost(agentHost);
+                          setConnectionComposerOpen(true);
+                          setMessage(`${selectedHost.name} connection created.`);
+                        })
+                      }
+                    >
+                      Create {selectedHost.name} connection <ArrowRight size={15} />
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <details className="connection-access-summary">
+              <summary>What a connection can do <ChevronDown size={15} /></summary>
+              <div>
+                <p><CheckCircle2 size={15} /> Read the connected agent wallet</p>
+                <p><CheckCircle2 size={15} /> Propose a payment for your review</p>
+                <p><X size={15} /> Sign or submit a payment</p>
+                <p><X size={15} /> Change ownership or token allowances</p>
+              </div>
+            </details>
+          </div>
+        )}
+
+        {signedIn && !requestedOperation && !connectionsOnly && (
           <div className="agent-grid">
             <details className="panel setup-panel" open={connectionsOnly ? true : undefined}>
               <summary className="setup-disclosure">
@@ -1738,7 +2006,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           </div>
         )}
 
-        {token && (
+        {token && !connectionsOnly && (
           <section className="key-banner">
             <KeyRound size={18} />
             <div>

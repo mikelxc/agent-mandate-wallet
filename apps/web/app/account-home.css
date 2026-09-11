@@ -86,7 +86,7 @@ body {
   padding: 12px;
   background: white;
 }
-.app-skip:focus {
+.app-skip:focus-visible {
   top: 12px;
 }
 main.account-home {

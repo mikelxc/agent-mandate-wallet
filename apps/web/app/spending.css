@@ -527,6 +527,402 @@ summary:focus-visible {
     transition: none !important;
   }
 }
+
+/* Connect is a management surface: current state first, setup only when needed. */
+.account-home .connections-workspace .connection-page {
+  width: min(100%, 920px);
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin: 18px auto 28px;
+  padding: 22px 0 28px;
+  border: 0;
+  border-bottom: 1px solid #dfe2df;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.account-home .connections-workspace .connection-page-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #39413c;
+  background: #e7eae8;
+}
+.account-home .connections-workspace .connection-page .eyebrow,
+.account-home .connections-workspace .connection-composer .eyebrow,
+.account-home .connections-workspace .connection-roster .eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #747c77;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+}
+.account-home .connections-workspace .connection-page h1 {
+  margin: 0;
+  color: #252a27;
+  font-size: clamp(30px, 4vw, 38px);
+  font-weight: 560;
+  letter-spacing: -1.1px;
+}
+.account-home .connections-workspace .connection-page p {
+  max-width: 610px;
+  margin: 7px 0 0;
+  color: #666e69;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.account-home .connections-workspace .connection-page > .primary {
+  margin: 0;
+  white-space: nowrap;
+}
+.account-home .connections-command-center {
+  width: min(100%, 920px);
+  display: grid;
+  gap: 18px;
+  margin: 0 auto 72px;
+}
+.account-home .connections-command-center > .panel {
+  border: 1px solid #dfe2df;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 38px rgba(37, 42, 39, 0.045);
+}
+.account-home .connection-roster {
+  padding: 26px 28px 10px;
+}
+.account-home .connection-roster-head,
+.account-home .connection-composer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.account-home .connection-roster-head h2,
+.account-home .connection-composer-head h2 {
+  margin: 0;
+  color: #252a27;
+  font-size: 22px;
+  font-weight: 560;
+  letter-spacing: -0.4px;
+}
+.account-home .connection-roster-head .secondary {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+.account-home .connection-roster-list {
+  margin-top: 18px;
+  border-top: 1px solid #e7e9e7;
+}
+.account-home .connection-roster-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 76px;
+  border-bottom: 1px solid #e7e9e7;
+}
+.account-home .connection-roster-row .agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+.account-home .connection-roster-row strong {
+  display: block;
+  color: #252a27;
+  font-size: 15px;
+  font-weight: 600;
+}
+.account-home .connection-roster-row p {
+  margin: 3px 0 0;
+  color: #757d78;
+  font-size: 13px;
+}
+.account-home .connection-status {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #40584c;
+  background: #e9eee8;
+  font-size: 12px;
+  font-weight: 600;
+}
+.account-home .connection-composer {
+  padding: 30px;
+}
+.account-home .connection-composer-head > div {
+  max-width: 640px;
+}
+.account-home .connection-composer-head p {
+  margin: 8px 0 0;
+  color: #666e69;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.account-home .connection-step-pill {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #68706b;
+  background: #f0f2f1;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.account-home .connection-current-action,
+.account-home .connection-handoff {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e4e7e5;
+}
+.account-home .connection-host-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 22px;
+}
+.account-home .connection-host-grid button,
+.account-home .connection-host-grid button.selected {
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  color: #4f5752;
+  background: #fafbfa;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.account-home .connection-host-grid button.selected {
+  border-color: #6e7972;
+  color: #252a27;
+  background: #edf0ee;
+  box-shadow: 0 0 0 2px rgba(74, 87, 79, 0.09);
+}
+.account-home .connection-host-grid button .agent-host-logo,
+.account-home .connection-host-grid button.selected .agent-host-logo {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e3e1;
+  border-radius: 11px;
+  background: #fff;
+}
+.account-home .connection-host-grid .agent-host-logo img {
+  width: 21px;
+  height: 21px;
+}
+.account-home .connection-label-field {
+  display: block;
+  color: #414844;
+  font-size: 14px;
+  font-weight: 600;
+}
+.account-home .connection-label-field > span {
+  margin-left: 6px;
+  color: #858c88;
+  font-size: 12px;
+  font-weight: 500;
+}
+.account-home .connection-label-field input {
+  max-width: 480px;
+  margin-top: 8px;
+}
+.account-home .connection-wallet-row {
+  max-width: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 0;
+  padding: 13px 15px;
+  border-radius: 13px;
+  background: #f3f4f4;
+}
+.account-home .connection-wallet-row span,
+.account-home .connection-wallet-row strong {
+  display: block;
+}
+.account-home .connection-wallet-row span {
+  color: #777f7a;
+  font-size: 12px;
+}
+.account-home .connection-wallet-row strong {
+  margin-top: 3px;
+  color: #252a27;
+  font-size: 14px;
+}
+.account-home .connection-wallet-row code {
+  color: #656d68;
+  font-size: 12px;
+}
+.account-home .connection-current-action > .primary,
+.account-home .connection-handoff-actions .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.account-home .connection-handoff-destination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.account-home .connection-handoff-destination .agent-host-logo {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #dfe3e0;
+  border-radius: 13px;
+  background: #fff;
+}
+.account-home .connection-handoff-destination strong {
+  color: #252a27;
+  font-size: 15px;
+}
+.account-home .connection-handoff-destination p {
+  margin: 3px 0 0;
+  color: #707873;
+  font-size: 13px;
+}
+.account-home .connection-setup-code {
+  max-height: 300px;
+  overflow: auto;
+  border-radius: 14px;
+}
+.account-home .connection-setup-code pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.account-home .connection-handoff-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 16px;
+}
+.account-home .connection-secret-note {
+  margin: 12px 0 0;
+  color: #777f7a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.account-home .connection-access-summary {
+  padding: 0 4px;
+  color: #525a55;
+}
+.account-home .connection-access-summary summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+}
+.account-home .connection-access-summary summary::-webkit-details-marker {
+  display: none;
+}
+.account-home .connection-access-summary[open] summary svg {
+  transform: rotate(180deg);
+}
+.account-home .connection-access-summary > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #ecefed;
+}
+.account-home .connection-access-summary p {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #5f6762;
+  font-size: 14px;
+}
+.account-home .connection-access-summary p:nth-child(-n + 2) svg {
+  color: #40584c;
+}
+.account-home .connection-access-summary p:nth-child(n + 3) svg {
+  color: #8b5b55;
+}
+
+@media (max-width: 720px) {
+  .account-home .connections-workspace .connection-page {
+    grid-template-columns: 44px minmax(0, 1fr);
+    margin-top: 0;
+    padding: 18px 0 24px;
+  }
+  .account-home .connections-workspace .connection-page-mark {
+    width: 44px;
+    height: 44px;
+  }
+  .account-home .connections-workspace .connection-page > .primary {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+  .account-home .connection-roster,
+  .account-home .connection-composer {
+    padding: 22px 20px;
+  }
+  .account-home .connection-roster-head,
+  .account-home .connection-composer-head {
+    gap: 14px;
+  }
+  .account-home .connection-roster-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    padding: 14px 0;
+  }
+  .account-home .connection-roster-row .connection-status {
+    display: none;
+  }
+  .account-home .connection-host-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .account-home .connection-access-summary > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .account-home .connection-roster-head,
+  .account-home .connection-composer-head {
+    display: grid;
+  }
+  .account-home .connection-roster-head .secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  .account-home .connection-step-pill {
+    grid-row: 1;
+    width: max-content;
+  }
+  .account-home .connection-roster-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .account-home .connection-roster-row > .text-button {
+    grid-column: 2;
+    width: max-content;
+  }
+  .account-home .connection-handoff-actions {
+    display: grid;
+  }
+  .account-home .connection-wallet-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 .connection-page {
   max-width: 520px;
   margin: 70px auto 100px;
@@ -2577,4 +2973,81 @@ body {
 }
 .account-home .mobile-status {
   text-align: center;
+}
+
+/* Final connect-page overrides live after the legacy workspace rules. */
+.account-home .connections-workspace .connection-page {
+  width: min(100%, 920px);
+  margin: 18px auto 28px;
+  padding: 22px 0 28px;
+  border: 0;
+  border-bottom: 1px solid #dfe2df;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.account-home .connection-host-grid button,
+.account-home .connection-host-grid button.selected {
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  color: #4f5752;
+  background: #fafbfa;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.account-home .connection-host-grid button.selected {
+  border-color: #6e7972;
+  color: #252a27;
+  background: #edf0ee;
+  box-shadow: 0 0 0 2px rgba(74, 87, 79, 0.09);
+}
+.account-home .connection-host-grid button .agent-host-logo,
+.account-home .connection-host-grid button.selected .agent-host-logo {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e3e1;
+  border-radius: 11px;
+  background: #fff;
+}
+.account-home .connection-host-grid .agent-host-logo img {
+  width: 21px;
+  height: 21px;
+}
+@media (max-width: 720px) {
+  .account-home .connections-workspace .connection-page {
+    margin-top: 0;
+    padding: 18px 0 24px;
+  }
+  .wayleave-app:has(.connections-workspace) .app-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding-inline: 28px;
+  }
+  .wayleave-app:has(.connections-workspace) .app-brand-group {
+    width: 100%;
+  }
+  .wayleave-app:has(.connections-workspace) .app-header nav {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    border-radius: 16px;
+    scrollbar-width: none;
+  }
+  .wayleave-app:has(.connections-workspace) .app-header nav::-webkit-scrollbar {
+    display: none;
+  }
+  .wayleave-app:has(.connections-workspace) .app-header nav a {
+    flex: 0 0 auto;
+    padding-inline: 14px;
+  }
 }

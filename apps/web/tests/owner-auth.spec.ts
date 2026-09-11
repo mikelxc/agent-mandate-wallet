@@ -202,32 +202,30 @@ for (const validSignature of [true, false])
         await expect(page.locator('.mobile-agent-onboarding')).toBeHidden();
 
         await page.getByRole('link', { name: 'Connect an agent', exact: true }).click();
-        await expect(page.getByRole('heading', { name: 'Manage MCP connections' })).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByRole('heading', { name: 'Connections', exact: true })).toBeVisible({ timeout: 20_000 });
         expect(signatures).toBe(1);
-        await expect(page.locator('.agent-row')).toContainText('Existing agent');
+        await expect(page.locator('.connection-roster-row')).toContainText('Existing agent');
+        await page.getByRole('button', { name: 'Add connection', exact: true }).click();
         await page.locator('.desktop-host-picker').getByRole('button', { name: 'Generic MCP' }).click();
         await page.getByRole('button', { name: 'Create Generic MCP connection', exact: true }).click();
-        await expect(page.locator('.agent-row')).toHaveCount(2);
-        await expect(page.locator('.agent-row').last()).toContainText('Generic MCP connection');
-        const token = await page.getByLabel('Agent connection key', { exact: true }).inputValue();
-        await page.getByRole('button', { name: 'Copy agent setup guide', exact: true }).first().click();
-        await expect(page.getByRole('button', { name: 'Copied setup guide', exact: true }).first()).toBeVisible();
-        await expect(page.locator('.mobile-status')).toContainText('Agent setup guide copied.');
-        const guide = await page.evaluate(() => navigator.clipboard.readText());
-        expect(guide).toContain('local stdio');
-        expect(guide).toContain('get_account');
-        expect(guide).toContain('<WAYLEAVE_AGENT_TOKEN>');
-        expect(guide).not.toContain(token);
-        await page.locator('.agent-row').last().getByRole('button', { name: 'Revoke' }).click();
-        await expect(page.locator('.agent-row')).toHaveCount(1);
-        const agentArchive = page.locator('.archived-records').filter({ hasText: 'Expired & revoked agents' });
+        await expect(page.locator('.connection-roster-row')).toHaveCount(2);
+        await expect(page.locator('.connection-roster-row').last()).toContainText('Generic MCP connection');
+        await page.getByRole('button', { name: 'Copy Generic MCP setup', exact: true }).click();
+        await expect(page.locator('.mobile-status')).toContainText('Generic MCP setup copied.');
+        const setup = await page.evaluate(() => navigator.clipboard.readText());
+        expect(setup).toContain('WAYLEAVE_AGENT_TOKEN');
+        expect(setup).not.toContain('<create-a-generic-connection>');
+        await page.getByRole('button', { name: 'Done', exact: true }).click();
+        await page.locator('.connection-roster-row').last().getByRole('button', { name: 'Revoke' }).click();
+        await expect(page.locator('.connection-roster-row')).toHaveCount(1);
+        const agentArchive = page.locator('.archived-records').filter({ hasText: 'Past connections' });
         await expect(agentArchive).not.toHaveAttribute('open', '');
         await agentArchive.locator('summary').click();
         await expect(agentArchive.locator('.archive-row')).toContainText('Revoked');
         await agentArchive.getByRole('button', { name: 'Hide Generic MCP connection', exact: true }).click();
         await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
 
-        await expect(page.getByLabel('Agent connection key', { exact: true })).toHaveCount(0);
+        await expect(page.getByText('Finish in Generic MCP', { exact: true })).toHaveCount(0);
         for (const width of [390, 1280]) {
           await page.setViewportSize({ width, height: 900 });
           await page.screenshot({ path: `/tmp/wayleave-connect-${width}.png`, fullPage: true });
