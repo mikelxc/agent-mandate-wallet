@@ -1,9 +1,14 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { verifyMessage, type Address, type Hex } from 'viem';
+import { decodeFunctionData, encodeFunctionResult, multicall3Abi, verifyMessage, type Address, type Hex } from 'viem';
+import { sepolia } from 'viem/chains';
+import { sepoliaDeployment } from '@mandate/sdk';
 import { Store } from '../../gateway/src/store';
 import { createHostedGateway } from '../../gateway/src/hosted';
 import type { Chain } from '../../gateway/src/chain';
+
+test.setTimeout(60_000);
 
 for (const validSignature of [true, false])
   test(`Reown wallet flow ${validSignature ? 'verifies ownership' : 'rejects a wrong-wallet signature'}`, async ({
@@ -15,13 +20,48 @@ for (const validSignature of [true, false])
       ? owner
       : privateKeyToAccount(generatePrivateKey());
     const store = new Store(':memory:');
-    const chain = {
+    const chain: Chain = {
+      ownership: async () => ({ owner: owner.address.toLowerCase(), tokenId: '1', epoch: '0' }),
       verifyLogin: (address, message, signature) =>
         verifyMessage({ address: address as Address, message, signature }),
-    } as Chain;
+      balances: async () => { throw new Error('Not used by connection tests'); },
+      prepare: async () => { throw new Error('Not used by connection tests'); },
+      verifyApproval: async () => { throw new Error('Not used by connection tests'); },
+      receipt: async () => { throw new Error('Not used by connection tests'); },
+    };
     const gateway = createHostedGateway(store, chain, [
       new URL(baseURL!).origin,
     ]);
+    await store.createAgent({ owner: owner.address.toLowerCase(), name: 'Existing agent', account: '0x1111111111111111111111111111111111111111', tokenHash: 'test-existing-token-hash', expiresAt: Math.floor(Date.now() / 1000) + 86400 }, Math.floor(Date.now() / 1000));
+    let nfatBalance = 0;
+    let balanceReads = 0;
+    await page.route((url) => url.hostname === new URL(sepolia.rpcUrls.default.http[0]).hostname || url.hostname === 'rpc.walletconnect.org', async (route) => {
+      const body = route.request().postDataJSON();
+      const contractReply = (target: string, data: Hex): { success: boolean; returnData: Hex } => {
+        if (data.startsWith('0x70a08231') && target.toLowerCase() === sepoliaDeployment.registry.toLowerCase()) {
+          expect(data.slice(-40).toLowerCase()).toBe(owner.address.slice(2).toLowerCase());
+          balanceReads++;
+          return { success: true, returnData: `0x${nfatBalance.toString(16).padStart(64, '0')}` };
+        }
+        return { success: false, returnData: '0x' };
+      };
+      const reply = (call: any) => {
+        if (call.method === 'eth_call') {
+          const { to, data } = call.params[0];
+          if (data.startsWith('0x82ad56cb')) {
+            const decoded = decodeFunctionData({ abi: multicall3Abi, data });
+            if (decoded.functionName === 'aggregate3') {
+              const result = decoded.args[0].map((entry) => contractReply(entry.target, entry.callData));
+              return { jsonrpc: '2.0', id: call.id, result: encodeFunctionResult({ abi: multicall3Abi, functionName: 'aggregate3', result }) };
+            }
+          }
+          const result = contractReply(to, data);
+          if (result.success) return { jsonrpc: '2.0', id: call.id, result: result.returnData };
+        }
+        return { jsonrpc: '2.0', id: call.id, error: { code: -32000, message: 'Not available in this UI test' } };
+      };
+      await route.fulfill({ json: Array.isArray(body) ? body.map(reply) : reply(body) });
+    });
     let signatures = 0;
     let verified = false;
     let verificationStatus = 0;
@@ -139,6 +179,43 @@ for (const validSignature of [true, false])
         await expect(page.locator('.mobile-status')).toContainText(
           'Owner verified.',
         );
+        // A connected wallet and old MCP connection alone must not skip setup.
+        await page.evaluate(() => window.history.pushState(null, '', '/?setup=1&from=test'));
+        await expect.poll(() => balanceReads).toBeGreaterThan(0);
+        await expect(page).toHaveURL(/setup=1/);
+        await expect(page.locator('.mobile-agent-onboarding')).toBeVisible();
+        nfatBalance = 1;
+        await page.evaluate(() => window.history.pushState(null, '', '/?setup=1&from=test-owned#activity'));
+        await expect(page).toHaveURL(/\/\?from=test-owned#activity$/);
+        await expect(page.locator('.mobile-agent-onboarding')).toBeHidden();
+
+        await page.getByRole('link', { name: 'Connect an agent', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Manage MCP connections' })).toBeVisible({ timeout: 20_000 });
+        expect(signatures).toBe(1);
+        await expect(page.locator('.agent-row')).toContainText('Existing agent');
+        await page.locator('.desktop-host-picker').getByRole('button', { name: 'Generic MCP' }).click();
+        await page.getByRole('button', { name: 'Create Generic MCP connection', exact: true }).click();
+        await expect(page.locator('.agent-row')).toHaveCount(2);
+        await expect(page.locator('.agent-row').last()).toContainText('Generic MCP connection');
+        const token = await page.getByLabel('Agent connection key', { exact: true }).inputValue();
+        const downloaded = page.waitForEvent('download');
+        await page.getByRole('button', { name: 'Download agent setup (.md)', exact: true }).first().click();
+        const download = await downloaded;
+        expect(download.suggestedFilename()).toBe('wayleave-generic-setup.md');
+        const guide = await readFile((await download.path())!, 'utf8');
+        expect(guide).toContain('local stdio');
+        expect(guide).toContain('get_account');
+        expect(guide).toContain('<WAYLEAVE_AGENT_TOKEN>');
+        expect(guide).not.toContain(token);
+        await page.locator('.agent-row').last().getByRole('button', { name: 'Revoke' }).click();
+        await expect(page.locator('.agent-row').last()).toContainText('Revoked');
+        await expect(page.getByLabel('Agent connection key', { exact: true })).toHaveCount(0);
+        for (const width of [390, 1280]) {
+          await page.setViewportSize({ width, height: 900 });
+          await page.screenshot({ path: `/tmp/wayleave-connect-${width}.png`, fullPage: true });
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        }
+
       } else {
         expect(verified).toBe(false);
         expect(cookie).not.toContain('mandate_session=');

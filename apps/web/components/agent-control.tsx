@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { SetupRouteGuard } from './setup-route-guard';
 import Link from 'next/link';
 import { SpendingOverview } from './spending-overview';
+import { buildAgentSetupGuide } from '../lib/agent-setup-guide';
 import { PaymentSetup } from './payment-setup';
 import {
   useConnect,
@@ -62,7 +64,7 @@ type Row = Operation & {
   };
 };
 
-type AgentHost = 'codex' | 'claude' | 'cursor';
+type AgentHost = 'codex' | 'claude' | 'cursor' | 'generic';
 
 const agentHosts: Array<{
   id: AgentHost;
@@ -72,6 +74,7 @@ const agentHosts: Array<{
   { id: 'codex', name: 'Codex', detail: 'Desktop · CLI · IDE' },
   { id: 'claude', name: 'Claude', detail: 'Desktop · Code' },
   { id: 'cursor', name: 'Cursor', detail: 'Editor · Agent' },
+  { id: 'generic', name: 'Generic MCP', detail: 'Any local stdio client' },
 ];
 const mcpPackage = 'wayleave-mcp@0.1.1';
 async function api<T>(path: string, data?: unknown): Promise<T> {
@@ -96,7 +99,7 @@ function nowSeconds() {
   return Date.now() / 1000;
 }
 
-export function AgentControl() {
+export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: boolean }) {
   const { address, chainId, connector: currentConnector } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
@@ -121,6 +124,7 @@ export function AgentControl() {
   const [account, setAccount] = useState('');
   const [token, setToken] = useState('');
   const [tokenHost, setTokenHost] = useState<AgentHost>();
+  const [tokenAgentId, setTokenAgentId] = useState('');
   const [setupPayment, setSetupPayment] = useState<string>();
   const [reviewError, setReviewError] = useState<{
     id: string;
@@ -143,18 +147,8 @@ export function AgentControl() {
   const [creationHash, setCreationHash] = useState<Hex>();
   const [uiReady, setUiReady] = useState(false);
   useEffect(() => {
-    try {
-      setMobilePro(
-        new URLSearchParams(window.location.search).get('setup') !== '1',
-      );
-    } catch {
-      /* Storage is optional. */
-    }
-    setRequestedOperation(
-      new URLSearchParams(window.location.search).get('operation') ?? '',
-    );
     setUiReady(true);
-  }, []);
+  }, [connectionsOnly]);
   function showDashboard(show: boolean) {
     setMobilePro(show);
     try {
@@ -190,6 +184,11 @@ export function AgentControl() {
   useEffect(() => {
     let cancelled = false;
     setSession('');
+    setToken('');
+    setTokenHost(undefined);
+    setAccount('');
+    setNfatId(undefined);
+    setIdentityLabel('');
     setAgents([]);
     setOperations([]);
     void api<{ address: string; chainId: number }>('/auth/session')
@@ -775,7 +774,26 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       ? 'Add to .codex/config.toml or Settings → MCP servers'
       : agentHost === 'cursor'
         ? 'Save as .cursor/mcp.json in your project'
-        : 'Add to claude_desktop_config.json';
+        : agentHost === 'generic'
+          ? 'Add the server to your client’s local stdio MCP settings; adapt the JSON wrapper to its format'
+          : 'Add to claude_desktop_config.json';
+  function downloadGuide() {
+    const guide = buildAgentSetupGuide({
+      host: selectedHost.name,
+      destination: mcpDestination,
+      config: mcpConfig.replaceAll(credential, '<WAYLEAVE_AGENT_TOKEN>'),
+      format: agentHost === 'codex' ? 'toml' : 'json',
+      gateway: agentGateway,
+      account: selectedAccount,
+    });
+    const url = URL.createObjectURL(new Blob([guide], { type: 'text/markdown;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `wayleave-${agentHost}-setup.md`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setMessage('Agent setup guide downloaded. Supply the connection key separately in the client’s private settings.');
+  }
   const identityName = agentEnsName(identityLabel);
   const identityLoaded =
     hasAccount && nfatId !== undefined && !identityLoadError;
@@ -786,6 +804,13 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       : 'Loading ENSv2 identity…';
   return (
     <>
+      <Suspense fallback={null}>
+        <SetupRouteGuard
+          connectionsOnly={connectionsOnly}
+          onDashboardChange={setMobilePro}
+          onOperationChange={setRequestedOperation}
+        />
+      </Suspense>
       <section
         className={`mobile-agent-onboarding ${mobilePro || !uiReady ? 'hidden' : ''}`}
         data-step={mobileStep}
@@ -1126,6 +1151,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                       token: string;
                     }>('/agents', { name: name.trim() || `${selectedHost.name} connection`, account: selectedAccount });
                     setToken(result.token);
+                    setTokenAgentId(result.agent.id);
                     setTokenHost(agentHost);
                     setMessage(
                       `${selectedHost.name} connection created. Copy its setup now; create another connection for each additional client.`,
@@ -1194,6 +1220,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               >
                 <Clipboard size={16} /> Copy {selectedHost.name} setup
               </button>
+              <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
               <p className="mobile-trust">
                 {mcpDestination}.{' '}
                 {agentGateway.startsWith('http://127.0.0.1')
@@ -1227,9 +1254,21 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       </section>
 
       <div
-        className={`agent-shell desktop-agent-pro ${mobilePro && uiReady ? 'show-on-mobile' : ''} ${requestedOperation ? 'focused-payment' : ''}`}
+        className={`agent-shell desktop-agent-pro ${connectionsOnly ? 'connections-workspace' : ''} ${mobilePro && uiReady ? 'show-on-mobile' : ''} ${requestedOperation ? 'focused-payment' : ''}`}
       >
-        {(!requestedOperation || !signedIn) && (
+        {connectionsOnly && (
+          <section className="connection-page">
+            <TerminalSquare size={26} strokeWidth={1.4} />
+            <h1>{signedIn ? 'Manage MCP connections' : 'Connect your agent'}</h1>
+            <p>{address
+              ? `Wallet connected: ${address.slice(0, 6)}…${address.slice(-4)}. ${signedIn ? 'Create a separate connection for each agent app, or revoke its access below.' : 'Verify ownership to load and manage your connections.'}`
+              : 'Connect your wallet to create and manage agent connections. Your agent can read and request payments; you approve spending.'}</p>
+            {!signedIn && <button className="primary" disabled={!uiReady || busy || authStage !== 'idle'} onClick={() => void run(login)}>{uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} /></button>}
+            <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
+            <p>The guide contains no connection key. Supports Codex, Claude, Cursor, and generic local stdio MCP clients.</p>
+          </section>
+        )}
+        {!connectionsOnly && (!requestedOperation || !signedIn) && (
           <SpendingOverview
             signedIn={signedIn}
             address={address}
@@ -1248,14 +1287,14 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
 
         {signedIn && !requestedOperation && (
           <div className="agent-grid">
-            <details className="panel setup-panel">
+            <details className="panel setup-panel" open={connectionsOnly ? true : undefined}>
               <summary className="setup-disclosure">
-                Connect another agent <ChevronDown size={16} />
+                Create an MCP connection <ChevronDown size={16} />
               </summary>
               <div className="setup-head">
                 <div>
                   <div className="eyebrow">GET STARTED</div>
-                  <h2>Connect your first agent</h2>
+                  <h2>{agents.length ? 'Connect another agent' : 'Connect your first agent'}</h2>
                 </div>
                 <strong>{setupCount} / 5</strong>
               </div>
@@ -1451,8 +1490,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             const result = await api<{
                               agent: AgentConnection;
                               token: string;
-                            }>('/agents', { name, account: selectedAccount });
+                            }>('/agents', { name: name.trim() || `${selectedHost.name} connection`, account: selectedAccount });
                             setToken(result.token);
+                    setTokenAgentId(result.agent.id);
                             setTokenHost(agentHost);
                             setMessage(
                               `${selectedHost.name} connection created for 24 hours. Copy its setup now; create another connection for each additional client.`,
@@ -1525,6 +1565,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           <Clipboard size={14} /> Copy
                         </button>
                       </div>
+                      <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
+                      <p>The guide omits your key. Supply it separately in private client settings.</p>
                       <div className="tool-chips">
                         <span>
                           get_account <small>read</small>
@@ -1585,6 +1627,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         onClick={() =>
                           void run(async () => {
                             await api(`/agents/${a.id}/revoke`, {});
+                            if (a.id === tokenAgentId) {
+                              setToken('');
+                              setTokenHost(undefined);
+                            }
                             setMessage(
                               'Agent API access revoked. Existing signed payments and token allowances are unchanged.',
                             );
@@ -1673,7 +1719,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           </section>
         )}
 
-        {signedIn && (
+        {signedIn && !connectionsOnly && (
           <section className="panel approval-panel" id="activity">
             <div className="approval-head">
               <div>

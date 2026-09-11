@@ -2255,3 +2255,41 @@ body {
     width: 16px;
   }
 }
+
+/* Keep all four MCP clients balanced on narrow screens. */
+.account-home .agent-host-picker {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.connection-page > .secondary {
+  margin-top: 12px;
+}
+
+.account-home .connections-workspace .setup-panel {
+  display: block;
+  min-width: 0;
+}
+.account-home .connections-workspace .connection-page {
+  max-width: none;
+  margin: 0;
+  padding: 36px 0;
+}
+.account-home .connections-workspace .agent-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+}
+.account-home .connections-workspace .agent-side {
+  min-width: 0;
+}
+.account-home .connections-workspace .code-block pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .account-home .connections-workspace .agent-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-home .connections-workspace .desktop-nfat-selected {
+    flex-wrap: wrap;
+  }
+}

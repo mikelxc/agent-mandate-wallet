@@ -72,6 +72,6 @@ test('walkthrough explains real authority and identity without simulating comple
   ).toBe(true);
   await page.getByRole('button', { name: 'Open my dashboard' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
+    page.getByRole('heading', { name: 'Let your agents do their thing.' }),
   ).toBeVisible();
 });

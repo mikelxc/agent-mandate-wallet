@@ -8,7 +8,7 @@ for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 740 });
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
+      page.getByRole('heading', { name: 'Let your agents do their thing.' }),
     ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Connect your wallet.' }),
@@ -33,7 +33,7 @@ for (const width of [320, 390, 1280]) {
     await page.getByRole('button', { name: 'View dashboard' }).click();
     await page.reload();
     await expect(
-      page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
+      page.getByRole('heading', { name: 'Let your agents do their thing.' }),
     ).toBeVisible();
     await page.goto('/?setup=1');
     await expect(
