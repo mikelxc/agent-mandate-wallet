@@ -98,6 +98,26 @@ async function api<T>(path: string, data?: unknown): Promise<T> {
   return value as T;
 }
 
+async function copyText(value: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    throw new Error('Clipboard API unavailable');
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', '');
+    textarea.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  }
+}
+
 function nowSeconds() {
   return Date.now() / 1000;
 }
@@ -149,6 +169,7 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
   const [identityLoadError, setIdentityLoadError] = useState('');
   const [creationHash, setCreationHash] = useState<Hex>();
   const [uiReady, setUiReady] = useState(false);
+  const [setupGuideCopied, setSetupGuideCopied] = useState(false);
   useEffect(() => {
     setUiReady(true);
   }, [connectionsOnly]);
@@ -798,19 +819,24 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       gateway: agentGateway,
       account: selectedAccount,
     });
-    void navigator.clipboard
-      .writeText(guide)
-      .then(() =>
+    setSetupGuideCopied(false);
+    void copyText(guide)
+      .then((copied) => {
+        if (!copied) throw new Error('Clipboard unavailable');
+        setSetupGuideCopied(true);
         setMessage(
           'Agent setup guide copied. Supply the connection key separately in the client’s private settings.',
-        ),
-      )
+        );
+      })
       .catch(() =>
         setMessage(
           'Clipboard unavailable. Select and copy the agent setup guide.',
         ),
       );
   }
+  const setupGuideLabel = setupGuideCopied
+    ? 'Copied setup guide'
+    : 'Copy agent setup guide';
   const identityName = agentEnsName(identityLabel);
   const identityLoaded =
     hasAccount && nfatId !== undefined && !identityLoadError;
@@ -1137,7 +1163,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     type="button"
                     aria-pressed={agentHost === host.id}
                     className={agentHost === host.id ? 'selected' : ''}
-                    onClick={() => setAgentHost(host.id)}
+                    onClick={() => {
+                      setAgentHost(host.id);
+                      setSetupGuideCopied(false);
+                    }}
                   >
                     <span className="agent-host-logo" aria-hidden="true">
                       {/* Static brand SVGs share a fixed optical frame. */}
@@ -1237,7 +1266,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               >
                 <Clipboard size={16} /> Copy {selectedHost.name} setup
               </button>
-              <button className="secondary" onClick={copySetupGuide}><Clipboard size={16} /> Copy agent setup guide</button>
+              <button className="secondary" onClick={copySetupGuide}>
+                {setupGuideCopied ? <Check size={16} /> : <Clipboard size={16} />}{' '}
+                {setupGuideLabel}
+              </button>
               <p className="mobile-trust">
                 {mcpDestination}.{' '}
                 {agentGateway.startsWith('http://127.0.0.1')
@@ -1281,7 +1313,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               ? `Wallet connected: ${address.slice(0, 6)}…${address.slice(-4)}. ${signedIn ? 'Create a separate connection for each agent app, or revoke its access below.' : 'Verify ownership to load and manage your connections.'}`
               : 'Connect your wallet to create and manage agent connections. Your agent can read and request payments; you approve spending.'}</p>
             {!signedIn && <button className="primary" disabled={!uiReady || busy || authStage !== 'idle'} onClick={() => void run(login)}>{uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} /></button>}
-            <button className="secondary" onClick={copySetupGuide}><Clipboard size={16} /> Copy agent setup guide</button>
+            <button className="secondary" onClick={copySetupGuide}>
+              {setupGuideCopied ? <Check size={16} /> : <Clipboard size={16} />}{' '}
+              {setupGuideLabel}
+            </button>
             <p>The guide contains no connection key. Supports Codex, Claude, Cursor, and generic local stdio MCP clients.</p>
           </section>
         )}
@@ -1466,7 +1501,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             type="button"
                             aria-pressed={agentHost === host.id}
                             className={agentHost === host.id ? 'selected' : ''}
-                            onClick={() => setAgentHost(host.id)}
+                            onClick={() => {
+                              setAgentHost(host.id);
+                              setSetupGuideCopied(false);
+                            }}
                           >
                             <span className="agent-host-logo" aria-hidden="true">
                       {/* Static brand SVGs share a fixed optical frame. */}
@@ -1582,7 +1620,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           <Clipboard size={14} /> Copy
                         </button>
                       </div>
-                      <button className="secondary" onClick={copySetupGuide}><Clipboard size={14} /> Copy agent setup guide</button>
+                      <button className="secondary" onClick={copySetupGuide}>
+                        {setupGuideCopied ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+                        {setupGuideLabel}
+                      </button>
                       <p>The guide omits your key. Supply it separately in private client settings.</p>
                       <div className="tool-chips">
                         <span>

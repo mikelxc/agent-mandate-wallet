@@ -211,6 +211,7 @@ for (const validSignature of [true, false])
         await expect(page.locator('.agent-row').last()).toContainText('Generic MCP connection');
         const token = await page.getByLabel('Agent connection key', { exact: true }).inputValue();
         await page.getByRole('button', { name: 'Copy agent setup guide', exact: true }).first().click();
+        await expect(page.getByRole('button', { name: 'Copied setup guide', exact: true }).first()).toBeVisible();
         await expect(page.locator('.mobile-status')).toContainText('Agent setup guide copied.');
         const guide = await page.evaluate(() => navigator.clipboard.readText());
         expect(guide).toContain('local stdio');
