@@ -70,3 +70,100 @@ test("uses only approved HTTPS deployment hosts and never follows bearer-token r
     expect(() => createGatewayClient({ token: "secret", baseUrl })).toThrow("trusted Wayleave");
   }
 });
+
+test("adds readable setup guidance while preserving account fields", async () => {
+  const client = createGatewayClient({
+    token: "secret",
+    fetchImpl: fakeFetch(() =>
+      Response.json({
+        agent: { account: "0x1111", owner: "0x2222" },
+        balances: {
+          token: "100000000",
+          allowance: "0",
+          deposit: "0",
+          tokenAddress: "0x3C14067e0dbD276c083908C1D9D2f2Dc0A65ca41",
+        },
+        chainId: 11155111,
+      }),
+    ),
+  });
+  const account = (await client.getAccount()) as any;
+  expect(account.balances.token).toBe("100000000");
+  expect(account.human.balance).toBe("100 demo USDC");
+  expect(account.human.nextSteps).toEqual([
+    "Set a capped demo USDC allowance in the owner wallet",
+    "Add a gas deposit for the account",
+  ]);
+});
+
+test("adds an owner approval action and supports a local dashboard URL", async () => {
+  const previous = process.env.WAYLEAVE_DASHBOARD_URL;
+  process.env.WAYLEAVE_DASHBOARD_URL = "http://localhost:3020";
+  try {
+    const demoIntent = {
+      ...intent,
+      token: "0x3C14067e0dbD276c083908C1D9D2f2Dc0A65ca41",
+      amount: "1",
+    };
+    const client = createGatewayClient({
+      token: "secret",
+      fetchImpl: fakeFetch(() =>
+        Response.json({ id: "op-2", status: "approval_required", intent: demoIntent }),
+      ),
+    });
+    const operation = (await client.proposePayment(demoIntent)) as any;
+    expect(operation.approvalUrl).toBe("http://localhost:3020/?operation=op-2");
+    expect(operation.human.amount).toBe("0.000001 demo USDC");
+    expect(operation.human.status).toBe("Waiting for owner approval");
+  } finally {
+    if (previous === undefined) delete process.env.WAYLEAVE_DASHBOARD_URL;
+    else process.env.WAYLEAVE_DASHBOARD_URL = previous;
+  }
+});
+
+test("rejects an untrusted dashboard URL before returning an action link", async () => {
+  process.env.WAYLEAVE_DASHBOARD_URL = "https://evil.example";
+  try {
+    const client = createGatewayClient({
+      token: "secret",
+      fetchImpl: fakeFetch(() =>
+        Response.json({ id: "op-3", status: "approval_required", intent }),
+      ),
+    });
+    await expect(client.proposePayment(intent)).rejects.toThrow("trusted Wayleave");
+  } finally {
+    delete process.env.WAYLEAVE_DASHBOARD_URL;
+  }
+});
+
+test("describes execution evidence without overstating finality or delivery", async () => {
+  const hashes = {
+    success: "0x" + "a".repeat(64),
+    failed: "0x" + "b".repeat(64),
+  };
+  const responses = [
+    { id: "paid", status: "approved", intent, execution: { success: true, transactionHash: hashes.success } },
+    { id: "failed", status: "approved", intent, execution: { success: false, transactionHash: hashes.failed } },
+    { id: "bad-proof", status: "approved", intent, execution: { success: true, transactionHash: "0x123" } },
+    { id: "approved", status: "approved", intent, approvalUrl: "http://localhost:3020/?operation=approved" },
+    { id: "expired", status: "rejected", decisionReason: "intent expired", intent },
+  ];
+  const client = createGatewayClient({
+    token: "secret",
+    fetchImpl: fakeFetch(() => Response.json(responses.shift())),
+  });
+  const paid = (await client.getOperation("paid")) as any;
+  expect(paid.human.status).toContain("confirmed onchain");
+  expect(paid.human.status).toContain("finality");
+  expect(paid.human.nextStep).toContain(hashes.success);
+  const failed = (await client.getOperation("failed")) as any;
+  expect(failed.human.status).toContain("failed onchain");
+  expect(failed.human.nextStep).toContain("Do not automatically retry");
+  const malformed = (await client.getOperation("bad-proof")) as any;
+  expect(malformed.human.status).toBe("Execution evidence is incomplete");
+  const approved = (await client.getOperation("approved")) as any;
+  expect(approved.human.status).toBe("Approved; waiting for submission");
+  expect(approved.human.nextStep).not.toContain("approval page");
+  const expired = (await client.getOperation("expired")) as any;
+  expect(expired.human.status).toBe("Payment request expired");
+});

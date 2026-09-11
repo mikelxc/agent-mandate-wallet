@@ -8,7 +8,6 @@ import {
   http,
   isAddress,
   isAddressEqual,
-  parseEther,
   type Address,
   type Hex,
 } from 'viem';
@@ -22,6 +21,8 @@ import {
   sepoliaDeployment as deployment,
   validLabel,
 } from '../../packages/sdk/src';
+import { validateDevLoginMessage } from './lib/dev-login';
+import { validateDevGasDeposit } from './lib/dev-deposit';
 
 const run = promisify(execFile);
 const keyStore = fileURLToPath(
@@ -35,7 +36,6 @@ const rpcUrl =
 const client = createPublicClient({ chain: sepolia, transport: http(rpcUrl) });
 const credentials = ['--keystore', keyStore, '--password-file', passwordFile];
 const maxDemoAmount = 100_000_000n;
-const gasDeposit = parseEther('0.005');
 
 type RpcRequest = { id?: unknown; method?: unknown; params?: unknown };
 type Transaction = { from?: Address; to?: Address; data?: Hex; value?: Hex };
@@ -272,6 +272,20 @@ export function createDevWalletHandler(enabled: boolean) {
     ]);
   }
 
+  async function signPersonalMessage(params: unknown, expectedOwner: Address, origin: string) {
+    if (!Array.isArray(params) || params.length !== 2 || params.length > 2)
+      throw new Error('Local sign-in requires exactly a message and wallet address.');
+    const [rawMessage, requestedAddress] = params as [string, string];
+    if (
+      typeof rawMessage !== 'string' ||
+      rawMessage.length > 20_000 ||
+      typeof requestedAddress !== 'string'
+    )
+      throw new Error('Local sign-in requires a message and wallet address.');
+    const message = validateDevLoginMessage(rawMessage, requestedAddress, expectedOwner, origin);
+    return cast(['wallet', 'sign', message, ...credentials]);
+  }
+
   async function sendTransaction(params: unknown, expectedOwner: Address) {
     const [tx] = params as [Transaction];
     if (
@@ -324,8 +338,7 @@ export function createDevWalletHandler(enabled: boolean) {
       if (decoded.functionName === 'depositTo') {
         const [account] = decoded.args;
         allowedAccount(account);
-        if (value !== gasDeposit)
-          throw new Error('Only the fixed 0.005 ETH gas deposit is allowed.');
+        validateDevGasDeposit(value);
       } else if (decoded.functionName === 'handleOps') {
         const [ops, beneficiary] = decoded.args;
         if (
@@ -375,6 +388,8 @@ export function createDevWalletHandler(enabled: boolean) {
         result = await prepareOperation(request.params, expectedOwner);
       else if (request.method === 'eth_signTypedData_v4')
         result = await signTypedData(request.params, expectedOwner);
+      else if (request.method === 'personal_sign')
+        result = await signPersonalMessage(request.params, expectedOwner, req.headers.origin!);
       else if (request.method === 'eth_sendTransaction')
         result = await sendTransaction(request.params, expectedOwner);
       else

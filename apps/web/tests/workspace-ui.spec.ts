@@ -2,73 +2,64 @@ import { expect, test } from '@playwright/test';
 
 test.setTimeout(30_000);
 for (const width of [320, 390, 1280]) {
-  test(`real account home and dismissible setup at ${width}px`, async ({
+  test(`spending dashboard and optional setup at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 740 });
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: 'Try Wayleave.' }),
+      page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
     ).toBeVisible();
     await expect(
-      page.getByText('Run example journey', { exact: true }),
-    ).toHaveCount(0);
+      page.getByRole('heading', { name: 'Connect your wallet.' }),
+    ).toBeHidden();
     await expect(
-      page.getByRole('button', { name: 'View dashboard' }),
-    ).toBeVisible();
+      page.getByRole('heading', { name: 'Activity', exact: true }),
+    ).toBeHidden();
     const connectBounds = await page
       .getByRole('button', { name: 'Connect wallet', exact: true })
       .boundingBox();
     expect(connectBounds).not.toBeNull();
     expect(connectBounds!.y + connectBounds!.height).toBeLessThan(740);
-    await page.getByRole('button', { name: 'View dashboard' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Your agents.' }),
-    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    await page.goto('/?setup=1');
+    await expect(
+      page.getByRole('heading', { name: 'Connect your wallet.' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'View dashboard' }).click();
     await page.reload();
     await expect(
-      page.getByRole('heading', { name: 'Your agents.' }),
+      page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
     ).toBeVisible();
+    await page.goto('/?setup=1');
     await expect(
-      page.getByRole('heading', { name: 'Try Wayleave.' }),
-    ).toBeHidden();
-    await page.getByRole('button', { name: 'Set up an agent' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Try Wayleave.' }),
+      page.getByRole('heading', { name: 'Connect your wallet.' }),
     ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    if (process.env.MANDATE_CAPTURE_UI === 'true')
-      await page.screenshot({
-        path: `/private/tmp/wayleave-restored-${width}.png`,
-        fullPage: true,
-        animations: 'disabled',
-      });
   });
 }
 
-test('account settings are separate and collapsed by default', async ({
+test('wallet access does not expose developer payment controls', async ({
   page,
 }) => {
   await page.goto('/accounts');
   await expect(
-    page.getByRole('heading', { name: 'Your account.' }),
+    page.getByRole('heading', { name: 'Wallet access' }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Create account + approve allowance' }),
-  ).toBeHidden();
-  await page.getByText('Funding & account settings', { exact: true }).click();
+  ).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Create account + approve allowance' }),
-  ).toBeVisible();
+    page.getByRole('button', { name: 'Sign + send payment' }),
+  ).toHaveCount(0);
 });
 
 for (const width of [390, 1280]) {

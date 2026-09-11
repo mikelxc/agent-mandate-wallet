@@ -6,24 +6,24 @@ test.setTimeout(30_000);
 test('walkthrough explains real authority and identity without simulating completion', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/?setup=1');
   await expect(
-    page.getByRole('heading', { name: 'Try Wayleave.' }),
+    page.getByRole('heading', { name: 'Connect your wallet.' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Go to step 2', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'You approve every payment.' }),
+    page.getByRole('heading', { name: 'How your agent spends.' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Use these permissions' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Give the account a name.' }),
+    page.getByRole('heading', { name: 'Name your agent’s wallet' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Create named account' }),
+    page.getByRole('button', { name: 'Create agent wallet' }),
   ).toBeDisabled();
-  await expect(page.getByLabel('Account name')).toHaveValue('my-agent');
+  await expect(page.getByLabel('Agent wallet name')).toHaveValue('');
   await page.getByRole('button', { name: 'Go to step 4', exact: true }).click();
-  const cursor = page.getByRole('button', { name: 'CR Cursor Editor · Agent' });
+  const cursor = page.getByRole('button', { name: 'Cursor Editor · Agent' });
   await cursor.click();
   await expect(cursor).toHaveAttribute('aria-pressed', 'true');
   await expect(
@@ -35,11 +35,11 @@ test('walkthrough explains real authority and identity without simulating comple
   );
   await expect(page.locator('.mobile-config-preview')).toContainText('bunx');
   await expect(page.locator('.mobile-config-preview')).toContainText(
-    'wayleave-mcp@0.1.0',
+    'wayleave-mcp@0.1.1',
   );
   await expect(page.getByLabel('Wayleave checkout path')).toHaveCount(0);
   const codex = page.getByRole('button', {
-    name: 'CX Codex Desktop · CLI · IDE',
+    name: 'Codex Desktop · CLI · IDE',
   });
   await codex.click();
   await expect(codex).toHaveAttribute('aria-pressed', 'true');
@@ -54,10 +54,10 @@ test('walkthrough explains real authority and identity without simulating comple
   ).toBeDisabled();
   await page.getByRole('button', { name: 'Continue to account' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Your account.' }),
+    page.getByRole('heading', { name: 'Your agent wallet is ready.' }),
   ).toBeVisible();
   await page
-    .getByText('Account details & verification', { exact: true })
+    .getByText('Wallet details & verification', { exact: true })
     .click();
   await expect(
     page.getByRole('button', { name: 'Verify NFT → account' }),
@@ -72,6 +72,6 @@ test('walkthrough explains real authority and identity without simulating comple
   ).toBe(true);
   await page.getByRole('button', { name: 'Open my dashboard' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Your agents.' }),
+    page.getByRole('heading', { name: 'Give your agent a wallet you control.' }),
   ).toBeVisible();
 });

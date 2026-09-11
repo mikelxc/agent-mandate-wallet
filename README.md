@@ -1,6 +1,6 @@
 # Wayleave
 
-**Your intent. Your account. Your rules.**
+**Your agent requests a payment. You decide whether it gets paid.**
 
 Wayleave turns human intent into accountable onchain actions. It combines customizable smart accounts, NFT-based ownership, and an agent interface with a human approval dashboard. An agent requests a payment, the owner approves its exact terms, and both can inspect the transaction outcome.
 
@@ -10,7 +10,7 @@ The Sepolia wallet now uses pinned Kernel v4 with EntryPoint 0.9 and our NFT own
 
 The new [passkey root factory](docs/passkey-accounts.md) supports deterministic Kernel accounts with self-owned identity NFTs and an account-owned ENS adapter. Contracts and SDK helpers are implemented; browser onboarding and a passkey Sepolia deployment are pending.
 
-The default UI opens a dismissible walkthrough: **Wallet → Approval-only policy → Named account transaction → MCP client → NFAT selection → MCP connection → NFT interoperability**. Returning users see real accounts and payment requests, with no persistent simulated activity. The first transaction creates the NFAT and ENS name on Sepolia; it does not charge a name fee or approve token spending. Developer tools preserves the existing contract workflows. [Design decisions and Mobbin references](docs/plans/workspace-ux.md). Run the local UI regression suite with `bun run --cwd apps/web e2e:ui`; live sponsor execution is a separate E2E milestone.
+The default UI opens a focused wallet connection screen. After verification, it shows payment requests, receipts and connected agents; a direct request link opens only that payment. A separate guided setup creates the NFT-owned spending wallet and connects a local MCP client. The wallet page manages balances and capped allowances; the connection page clearly labels embedded ChatGPT/Claude UI and terminal pairing as planned. See [the spending redesign and integration plan](docs/plans/spending-control-redesign.md) and [the browser/MCP usability run](docs/owner-mcp-usability.md). Existing developer tools preserve contract workflows.
 
 Owner connection uses Reown AppKit with wagmi, supporting injected wallets and WalletConnect QR/mobile links. The public Reown project ID is configured in `apps/web/lib/wallet-config.ts`. Connecting does not authenticate the gateway: the owner explicitly verifies with the existing login signature afterward. AppKit loads in the browser so its SDK is not evaluated during server rendering.
 
@@ -69,7 +69,7 @@ bun run smoke       # requires Anvil running; deploys isolated demo contracts
 
 `bun run dev:e2e` enables an opt-in Wagmi connector for exercising the Sepolia UI with the ignored encrypted test keystore in `.secrets/`. The private key is never sent to or bundled into the browser. A loopback-only Next.js development launcher exposes a same-origin wallet endpoint only while this command is running; ordinary development and production builds do not enable it. The launcher refuses production mode and Vercel environments.
 
-The endpoint is chain-locked to Sepolia and allowlists only this deployment's checked account creation, bounded demo-token mint/approval, fixed gas deposit, and validated single-payment UserOperation. The UI must register the complete UserOperation before its short-lived action hash can be signed. Treat the signer as a hot test key: never fund it with mainnet assets or reuse it for production authority.
+The endpoint is chain-locked to Sepolia and allowlists only this deployment's checked account creation, bounded demo-token mint/approval, bounded gas deposit (up to 0.005 Sepolia ETH), and validated single-payment UserOperation. The UI must register the complete UserOperation before its short-lived action hash can be signed. Treat the signer as a hot test key: never fund it with mainnet assets or reuse it for production authority.
 
 Run the real browser regression explicitly—it spends Sepolia test gas:
 

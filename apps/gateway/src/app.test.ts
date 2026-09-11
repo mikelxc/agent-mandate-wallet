@@ -4,7 +4,7 @@ import { verifyMessage, type Address, type Hex } from "viem";
 import { sepoliaDeployment } from "@mandate/sdk";
 import { Store } from "./store";
 import { createApp } from "./app";
-import type { Chain, Prepared } from "./chain";
+import { PaymentPreparationError, type Chain, type Prepared } from "./chain";
 import type { PaymentIntent } from "@mandate/protocol";
 const owner = privateKeyToAccount(
   "0x59c6995e998f97a5a0044976f0945389dc9e86dae88c7a4f6d7e9c8f7d2b7a11",
@@ -266,6 +266,19 @@ describe("gateway app", () => {
         })
       ).status,
     ).toBe(409);
+    const originalPrepare = f.chain.prepare;
+    for (const [failure, expected] of [
+      [new PaymentPreparationError("funding_required", "Set a capped allowance and add gas."), "Set a capped allowance and add gas."],
+      [new Error("RPC failed https://provider.invalid/private-credential"), "Operation could not be completed. Check ownership, token allowance, balance and gas deposit, then retry."],
+    ] as const) {
+      f.chain.prepare = async () => { throw failure; };
+      const response = await call(f.app, `/operations/${op.id}/prepare`, {
+        method: "POST", headers: { Cookie: cookie }, body: "{}",
+      });
+      expect(response.status).toBe(422);
+      expect((await response.json() as { error: string }).error).toBe(expected);
+    }
+    f.chain.prepare = originalPrepare;
     await call(f.app, `/operations/${op.id}/prepare`, {
       method: "POST",
       headers: { Cookie: cookie },

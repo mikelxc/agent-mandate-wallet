@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Sprout } from 'lucide-react';
+import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export function AppFrame({
@@ -7,7 +7,7 @@ export function AppFrame({
   active = 'agents',
 }: {
   children: ReactNode;
-  active?: 'agents' | 'account' | 'tools';
+  active?: 'agents' | 'account' | 'tools' | 'connect';
 }) {
   return (
     <div className="wayleave-app">
@@ -17,7 +17,7 @@ export function AppFrame({
       <header className="app-header">
         <Link href="/" className="app-brand">
           <span>
-            <Sprout size={23} />
+            <ShieldCheck size={23} />
           </span>
           wayleave<span className="app-testnet">Sepolia testnet</span>
         </Link>
@@ -26,13 +26,19 @@ export function AppFrame({
             href="/"
             aria-current={active === 'agents' ? 'page' : undefined}
           >
-            My agents
+            Spending
           </Link>
           <Link
             href="/accounts"
             aria-current={active === 'account' ? 'page' : undefined}
           >
-            Account
+            Wallets
+          </Link>
+          <Link
+            href="/connect"
+            aria-current={active === 'connect' ? 'page' : undefined}
+          >
+            Connect an agent
           </Link>
         </nav>
       </header>
@@ -40,7 +46,7 @@ export function AppFrame({
         {children}
       </main>
       <footer className="app-footer">
-        <span>Sepolia testnet · You’re in control.</span>
+        <span>Sepolia · Test funds only</span>
         <Link href="/advanced">
           Developer tools <ArrowUpRight size={13} />
         </Link>

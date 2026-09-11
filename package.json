@@ -17,7 +17,7 @@
     "test:contracts": "cd packages/contracts && forge test",
     "abi": "bun scripts/generate-abi.ts",
     "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/gateway typecheck && bun run --cwd packages/agent-tools typecheck",
-    "test": "bun test packages/sdk packages/protocol packages/agent-tools apps/gateway/src apps/web/dev-wallet-server.test.ts && bun run test:contracts",
+    "test": "bun test packages/sdk packages/protocol packages/agent-tools apps/gateway/src apps/web/dev-wallet-server.test.ts apps/web/lib/dev-login.test.ts apps/web/lib/dev-deposit.test.ts apps/web/lib/wallet-connect.test.ts apps/web/lib/owner-challenge.test.ts apps/web/lib/payment-setup.test.ts && bun run test:contracts",
     "check": "bun run build && bun run typecheck && bun run test",
     "chain": "anvil",
     "deploy:local": "cd packages/contracts && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",

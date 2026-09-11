@@ -1,0 +1,1010 @@
+:root {
+  --ink: #23252a;
+  --muted: #777b84;
+  --line: #e8e9ed;
+  --soft-line: #f0f1f3;
+  --surface: #fff;
+  --soft: #fafafa;
+  --accent: #ebebfc;
+  --accent-ink: #5350ac;
+  --dark: #5350ac;
+}
+html,
+body,
+.wayleave-app {
+  background: #fff;
+  color: var(--ink);
+}
+.app-header {
+  height: 80px;
+  max-width: none;
+  margin: 0;
+  padding: 0 44px;
+  border-bottom: 1px solid #f0f1f3;
+  background: #fff;
+  position: relative;
+}
+.app-brand {
+  font-size: 22px;
+  letter-spacing: -0.7px;
+  font-weight: 600;
+}
+.app-brand > span:first-child {
+  background: transparent;
+  color: #585568;
+  width: 25px;
+  height: 30px;
+}
+.app-brand .app-testnet {
+  background: #f5f5f7;
+  border: 0;
+  border-radius: 4px;
+  color: #7c7d85;
+  font-size: 11px;
+}
+.app-header nav {
+  border: 0;
+  background: none;
+  gap: 20px;
+  padding: 0;
+}
+.app-header nav a {
+  font-size: 13px;
+  color: #83858c;
+  border-radius: 0;
+  padding: 9px 0;
+}
+.app-header nav a[aria-current] {
+  background: none;
+  color: #292a30;
+  box-shadow: 0 1px #292a30;
+}
+.app-header nav a:hover {
+  background: none;
+  color: #292a30;
+}
+.app-footer {
+  max-width: 1120px;
+  padding: 24px 0;
+  border-color: #f0f1f3;
+  font-size: 12px;
+  color: #8b8d95;
+}
+.account-home .desktop-agent-pro.show-on-mobile {
+  max-width: 960px;
+  padding: 54px 0 64px;
+  gap: 28px;
+}
+.wallet-entry {
+  max-width: 460px;
+  margin: 70px auto 120px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.entry-icon {
+  color: #6a657e;
+  padding-bottom: 30px;
+}
+.wallet-entry h1 {
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -1.1px;
+  margin: 0 0 20px;
+  max-width: 440px;
+}
+.wallet-entry p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #787a84;
+  margin-bottom: 30px;
+}
+.account-home .primary,
+.account-home .mobile-primary {
+  min-height: 42px;
+  border-radius: 6px;
+  padding: 11px 18px;
+  background: #6158c5;
+  border: 1px solid #6158c5;
+  color: #fff;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.account-home .primary:hover:not(:disabled),
+.account-home .mobile-primary:hover:not(:disabled) {
+  background: #5047af;
+  box-shadow: none;
+}
+.account-home .secondary {
+  background: #fff;
+  border-color: #e5e5eb;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #484951;
+  box-shadow: none;
+}
+.entry-note {
+  font-size: 12px;
+  color: #90919a;
+  margin-top: 14px;
+}
+.entry-help {
+  font-size: 13px;
+  color: #6c659c;
+  margin-top: 42px;
+}
+.payments-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+.owner-caption {
+  font-size: 12px;
+  color: #94949c;
+}
+.payments-heading h1 {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.7px;
+  margin: 12px 0;
+}
+.payments-heading p {
+  font-size: 14px;
+}
+.account-home .panel {
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  background: #fff;
+}
+.account-home .approval-panel {
+  order: 1;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+}
+.account-home .approval-head h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+.account-home .approval-empty {
+  border: 0;
+  background: #fafafb;
+  border-radius: 6px;
+  padding: 45px 24px;
+  margin-top: 24px;
+}
+.account-home .approval-empty > span {
+  display: none;
+}
+.account-home .approval-empty strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.account-home .approval-empty p {
+  font-size: 13px;
+}
+.account-home .agent-grid {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.account-home .setup-panel {
+  display: none;
+}
+.account-home .agent-side {
+  display: block;
+  width: 100%;
+}
+.account-home .permission-card {
+  display: none;
+}
+.account-home .connections-panel {
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+.account-home .connections-panel .panel-heading {
+  margin-bottom: 14px;
+}
+.account-home .connections-panel .panel-heading > svg {
+  display: none;
+}
+.account-home .connections-panel h3 {
+  font-size: 16px;
+  font-weight: 500;
+}
+.account-home .agent-avatar {
+  background: #f1f0f6;
+  color: #7a738d;
+  border-radius: 6px;
+}
+.account-home .transaction-message {
+  order: 3;
+  background: #fafafb;
+  border: 0;
+  border-radius: 6px;
+  color: #71737e;
+  font-size: 13px;
+}
+.activity-filter {
+  margin: 20px 0;
+  max-width: 230px;
+  font-size: 12px;
+  color: #898994;
+}
+.account-home input,
+.account-home select {
+  font-size: 14px;
+  color: #373840;
+  border-color: #e4e4e9;
+  background: #fff;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.account-home .mobile-agent-onboarding:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 38px auto 80px;
+  min-height: 600px;
+  gap: 0;
+}
+.account-home .mobile-onboarding-top {
+  order: 0;
+  padding: 0 0 32px;
+  margin: 0;
+  color: #999;
+}
+.account-home .mobile-onboarding-top .mobile-wordmark {
+  display: none;
+}
+.account-home .mobile-onboarding-top button {
+  color: #8b8798;
+  font-size: 12px;
+  padding: 0;
+}
+.account-home .mobile-stage {
+  order: 1;
+  min-height: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+.account-home .mobile-step-meta {
+  padding: 0 0 22px;
+  margin: 0;
+  justify-content: flex-start;
+  color: #aaa6b2;
+  font-size: 12px;
+}
+.account-home .mobile-step-content {
+  padding: 0;
+}
+.account-home .mobile-copy {
+  margin: 0 0 26px;
+}
+.account-home .mobile-kicker {
+  display: none;
+}
+.account-home .mobile-copy h2 {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.22;
+  letter-spacing: -0.7px;
+  font-weight: 500;
+}
+.account-home .mobile-copy p {
+  color: #81808a;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.account-home .mobile-trust {
+  color: #96939f;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.account-home .mobile-primary {
+  width: auto;
+  min-width: 190px;
+  margin: 16px 0 0;
+}
+.account-home .mobile-permissions {
+  margin: 20px 0;
+  gap: 12px;
+  display: grid;
+}
+.account-home .mobile-permissions > span {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  color: #6f6b7e;
+}
+.account-home .mobile-permissions .off {
+  color: #98949d;
+}
+.account-home .mobile-field {
+  font-size: 13px;
+  color: #797581;
+}
+.account-home .nfat-selector {
+  background: #faf9fc;
+  border: 1px solid #ebe9ef;
+  border-radius: 6px;
+  padding: 16px;
+}
+.account-home .nfat-selector > span {
+  color: #80798f;
+  background: #efedf5;
+}
+.account-home .nfat-name-field > span {
+  border: 1px solid #e7e4eb;
+  background: #fff;
+  border-radius: 6px;
+}
+.account-home .nfat-name-field input {
+  border: 0;
+}
+.account-home .nfat-name-field b {
+  color: #a29ba9;
+  font-weight: 400;
+}
+.account-home .agent-host-picker {
+  gap: 10px;
+}
+.account-home .agent-host-picker button {
+  border-color: #e9e6ee;
+  background: #fff;
+  border-radius: 6px;
+  color: #777080;
+}
+.account-home .agent-host-picker button.selected {
+  border-color: #a99dd0;
+  background: #faf9fd;
+  box-shadow: none;
+}
+.account-home .mobile-mcp-recipe {
+  display: none;
+}
+.account-home .mobile-config-preview {
+  border-color: #e9e6ed;
+  border-radius: 5px;
+  background: #faf9fc;
+}
+.account-home .mobile-config-preview > div {
+  color: #8a8097;
+  background: #f3f1f7;
+}
+.account-home .mobile-config-preview pre {
+  font-size: 12px;
+  color: #6c617c;
+  overflow-wrap: anywhere;
+}
+.account-home .mobile-step-nav {
+  order: 2;
+  margin: 28px 0 0;
+  justify-content: flex-start;
+  gap: 9px;
+}
+.account-home .mobile-step-nav button {
+  background: #e9e6ee;
+  width: 24px;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 1px;
+}
+.account-home .mobile-step-nav button.active {
+  background: #766797;
+}
+.account-home .mobile-status {
+  order: 3;
+  color: #87778f;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 18px 0 0;
+}
+.account-home .mobile-link {
+  color: #77638e;
+  font-size: 13px;
+}
+.account-home .account-page {
+  max-width: 900px;
+}
+.account-home .account-page-heading {
+  margin-bottom: 30px;
+}
+.account-home .account-page-heading h1 {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+}
+.account-home .account-page-heading p {
+  font-size: 14px;
+}
+.account-home .account-page-icon {
+  display: none;
+}
+.account-home .account-notice {
+  background: #faf9fc;
+  border-radius: 5px;
+  padding: 18px;
+  font-size: 13px;
+}
+.account-home .account-tools {
+  border-color: #ece9ef;
+  border-radius: 6px;
+  background: #fff;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #b8a9d5;
+  outline-offset: 4px;
+}
+@media (max-width: 1060px) {
+  .account-home .desktop-agent-pro.show-on-mobile {
+    margin: 0 32px;
+  }
+  .app-footer {
+    margin: 0 32px;
+  }
+}
+@media (max-width: 640px) {
+  .app-header {
+    height: auto;
+    min-height: 100px;
+    padding: 20px 24px;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .app-header nav {
+    gap: 24px;
+    width: 100%;
+  }
+  .app-brand .app-testnet {
+    font-size: 10px;
+    margin-left: 6px;
+  }
+  .account-home .desktop-agent-pro.show-on-mobile {
+    margin: 0 26px;
+    padding-top: 32px;
+  }
+  .wallet-entry {
+    margin: 36px auto 70px;
+  }
+  .wallet-entry h1 {
+    font-size: 31px;
+  }
+  .wallet-entry p {
+    font-size: 15px;
+  }
+  .entry-note {
+    max-width: 260px;
+    line-height: 1.6;
+  }
+  .app-footer {
+    margin: 0 26px;
+    gap: 16px;
+    flex-wrap: wrap;
+    line-height: 1.6;
+  }
+  .account-home .mobile-agent-onboarding:not(.hidden) {
+    margin: 28px 26px 64px;
+    min-height: 500px;
+  }
+  .account-home .mobile-copy h2 {
+    font-size: 28px;
+  }
+  .account-home .mobile-stage {
+    padding: 0;
+  }
+  .payments-heading {
+    align-items: flex-start;
+  }
+  .payments-heading .secondary {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.connection-page {
+  max-width: 520px;
+  margin: 70px auto 100px;
+}
+.connection-page > svg {
+  color: #7f778c;
+  margin-bottom: 25px;
+}
+.connection-page h1 {
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+  margin: 0 0 18px;
+}
+.connection-page > p {
+  font-size: 16px;
+  line-height: 1.75;
+}
+.connection-page ol {
+  padding: 0;
+  margin: 36px 0;
+  list-style: none;
+  display: grid;
+  gap: 25px;
+}
+.connection-page li {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.connection-page li > span {
+  font-size: 12px;
+  padding-top: 3px;
+  color: #aaa2b4;
+}
+.connection-page strong {
+  font-weight: 500;
+  font-size: 15px;
+}
+.connection-page li p {
+  font-size: 14px;
+  margin-top: 5px;
+}
+.connection-page .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.connection-page details {
+  margin-top: 40px;
+  border-top: 1px solid #eeebf1;
+  padding-top: 20px;
+}
+.connection-page summary {
+  font-size: 13px;
+  color: #81758e;
+  cursor: pointer;
+}
+.connection-page details p {
+  margin-top: 15px;
+  font-size: 14px;
+}
+.account-home .mobile-permissions {
+  justify-items: start;
+  margin: 24px 0;
+}
+.account-home .mobile-trust {
+  text-align: left;
+}
+.account-home .mobile-step-content {
+  min-height: 0;
+}
+.account-home .mobile-status {
+  text-align: left;
+}
+.account-home .status-toast {
+  position: static;
+  order: 3;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  background: #faf9fc;
+  color: #84718c;
+  box-shadow: none;
+  font-size: 13px;
+  padding: 14px 18px;
+}
+.account-home .status-toast .signal-dot {
+  display: none;
+}
+@media (max-width: 640px) {
+  .connection-page {
+    margin: 40px 26px 80px;
+  }
+}
+.account-home .operation-card {
+  border: 1px solid #e9e5ee;
+  border-radius: 7px;
+  background: #fff;
+  margin-top: 20px;
+  padding: 24px;
+}
+.account-home .operation-card.selected {
+  border-color: #d4c9e2;
+  box-shadow: none;
+}
+.account-home .payment-summary {
+  background: #faf9fc;
+  border: 0;
+  border-radius: 5px;
+}
+.account-home .payment-summary strong {
+  color: #35313d;
+}
+.account-home .payment-summary small {
+  color: #a29aa9;
+}
+.account-home .operation-top .agent-avatar {
+  display: none;
+}
+.account-home .status {
+  background: #f1eef7;
+  color: #8a729d;
+  border: 0;
+  font-size: 12px;
+}
+.account-home .operation-actions .text-button {
+  font-size: 13px;
+}
+.account-home .review-sheet {
+  background: #fff;
+  border: 0;
+  border-top: 1px solid #eee9f2;
+  border-radius: 0;
+  padding: 24px 0 0;
+}
+.account-home .review-sheet dl {
+  display: block;
+}
+.account-home .review-sheet dl > div {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3eff6;
+}
+.account-home .review-sheet dt {
+  font-size: 13px;
+  color: #938599;
+}
+.account-home .review-sheet dd {
+  font-size: 14px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.account-home .review-sheet code {
+  font-size: 12px;
+}
+.account-home .review-sheet > p {
+  font-size: 14px;
+}
+.account-home .review-sheet ol {
+  margin: 24px 0;
+  padding-left: 20px;
+}
+.account-home .review-sheet li {
+  margin: 16px 0;
+  padding-left: 8px;
+}
+.account-home .review-sheet li strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.account-home .review-sheet li p {
+  font-size: 13px;
+}
+.account-home .warning-note {
+  font-size: 12px;
+  background: #faf7ee;
+  border-color: #eee6cf;
+  color: #8d7c4f;
+}
+@media (max-width: 640px) {
+  .account-home .operation-card {
+    padding: 18px;
+  }
+  .account-home .review-sheet dl > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .account-home .payment-summary {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+.account-home .desktop-agent-pro.focused-payment {
+  max-width: 620px;
+  padding-top: 40px;
+}
+.account-home .focused-payment .approval-panel {
+  border-top: 0;
+  padding-top: 0;
+}
+.account-home .focused-payment .approval-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.account-home .focused-payment .approval-head > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 20px;
+}
+.account-home .focused-payment .operation-card {
+  border: 0;
+  padding: 0;
+}
+.account-home .focused-payment .payment-summary {
+  background: none;
+  padding: 20px 0;
+}
+.account-home .focused-payment .payment-summary > div:first-child strong {
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.account-home .focused-payment .payment-summary > div:first-child strong span {
+  font-size: 16px;
+  color: #94899c;
+}
+.account-home .focused-payment .operation-top {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee9f2;
+}
+.account-home .focused-payment .status-toast {
+  order: 4;
+}
+.account-home .account-page {
+  max-width: 680px;
+  padding-top: 50px;
+}
+.wallet-selection {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin: 26px 0;
+}
+.wallet-selection label {
+  flex: 1;
+  margin: 0;
+  font-size: 13px;
+}
+.wallet-selection .secondary {
+  height: 42px;
+}
+.wallet-address {
+  font-family: monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  color: #9a8da3;
+}
+.wallet-balances {
+  margin: 30px 0;
+}
+.wallet-balances > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 21px 0;
+  border-bottom: 1px solid #eee9f2;
+  gap: 24px;
+}
+.wallet-balances dt {
+  color: #8b7c95;
+  font-size: 14px;
+}
+.wallet-balances dd {
+  margin: 0;
+  font-size: 20px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.wallet-balances small {
+  font-size: 12px;
+  color: #9c8fa6;
+}
+.wallet-control-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+.wallet-allowance {
+  border-top: 1px solid #eee9f2;
+  padding: 24px 0;
+}
+.wallet-allowance summary {
+  font-size: 14px;
+  cursor: pointer;
+  color: #786189;
+}
+.wallet-allowance p {
+  margin: 20px 0;
+  font-size: 14px;
+}
+.wallet-allowance label {
+  max-width: 260px;
+}
+@media (max-width: 640px) {
+  .wallet-balances > div {
+    display: block;
+  }
+  .wallet-balances dd {
+    text-align: left;
+    margin-top: 10px;
+  }
+  .account-home .account-page {
+    padding: 34px 26px;
+  }
+}
+.app-brand .app-testnet {
+  display: inline-block;
+}
+
+/* Keep onboarding independent of legacy form floats and picker alignment. */
+.account-home .nfat-name-field > span {
+  float: none;
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  margin-top: 8px;
+}
+.account-home .nfat-name-field > span input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+}
+.account-home .nfat-name-field > span b {
+  flex: 0 0 auto;
+  padding: 0 14px 0 0;
+}
+.account-home .nfat-selector {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+.account-home .nfat-selector div {
+  min-width: 0;
+}
+.account-home .nfat-selector strong {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.account-home .mobile-copy h2 {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.account-home .agent-host-picker button {
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  min-width: 0;
+  padding: 16px 8px;
+  gap: 8px;
+}
+.account-home .agent-host-picker button > .agent-host-logo,
+.account-home .agent-host-picker button.selected > .agent-host-logo {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.account-home .agent-host-logo img {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.account-home .agent-host-picker button strong,
+.account-home .agent-host-picker button small {
+  align-self: center;
+  width: 100%;
+  text-align: center;
+  line-height: 1.4;
+}
+.account-home .agent-host-picker button small {
+  font-size: 11px;
+}
+.account-home .nfat-name-field > span:focus-within {
+  border-color: #a99dd0;
+  box-shadow: 0 0 0 3px #7667971a;
+}
+.account-home .nfat-name-field > span input:focus {
+  outline: none;
+  box-shadow: none;
+}
+/* A payment stays in one review surface as setup progresses. */
+.account-home .payment-progress-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+.account-home .payment-progress-heading strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.account-home .payment-progress-heading > span {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #8b8493;
+}
+.account-home .payment-extra-details {
+  margin-top: 20px;
+  color: #817989;
+  font-size: 12px;
+}
+.account-home .payment-extra-details summary {
+  cursor: pointer;
+}
+.account-home .payment-extra-details p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.account-home .payment-summary code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.account-home .payment-progress > p {
+  line-height: 1.65;
+  margin: 16px 0;
+}
+.account-home .review-sheet .footnote {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8b8493;
+}
+
+/* Setup keeps the brand and exit action, without competing navigation. */
+.wayleave-app:has(.mobile-agent-onboarding:not(.hidden)) .app-header nav {
+  display: none;
+}
+.account-home .wallet-ownership-explainer {
+  margin: 0 0 24px;
+  display: grid;
+  gap: 16px;
+}
+.account-home .wallet-ownership-explainer > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.account-home .wallet-ownership-explainer dt {
+  color: #39353f;
+  font-weight: 500;
+}
+.account-home .wallet-ownership-explainer dd {
+  margin: 0;
+  color: #817b88;
+}
+.account-home .wallet-ownership-details {
+  margin: 20px 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #817b88;
+}
+.account-home .wallet-ownership-details summary {
+  cursor: pointer;
+  color: #6d607d;
+}
+.account-home .wallet-ownership-details p {
+  margin: 12px 0 0;
+}
+.account-home .connection-label-settings {
+  margin: 8px 0;
+}

@@ -1,23 +1,23 @@
 /* Shared product theme. Technical evidence retains its own contrast and labels. */
 :root {
-  --ink: #29382e;
-  --muted: #697269;
-  --line: #e3e5dc;
-  --soft-line: #eceee6;
+  --ink: #292e38;
+  --muted: #696c72;
+  --line: #dcdfe5;
+  --soft-line: #e6e9ee;
   --surface: #fffefb;
-  --soft: #f5f6ef;
-  --accent: #d6edb6;
-  --accent-ink: #293f28;
-  --dark: #293f32;
-  --success: #416641;
+  --soft: #eff1f6;
+  --accent: #b6c8ed;
+  --accent-ink: #28303f;
+  --dark: #29303f;
+  --success: #414d66;
 }
 html,
 body {
-  background: #f9f9f3;
+  background: #f3f5f9;
 }
 .wayleave-app {
   min-height: 100dvh;
-  background: #f9f9f3;
+  background: #f3f5f9;
 }
 .app-header {
   height: 92px;
@@ -44,7 +44,7 @@ body {
   place-items: center;
   width: 39px;
   height: 39px;
-  background: #dce9ce;
+  background: #ced7e9;
   border-radius: 14px;
 }
 .app-brand .app-testnet {
@@ -52,31 +52,31 @@ body {
   font-size: 11px;
   letter-spacing: 0;
   font-weight: 500;
-  border: 1px solid #e0e4d8;
+  border: 1px solid #d8dce4;
   border-radius: 20px;
   padding: 5px 9px;
-  color: #697269;
+  color: #696c72;
 }
 .app-header nav {
   display: flex;
   gap: 6px;
   padding: 5px;
-  border: 1px solid #e4e6dc;
+  border: 1px solid #dcdfe6;
   border-radius: 30px;
 }
 .app-header nav a {
   padding: 9px 20px;
-  color: #697269;
+  color: #696c72;
   font-size: 13px;
   border-radius: 24px;
   transition: background 0.2s;
 }
 .app-header nav a[aria-current] {
-  background: #e5ecd9;
-  color: #304a31;
+  background: #d9dfec;
+  color: #30394a;
 }
 .app-header nav a:hover {
-  background: #edf0e5;
+  background: #e5e9f0;
 }
 .app-skip {
   position: fixed;
@@ -99,10 +99,10 @@ main.account-home {
   justify-content: space-between;
   max-width: 1232px;
   margin: 0 auto;
-  border-top: 1px solid #e4e6dc;
+  border-top: 1px solid #dcdfe6;
   padding: 24px 0;
   font-size: 12px;
-  color: #788071;
+  color: #717680;
 }
 .app-footer span {
   display: inline;
@@ -130,7 +130,7 @@ main.account-home {
   grid-row: 1/5;
   position: relative;
   overflow: hidden;
-  background: #eaf0dd;
+  background: #dde3f0;
   border-radius: 34px;
   padding: 42px 42px 30px;
   display: flex;
@@ -141,7 +141,7 @@ main.account-home {
   font-size: 10px;
   letter-spacing: 1.8px;
   font-weight: 650;
-  color: #617252;
+  color: #525d72;
 }
 .welcome-story h1 {
   font-size: clamp(40px, 4.8vw, 65px);
@@ -153,12 +153,12 @@ main.account-home {
 .welcome-story h1 em {
   font-family: Georgia, serif;
   font-weight: 400;
-  color: #6c8350;
+  color: #506183;
 }
 .welcome-story > p {
   font-size: 15px;
   line-height: 1.7;
-  color: #66745b;
+  color: #5b6374;
 }
 .friendly-scene {
   position: relative;
@@ -173,7 +173,7 @@ main.account-home {
   bottom: 30px;
   height: 145px;
   width: 165px;
-  background: #b4cb8e;
+  background: #8ea2cb;
   border-radius: 75px 75px 45px 45px;
   transform: rotate(-9deg);
   z-index: 2;
@@ -186,7 +186,7 @@ main.account-home {
   width: 8px;
   height: 13px;
   border-radius: 50%;
-  background: #34492c;
+  background: #2c3649;
   top: 60px;
 }
 .scene-eyes:before {
@@ -199,7 +199,7 @@ main.account-home {
   position: absolute;
   width: 26px;
   height: 13px;
-  border: 3px solid #34492c;
+  border: 3px solid #2c3649;
   border-top: 0;
   border-radius: 0 0 20px 20px;
   top: 83px;
@@ -218,7 +218,7 @@ main.account-home {
   box-shadow: 0 14px 30px #526c3820;
   display: grid;
   gap: 14px;
-  color: #506a41;
+  color: #414f6a;
 }
 .scene-card span {
   font-size: 13px;
@@ -228,7 +228,7 @@ main.account-home {
   position: absolute;
   right: 18px;
   top: 24px;
-  background: #e8eedb;
+  background: #dbe1ee;
   border-radius: 50%;
   padding: 4px;
 }
@@ -239,11 +239,11 @@ main.account-home {
   right: 10px;
   height: 22px;
   border-radius: 50%;
-  background: #dce5cc;
+  background: #ccd4e5;
 }
 .scene-spark {
   position: absolute;
-  color: #93a877;
+  color: #7787a8;
 }
 .spark-one {
   right: 20px;
@@ -259,7 +259,7 @@ main.account-home {
   display: flex;
   gap: 8px;
   align-items: center;
-  color: #5e7051;
+  color: #515b70;
   font-size: 12px;
   margin-top: 14px;
 }
@@ -269,13 +269,13 @@ main.account-home {
   gap: 10px;
 }
 .account-home .mobile-wordmark {
-  color: #76816e;
+  color: #6e7481;
   font-size: 12px;
   letter-spacing: 0;
   font-weight: 500;
 }
 .account-home .mobile-onboarding-top button {
-  color: #59684f;
+  color: #4f5768;
   background: transparent;
   border: 0;
   padding: 8px 0;
@@ -289,17 +289,17 @@ main.account-home {
 }
 .account-home .mobile-step-meta {
   font-family: inherit;
-  color: #708260;
+  color: #606b82;
   margin-bottom: 24px;
   gap: 10px;
 }
 .account-home .mobile-step-meta span,
 .account-home .mobile-step-meta small {
   font-size: 11px;
-  color: #708260;
+  color: #606b82;
 }
 .account-home .mobile-step-meta i {
-  background: #c9d4bc;
+  background: #bcc4d4;
   width: 24px;
 }
 .account-home .mobile-step-content {
@@ -315,7 +315,7 @@ main.account-home {
   display: none;
 }
 .account-home .mobile-copy h2 {
-  color: #29382e;
+  color: #292e38;
   font-size: 36px;
   line-height: 1.13;
   letter-spacing: -1.4px;
@@ -324,7 +324,7 @@ main.account-home {
   max-width: 400px;
 }
 .account-home .mobile-copy p {
-  color: #747b6e;
+  color: #6e727b;
   font-size: 15px;
   line-height: 1.75;
   max-width: 390px;
@@ -342,8 +342,8 @@ main.account-home {
   width: 62px;
   height: 62px;
   border: 0;
-  background: #e8eddc;
-  color: #5c7446;
+  background: #dce2ed;
+  color: #465574;
   box-shadow: none;
   border-radius: 21px;
 }
@@ -353,9 +353,9 @@ main.account-home {
 .account-home .mobile-primary {
   min-height: 52px;
   padding: 14px 20px;
-  background: #344e37;
+  background: #343d4e;
   color: #fffef7;
-  border: 1px solid #344e37;
+  border: 1px solid #343d4e;
   border-radius: 16px;
   font-size: 14px;
   font-weight: 550;
@@ -363,24 +363,24 @@ main.account-home {
   margin: 10px 0 0;
 }
 .account-home .mobile-primary:hover:not(:disabled) {
-  background: #466148;
+  background: #464f61;
   box-shadow: 0 5px 15px #344e3715;
   transform: translateY(-2px);
 }
 .account-home .mobile-trust {
-  color: #73806a;
+  color: #6a7180;
   font-size: 12px;
   line-height: 1.6;
   margin: 15px 0 0;
   overflow-wrap: anywhere;
 }
 .account-home .mobile-trust svg {
-  color: #718363;
+  color: #636e83;
   flex-shrink: 0;
 }
 .account-home .mobile-link {
   font-size: 13px;
-  color: #456044;
+  color: #444d60;
   padding: 12px 0;
   min-height: 44px;
 }
@@ -402,7 +402,7 @@ main.account-home {
   width: 7px;
   height: 7px;
   border-radius: 10px;
-  background: #d5dbcb;
+  background: #cbd0db;
   position: absolute;
 }
 .account-home .mobile-step-nav button.active {
@@ -410,13 +410,13 @@ main.account-home {
   width: 34px;
 }
 .account-home .mobile-step-nav button.active:after {
-  background: #71895a;
+  background: #5a6a89;
   width: 25px;
 }
 .account-home .mobile-status {
   grid-column: 2;
   padding: 4px 0 20px;
-  color: #6c7863;
+  color: #636a78;
   font-size: 12px;
   line-height: 1.6;
   text-align: left;
@@ -430,8 +430,8 @@ main.account-home {
   margin: 0 0 10px;
 }
 .account-home .mobile-permissions span {
-  background: #ecf0e2;
-  color: #48613e;
+  background: #e2e7f0;
+  color: #3e4a61;
   border: 0;
   border-radius: 12px;
   padding: 13px;
@@ -443,13 +443,13 @@ main.account-home {
 }
 .account-home .mobile-field {
   font-size: 13px;
-  color: #4c5d43;
+  color: #434c5d;
   margin: 12px 0;
 }
 .account-home .mobile-field input {
-  color: #29382e;
+  color: #292e38;
   background: #fffefa;
-  border: 1px solid #dce1d3;
+  border: 1px solid #d3d8e1;
   border-radius: 12px;
   min-height: 48px;
   padding: 12px;
@@ -458,7 +458,7 @@ main.account-home {
 }
 .account-home .nfat-name-field > span {
   background: #fffefa;
-  border: 1px solid #dce1d3;
+  border: 1px solid #d3d8e1;
   border-radius: 12px;
 }
 .account-home .nfat-name-field input {
@@ -466,19 +466,19 @@ main.account-home {
   background: transparent;
 }
 .account-home .nfat-name-field b {
-  color: #6e7b62;
+  color: #626a7b;
   font-size: 12px;
 }
 .account-home .ens-preview-note {
-  color: #73806a;
+  color: #6a7180;
   font-size: 12px;
   line-height: 1.5;
 }
 .account-home .nfat-card {
-  background: #e9eedc;
-  border: 1px solid #dce4cb;
+  background: #dce2ee;
+  border: 1px solid #cbd3e4;
   box-shadow: none;
-  color: #4c6340;
+  color: #404c63;
   border-radius: 20px;
   min-height: 150px;
   margin: 0 0 25px;
@@ -486,11 +486,11 @@ main.account-home {
   transform: rotate(-2deg);
 }
 .account-home .nfat-card strong {
-  color: #344e37;
+  color: #343d4e;
 }
 .account-home .nfat-card small,
 .account-home .nfat-card-top {
-  color: #78856b;
+  color: #6b7485;
 }
 .account-home .nfat-glyph {
   display: none;
@@ -507,20 +507,20 @@ main.account-home {
   padding: 14px 8px;
   border-radius: 16px;
   background: #fffefa;
-  border: 1px solid #dfe4d6;
-  color: #3d4d36;
+  border: 1px solid #d6dbe4;
+  color: #363e4d;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
 .account-home .agent-host-picker button.selected {
-  background: #eaf0de;
-  border-color: #899e72;
+  background: #dee4f0;
+  border-color: #72819e;
 }
 .account-home .agent-host-picker button > span,
 .account-home .agent-host-picker button.selected > span {
-  background: #dfe7d3;
-  color: #536945;
+  background: #d3dae7;
+  color: #455169;
   border-radius: 9px;
   width: 30px;
   height: 30px;
@@ -533,42 +533,42 @@ main.account-home {
 }
 .account-home .agent-host-picker button small {
   font-size: 9px;
-  color: #748168;
+  color: #687081;
 }
 .account-home .agent-host-picker button > svg {
   position: absolute;
   right: 7px;
   top: 9px;
-  color: #5f7949;
+  color: #495979;
 }
 .account-home .mcp-host-badge {
   display: none;
 }
 .account-home .mobile-mcp-recipe {
-  border-color: #dce2d3;
-  background: #f0f3e8;
+  border-color: #d3d8e2;
+  background: #e8ecf3;
   border-radius: 14px;
 }
 .account-home .mobile-mcp-recipe span,
 .account-home .mobile-mcp-recipe code {
-  color: #506343;
+  color: #434e63;
 }
 .account-home .mobile-mcp-recipe small {
-  color: #869578;
+  color: #788295;
 }
 .account-home .mobile-config-preview {
-  background: #f0f2e8;
-  border: 1px solid #dde3d3;
+  background: #e8ebf2;
+  border: 1px solid #d3d8e3;
   border-radius: 14px;
   min-width: 0;
   margin-top: 16px;
 }
 .account-home .mobile-config-preview > div {
-  color: #5a6c4d;
-  border-color: #dce2d2;
+  color: #4d576c;
+  border-color: #d2d7e2;
 }
 .account-home .mobile-config-preview pre {
-  color: #586a4c;
+  color: #4c566a;
   font-size: 11px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -576,7 +576,7 @@ main.account-home {
   overflow: auto;
 }
 .account-home .mobile-config-preview small {
-  color: #728465;
+  color: #656f84;
 }
 .account-home .desktop-agent-pro {
   display: none;
@@ -593,22 +593,22 @@ main.account-home {
   display: inline-flex;
   justify-self: end;
   width: fit-content;
-  border: 1px solid #dce2d3;
+  border: 1px solid #d3d8e2;
   background: #fffef9;
-  color: #536647;
+  color: #475166;
   border-radius: 20px;
   padding: 10px 18px;
   font-size: 13px;
 }
 .account-home .panel {
-  border: 1px solid #e2e5da;
+  border: 1px solid #dadee5;
   background: #fffefb;
   border-radius: 24px;
   box-shadow: none;
   padding: 26px;
 }
 .account-home .agent-overview {
-  background: #eaf0dd;
+  background: #dde3f0;
   padding: 35px 40px;
 }
 .account-home .overview-copy h2 {
@@ -625,8 +625,8 @@ main.account-home {
 }
 .account-home .flow-node span {
   border-radius: 18px;
-  background: #dbe6cb;
-  color: #566d45;
+  background: #cbd4e6;
+  color: #45526d;
 }
 .account-home .flow-node small {
   font-size: 11px;
@@ -679,16 +679,16 @@ main.account-home {
 .account-home .eyebrow {
   font-size: 10px;
   letter-spacing: 1.4px;
-  color: #7b8b6c;
+  color: #6c768b;
 }
 .account-home .permission-row {
   font-size: 13px;
   padding: 12px 0;
 }
 .account-home .primary {
-  background: #344e37;
+  background: #343d4e;
   color: #fffef8;
-  border-color: #344e37;
+  border-color: #343d4e;
   border-radius: 12px;
   min-height: 44px;
 }
@@ -700,7 +700,7 @@ main.account-home {
   position: static;
   border-radius: 14px;
   box-shadow: none;
-  background: #eff2e7;
+  background: #e7ebf2;
   font-size: 12px;
   max-width: 100%;
   padding: 14px 18px;
@@ -740,14 +740,14 @@ main.account-home {
   height: 65px;
   display: grid;
   place-items: center;
-  background: #e5ecd7;
-  color: #667e4e;
+  background: #d7deec;
+  color: #4e5e7e;
   border-radius: 22px;
 }
 .account-notice {
   display: flex;
   gap: 14px;
-  background: #eaf0dd;
+  background: #dde3f0;
   border-radius: 20px;
   padding: 24px;
   margin-bottom: 28px;
@@ -764,7 +764,7 @@ main.account-home {
 }
 .account-tools {
   background: #fffefb;
-  border: 1px solid #e1e5d8;
+  border: 1px solid #d8dce5;
   border-radius: 20px;
   padding: 24px;
 }
@@ -792,17 +792,17 @@ main.account-home {
   font-size: 13px;
 }
 .workspace .sidebar {
-  background: #eef1e6;
-  color: #40513b;
-  border-right: 1px solid #dfe5d4;
+  background: #e6eaf1;
+  color: #3b4251;
+  border-right: 1px solid #d4dae5;
 }
 .workspace .brand,
 .workspace .sidebar .nav-item {
-  color: #46583e;
+  color: #3e4758;
 }
 .workspace .sidebar .nav-item.active {
-  background: #dce8cb;
-  color: #354d2e;
+  background: #cbd5e8;
+  color: #2e384d;
 }
 .workspace .panel {
   border-radius: 20px;
@@ -812,8 +812,8 @@ main.account-home {
   border-radius: 15px;
 }
 .workspace .sidebar-note {
-  color: #6a7a5c;
-  background: #e3ead8;
+  color: #5c667a;
+  background: #d8deea;
 }
 .workspace .primary {
   border-radius: 12px;
@@ -1112,7 +1112,7 @@ main.account-home {
 
 .account-connect-hint {
   margin: 16px 0;
-  color: #405f36;
+  color: #36445f;
   font-size: 14px;
 }
 .account-connect-hint a {
@@ -1120,7 +1120,7 @@ main.account-home {
   text-underline-offset: 4px;
 }
 .account-home summary:focus-visible {
-  outline: 3px solid #8b9e72;
+  outline: 3px solid #72819e;
   outline-offset: 6px;
   border-radius: 5px;
 }
@@ -1145,7 +1145,7 @@ main.account-home {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 32px;
-  color: #718067;
+  color: #676f80;
   font-size: 13px;
 }
 .developer-workspace .content {
@@ -1162,8 +1162,8 @@ main.account-home {
   width: fit-content;
   margin: 28px 0;
   padding: 5px;
-  background: #ebeee3;
-  border: 1px solid #dfe4d4;
+  background: #e3e7ee;
+  border: 1px solid #d4d9e4;
   border-radius: 17px;
 }
 .developer-workspace .tabs button {
@@ -1173,7 +1173,7 @@ main.account-home {
 }
 .developer-workspace .tabs .selected {
   background: #fffef9;
-  color: #405937;
+  color: #374259;
 }
 .developer-workspace .panel {
   margin-bottom: 18px;
@@ -1208,7 +1208,7 @@ main.account-home {
 }
 .name-story {
   margin-top: 20px;
-  color: #5f7054;
+  color: #545d70;
   font-size: 12px;
 }
 .name-story summary {
@@ -1227,7 +1227,7 @@ main.account-home {
 }
 .connection-details {
   margin: 18px 0 6px;
-  color: #5e7051;
+  color: #515b70;
   font-size: 13px;
 }
 .connection-details summary {

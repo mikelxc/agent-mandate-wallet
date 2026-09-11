@@ -186,3 +186,64 @@ Turso configuration is present.
   and mobile/desktop WalletConnect pickers. The unrelated onboarding walkthrough
   expects the agent chooser at step 2, but the deployed step 2 is now the authority
   screen; that test needs reconciliation with the separate onboarding changes.
+
+## iPhone wallet launch and signing changes — September 10, 2026 (local)
+
+- Prefer wallet-provided universal links through Reown's
+  `experimental_preferUniversalLinks` option. Reown retains the native deep-link
+  fallback when the wallet does not provide a universal link.
+- Fetch the SIWE challenge before opening the connection picker. Reuse its nonce
+  and message parameters for signing instead of starting another gateway fetch
+  during the Sign tap. Refresh near-expiry challenges and clear them after
+  verification or logout; gateway expiration and replay checks remain unchanged.
+- For an already connected owner, prepare the challenge and then open Reown's
+  SIWX sign-message view so the owner has a fresh Sign tap after network switching.
+  The controller dependency is pinned to the installed AppKit version (1.8.23).
+- Validation: frontend TypeScript checks, 21 focused unit/gateway tests, and four
+  Chrome browser tests covering valid/invalid signatures and mobile/desktop picker
+  layouts passed. The signing tests assert that no second nonce request occurs
+  between selecting a wallet and signing.
+- These changes have not been deployed or verified with a physical iPhone wallet.
+  Browser automation does not establish successful iOS app handoff. A challenge
+  that expires while the picker remains open can still require a network refresh.
+
+## Payment review funding errors — September 10, 2026
+
+- Read-only diagnosis of the reported production operation found 100 demo USDC
+  in the funding wallet, zero account allowance, and zero EntryPoint gas deposit.
+  The preparation failure was reproduced against live Sepolia without signing or
+  changing production records. The separate `file:///` warning was not identified.
+- Gateway funding checks now report missing balance, capped allowance and gas
+  deposit together, with required amounts. Deliberately authored errors have
+  stable codes; unexpected provider errors remain redacted. Approval still checks
+  funding and simulates the signed operation before accepting it.
+- Review displays progress and errors on the payment card, clears stale quotes,
+  and links to expanded funding settings with the account ID prefilled from the
+  deployed validator. No automatic allowance, deposit, or payment is performed.
+- Released isolated HEAD plus these payment changes as production deployment
+  `dpl_8cUQCGDxa49QuRgHEuArCWeZqNYd`, Ready and aliased to
+  https://way-leave.vercel.app. Existing uncommitted wallet-login changes were
+  excluded. Vercel's production build and TypeScript validation passed.
+- Validation: 42 gateway tests, workspace type checks, local Anvil payment/replay/
+  ownership-handover smoke test, live gateway health 200, and browser confirmation
+  that the reported account resolves to prefilled account ID 2 in funding settings.
+  The local Next.js build encountered a sandbox port-binding failure; the hosted
+  build passed. The owner's authenticated review and funded payment still require
+  their wallet; no production payment was submitted during verification.
+
+## Inline payment setup — September 11, 2026
+
+- Released `dpl_EfYnthmn81VyHVSGpFpTCVcGbVJm` (Ready) to
+  https://way-leave.vercel.app from the isolated payment release source.
+- Review now opens an inline funding check and walkthrough. Missing demo tokens,
+  exact-amount allowance and gas shortfall are separate, explicit wallet steps;
+  confirmed funding proceeds to exact-payment preparation. Already funded requests
+  proceed directly to review. Setup transaction links and pending-receipt recovery
+  are distinct from payment evidence. Existing unrelated login edits were excluded.
+- Single-transaction setup plus payment is not supported by this deployed token /
+  EntryPoint submission path; see the threat-boundary discussion in docs/kernel.md.
+- Verified 46 focused funding/gateway tests, workspace type checks, local Anvil
+  payment/replay/handover smoke, hosted production build and gateway health. No
+  user-wallet setup transaction or payment was submitted during verification.
+- An initial release was started from the workspace instead of the isolated source;
+  deployment `dpl_8HMG7i8iXMuHXYzxSV38rnGDLm9K` was cancelled before alias assignment.

@@ -3,9 +3,11 @@ import { injected } from 'wagmi/connectors';
 import { foundry } from 'wagmi/chains';
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { RouterController } from '@reown/appkit-controllers';
 import { hackathonSepolia } from '@mandate/sdk';
 import { getDevWalletProvider } from './dev-wallet';
-import { ownerAuth } from './owner-auth';
+import { ownerAuth, prepareOwnerAuth } from './owner-auth';
+import { walletConnectSessionConfig } from './wallet-connect';
 
 // Public project identifier, not a wallet credential or signing key.
 const projectId = '74fcd78221a94fe49836612d214f6e3e';
@@ -44,6 +46,8 @@ const appKit = createAppKit({
   networks: [hackathonSepolia, foundry],
   defaultNetwork: hackathonSepolia,
   siweConfig: devWalletEnabled ? undefined : ownerAuth,
+  universalProviderConfigOverride: walletConnectSessionConfig,
+  experimental_preferUniversalLinks: true,
   metadata: {
     name: 'Wayleave',
     description: 'Your accounts, agents and approvals',
@@ -70,9 +74,16 @@ const appKit = createAppKit({
 export async function openWalletPicker() {
   if (!appKit)
     throw new Error('Wallet picker is only available in the browser.');
+  if (!devWalletEnabled) await prepareOwnerAuth();
   await appKit.open({ view: 'Connect', namespace: 'eip155' });
 }
 
 export async function verifyConnectedOwner() {
-  return ownerAuth.signIn();
+  if (!appKit)
+    throw new Error('Wallet picker is only available in the browser.');
+  await prepareOwnerAuth();
+  // Give Safari a fresh user gesture after challenge preparation/network switching.
+  // Calling signIn here starts the wallet redirect after those asynchronous tasks.
+  await appKit.open({ namespace: 'eip155' });
+  RouterController.replace('SIWXSignMessage');
 }

@@ -4,18 +4,18 @@
    progress and proof feel like one continuous journey. */
 
 .wl-shell {
-  --wl-paper: #f8f9f6;
+  --wl-paper: #f6f7f9;
   --wl-surface: #ffffff;
-  --wl-surface-muted: #f1f4ef;
-  --wl-ink: #18251f;
-  --wl-muted: #6f7b74;
-  --wl-faint: #9aa49e;
-  --wl-line: #dfe5df;
-  --wl-line-strong: #c8d2ca;
-  --wl-forest: #285c42;
-  --wl-forest-deep: #194331;
-  --wl-mint: #e3f0e4;
-  --wl-lime: #b8d68c;
+  --wl-surface-muted: #eff1f4;
+  --wl-ink: #181c25;
+  --wl-muted: #6f737b;
+  --wl-faint: #9a9da4;
+  --wl-line: #dfe1e5;
+  --wl-line-strong: #c8cbd2;
+  --wl-forest: #28395c;
+  --wl-forest-deep: #192743;
+  --wl-mint: #e3e7f0;
+  --wl-lime: #8ca5d6;
   --wl-danger: #a94f42;
   --wl-warning: #947322;
   min-height: 100vh;
@@ -85,7 +85,7 @@
   height: 27px;
   display: grid;
   place-items: center;
-  color: #f4f8f2;
+  color: #f2f4f8;
   background: var(--wl-forest);
   border-radius: 8px;
   font-size: 12px;
@@ -176,7 +176,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #5e9c6c;
+  background: #5e739c;
 }
 
 .wl-stage-layout {
@@ -309,7 +309,7 @@
   border-radius: 9px;
   padding: 11px 12px;
   color: var(--wl-ink);
-  background: #fcfdfb;
+  background: #fbfcfd;
   font-size: 15px;
 }
 .wl-job-form textarea,
@@ -854,7 +854,7 @@
   border-radius: 9px;
   padding: 12px;
   color: var(--wl-ink);
-  background: #fcfdfb;
+  background: #fbfcfd;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -1226,7 +1226,7 @@
   border: 1px solid var(--wl-line-strong);
   border-radius: 7px;
   padding: 9px;
-  background: #fcfdfb;
+  background: #fbfcfd;
   color: var(--wl-ink);
 }
 .job-limit-fields span {

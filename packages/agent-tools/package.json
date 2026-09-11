@@ -1,6 +1,6 @@
 {
   "name": "wayleave-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scoped MCP tools for Wayleave agent accounts",
   "bin": {
     "wayleave-mcp": "./dist/cli.js"

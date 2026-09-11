@@ -14,7 +14,7 @@ Configure a compatible MCP host with the version-pinned package:
   "mcpServers": {
     "wayleave": {
       "command": "bunx",
-      "args": ["wayleave-mcp@0.1.0"],
+      "args": ["wayleave-mcp@0.1.1"],
       "env": {
         "WAYLEAVE_AGENT_TOKEN": "<one-time dashboard key>",
         "WAYLEAVE_GATEWAY_URL": "https://way-leave.vercel.app/gateway"
@@ -29,14 +29,14 @@ Codex uses the equivalent TOML shape:
 ```toml
 [mcp_servers.wayleave]
 command = "bunx"
-args = ["wayleave-mcp@0.1.0"]
+args = ["wayleave-mcp@0.1.1"]
 
 [mcp_servers.wayleave.env]
 WAYLEAVE_AGENT_TOKEN = "<one-time dashboard key>"
 WAYLEAVE_GATEWAY_URL = "https://way-leave.vercel.app/gateway"
 ```
 
-The equivalent npm runner command is `npx -y wayleave-mcp@0.1.0`. The dashboard
+The equivalent npm runner command is `npx -y wayleave-mcp@0.1.1`. The dashboard
 uses a fixed version instead of `latest` because the process receives a bearer
 credential. It enables copying only after a fresh client-specific credential is
 created.
@@ -92,3 +92,5 @@ configure and reconnect the MCP host before invoking the server.
 
 Wayleave is the public project and MCP server name. The npm package is
 `wayleave-mcp`.
+
+For a local owner dashboard on a different port, set `WAYLEAVE_DASHBOARD_URL=http://127.0.0.1:3020`. Start the gateway with matching `MANDATE_DASHBOARD_ORIGIN=http://127.0.0.1:3020`. Local source responses include readable demo-token amounts, setup guidance and verified payment status while preserving the underlying fields. These additions are included in version 0.1.1.

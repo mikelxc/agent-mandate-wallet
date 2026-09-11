@@ -34,6 +34,7 @@
         "@mandate/sdk": "workspace:*",
         "@reown/appkit": "^1.8.23",
         "@reown/appkit-adapter-wagmi": "^1.8.23",
+        "@reown/appkit-controllers": "1.8.23",
         "@reown/appkit-siwe": "1.8.23",
         "@shadcn/react": "0.3.0",
         "@tanstack/react-query": "latest",
@@ -72,7 +73,7 @@
     },
     "packages/agent-tools": {
       "name": "wayleave-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "bin": {
         "wayleave-mcp": "./dist/cli.js",
       },

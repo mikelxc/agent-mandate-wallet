@@ -4,7 +4,7 @@ import { createSiweMessage } from "viem/siwe";
 import { canonicalIntentHash, parsePaymentIntent, ProtocolError } from "@mandate/protocol";
 import { sepoliaDeployment, validLabel, type PasskeyPublicKey } from "@mandate/sdk";
 import { Store } from "./store";
-import type { Chain, Prepared } from "./chain";
+import { PaymentPreparationError, type Chain, type Prepared } from "./chain";
 import { createSiweAuth } from "./siwe";
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 const secret = () => randomBytes(32).toString("hex");
@@ -547,6 +547,8 @@ export function createApp(
       }
       deny(404, "Route not found");
     } catch (error) {
+      if (error instanceof PaymentPreparationError)
+        return json({ error: error.message, code: error.code }, 422);
       if (error instanceof HttpError) return json({ error: error.message }, error.status);
       if (error instanceof ProtocolError || error instanceof SyntaxError)
         return json({ error: error.message }, 400);

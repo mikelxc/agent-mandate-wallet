@@ -7,6 +7,8 @@ import {
   type Address,
   type Hex,
   keccak256,
+  formatEther,
+  formatUnits,
   stringToHex,
 } from "viem";
 import { sepolia } from "viem/chains";
@@ -24,6 +26,30 @@ import {
 } from "@mandate/sdk";
 import { privateKeyToAccount } from "viem/accounts";
 import type { PaymentIntent } from "@mandate/protocol";
+
+/** Only deliberately authored messages may be returned to the browser. */
+export class PaymentPreparationError extends Error {
+  constructor(public code: string, message: string) { super(message); }
+}
+
+export function checkPaymentFunding(
+  amount: bigint,
+  balances: { token: string; allowance: string; deposit: string },
+  maxFee: bigint,
+) {
+  if (maxFee > 50_000_000_000n)
+    throw new PaymentPreparationError("fee_ceiling", "Sepolia gas fees exceed the payment safety limit. Try again when fees fall.");
+  const missing: string[] = [];
+  if (BigInt(balances.token) < amount)
+    missing.push(`Your wallet needs ${formatUnits(amount, 6)} demo USDC; it has ${formatUnits(BigInt(balances.token), 6)}.`);
+  if (BigInt(balances.allowance) < amount)
+    missing.push(`Set a capped token allowance for this account of at least ${formatUnits(amount, 6)} demo USDC (currently ${formatUnits(BigInt(balances.allowance), 6)}).`);
+  const required = maxFee * 660_000n;
+  if (BigInt(balances.deposit) < required)
+    missing.push(`Add at least ${formatEther(required - BigInt(balances.deposit))} Sepolia ETH to this account's gas deposit. ETH in your wallet is separate.`);
+  if (missing.length)
+    throw new PaymentPreparationError("funding_required", `${missing.join(" ")} Open Account funding settings, load this account, then review again.`);
+}
 
 export type Prepared = {
   tokenId: string;
@@ -168,17 +194,16 @@ export function liveChain(
   }
   async function authority(intent: PaymentIntent) {
     if (intent.token.toLowerCase() !== d.token.toLowerCase())
-      throw new Error("Only the demo token is supported");
+      throw new PaymentPreparationError("unsupported_token", "Only the demo token is supported");
     const own = await ownership(intent.account);
-    if (own.owner !== intent.fundingOwner) throw new Error("Funding owner changed");
+    if (own.owner !== intent.fundingOwner) throw new PaymentPreparationError("owner_changed", "Funding owner changed. Reject this request and ask your agent for a new one.");
     const code = await c.getCode({ address: intent.fundingOwner as Address });
     if (code && code !== "0x")
-      throw new Error(
-        "This first submission flow requires an undelegated EOA; separate bundling is next",
+      throw new PaymentPreparationError(
+        "unsupported_wallet",
+        "This wallet requires a separate bundler, which is not configured. Payment submission currently requires an undelegated EOA",
       );
     const b = await balances(intent.account, intent.fundingOwner);
-    if (BigInt(b.allowance) < BigInt(intent.amount) || BigInt(b.token) < BigInt(intent.amount))
-      throw new Error("Insufficient token balance or allowance");
     return { ...own, ...b };
   }
   return {
@@ -190,8 +215,7 @@ export function liveChain(
       const a = await authority(intent);
       const fees = await c.estimateFeesPerGas();
       const maxFee = fees.maxFeePerGas * 2n;
-      if (maxFee > 50_000_000_000n || BigInt(a.deposit) < maxFee * 660_000n)
-        throw new Error("Gas deposit insufficient or fee ceiling exceeded");
+      checkPaymentFunding(BigInt(intent.amount), a, maxFee);
       const op = {
         sender: intent.account as Address,
         nonce: await c.readContract({
@@ -234,6 +258,7 @@ export function liveChain(
     },
     async verifyApproval(intent, p, signature) {
       const own = await authority(intent);
+      checkPaymentFunding(BigInt(intent.amount), own, BigInt(p.op.gasFees) & ((1n << 128n) - 1n));
       if (own.epoch !== p.epoch || own.tokenId !== p.tokenId) return false;
       const valid = await c.verifyTypedData({
         address: intent.fundingOwner as Address,

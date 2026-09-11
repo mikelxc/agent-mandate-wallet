@@ -26,8 +26,10 @@ for (const validSignature of [true, false])
     let verified = false;
     let verificationStatus = 0;
     let cookie = '';
+    let nonceRequests = 0;
     await page.route('**/gateway/**', async (route) => {
       const request = route.request();
+      if (request.url().endsWith('/auth/siwe/nonce')) nonceRequests++;
       const headers = new Headers(request.headers());
       if (cookie) headers.set('Cookie', cookie);
       const response = await gateway(
@@ -126,11 +128,13 @@ for (const validSignature of [true, false])
         modal.getByRole('button', { name: 'Sign', exact: true }),
       ).toBeVisible({ timeout: 20_000 });
       expect(verified).toBe(false);
+      expect(nonceRequests).toBe(1);
       await modal.getByRole('button', { name: 'Sign', exact: true }).click();
       await expect
         .poll(() => verificationStatus, { timeout: 20_000 })
         .toBe(validSignature ? 200 : 401);
       expect(signatures).toBe(1);
+      expect(nonceRequests).toBe(1);
       if (validSignature) {
         await expect(page.locator('.mobile-status')).toContainText(
           'Owner verified.',

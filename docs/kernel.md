@@ -30,3 +30,35 @@ The original OperatingAccount contract is retained for its policy reference test
 - [EIP-5792 Wallet Call API](https://eips.ethereum.org/EIPS/eip-5792).
 
 Vendored upstream source is unmodified. Solidity 0.8.33, Prague, optimizer and via-IR are configured in foundry.toml. Upstream SPDX/license terms remain in each dependency; the root MIT license does not replace them. This is a development test deployment, not an audited production release.
+
+## Guided payment funding
+
+Payment review now checks the requested account binding, current owner, owner
+wallet type, demo token balance, account allowance and EntryPoint deposit inside
+the payment card. It offers only missing setup steps, one wallet confirmation at
+a time, and returns to exact-payment preparation once funding is confirmed.
+There is no automatic signing, wallet delegation, or setup on receipt of an agent
+request. The owner explicitly selects each displayed transaction.
+
+The demo faucet mints only the shortfall to the owner. An insufficient allowance
+is replaced with exactly the requested payment amount, never an unlimited value.
+A sufficient existing allowance is preserved. Gas funding covers the displayed
+660,000-gas reservation at the quoted capped fee; unused funds remain deposited.
+Each write rechecks scope and live funding. A changed transaction requires another
+review tap. Pending transaction hashes are retained in the open setup card so a
+confirmation timeout can be checked without sending a duplicate transaction.
+Reloading the page requires a fresh chain check; it is not proof that a pending
+transaction was cancelled. Confirm its wallet status before retrying after reload.
+
+Setup approvals remain standard ERC-20 allowances: they persist if the user stops,
+and lack recipient/expiry/ownership-epoch restrictions. The card explains that
+residual exposure. The signed payment still passes the gateway's funding checks,
+nonce/owner checks, signature verification and EntryPoint simulation. Setup
+receipts are labelled separately from payment inclusion.
+
+A single transaction for approval, deposit and payment is not implemented: the
+current token has no permit and EntryPoint 0.9 forbids contract/delegated callers
+of handleOps. Generic multicall would approve the wrong token owner. Supporting
+that UX requires an explicitly designed token authorization/sponsorship path or
+wallet-native batching with a separate bundler and revised gateway simulation;
+merely switching to wallet_sendCalls would not work safely with this deployment.

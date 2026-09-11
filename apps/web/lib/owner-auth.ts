@@ -3,16 +3,12 @@ import {
   formatMessage,
   type SIWESession,
 } from '@reown/appkit-siwe';
+import {
+  createOwnerChallengeCache,
+  type OwnerChallenge,
+} from './owner-challenge';
 
 export const ownerSessionEvent = 'wayleave:owner-session';
-type Challenge = {
-  nonce: string;
-  domain: string;
-  uri: string;
-  statement: string;
-  issuedAt: string;
-  expirationTime: string;
-};
 
 async function request<T>(path: string, data?: unknown): Promise<T> {
   const response = await fetch(`/gateway${path}`, {
@@ -31,13 +27,18 @@ async function request<T>(path: string, data?: unknown): Promise<T> {
   return value as T;
 }
 
-let challenge: Promise<Challenge> | undefined;
-function getChallenge() {
-  challenge ??= request<Challenge>('/auth/siwe/nonce', {}).catch((error) => {
-    challenge = undefined;
-    throw error;
-  });
-  return challenge;
+const challenge = createOwnerChallengeCache(() =>
+  request<OwnerChallenge>('/auth/siwe/nonce', {}),
+);
+let signingChallenge: OwnerChallenge | undefined;
+export async function prepareOwnerAuth() {
+  const data = await challenge.get();
+  if (
+    data.domain !== window.location.host ||
+    data.uri !== window.location.origin
+  )
+    throw new Error('The gateway is configured for a different website.');
+  return data;
 }
 function notify(session: SIWESession | null) {
   window.dispatchEvent(new CustomEvent(ownerSessionEvent, { detail: session }));
@@ -46,13 +47,8 @@ function notify(session: SIWESession | null) {
 export const ownerAuth = createSIWEConfig({
   required: true,
   async getMessageParams() {
-    challenge = undefined;
-    const data = await getChallenge();
-    if (
-      data.domain !== window.location.host ||
-      data.uri !== window.location.origin
-    )
-      throw new Error('The gateway is configured for a different website.');
+    const data = await prepareOwnerAuth();
+    signingChallenge = data;
     return {
       domain: data.domain,
       uri: data.uri,
@@ -63,7 +59,7 @@ export const ownerAuth = createSIWEConfig({
     };
   },
   async getNonce() {
-    return (await getChallenge()).nonce;
+    return (signingChallenge ?? (await prepareOwnerAuth())).nonce;
   },
   createMessage({ address, ...args }) {
     return formatMessage(args, address);
@@ -73,7 +69,8 @@ export const ownerAuth = createSIWEConfig({
       await request<SIWESession>('/auth/siwe/verify', { message, signature });
       return true;
     } finally {
-      challenge = undefined;
+      challenge.clear();
+      signingChallenge = undefined;
     }
   },
   async getSession() {
@@ -86,7 +83,8 @@ export const ownerAuth = createSIWEConfig({
   },
   async signOut() {
     await request('/auth/logout', {});
-    challenge = undefined;
+    challenge.clear();
+    signingChallenge = undefined;
     return true;
   },
   onSignIn: (session) => {
