@@ -187,7 +187,7 @@ function WalletScene() {
       aria-label="Your wallet holds ownership NFTs, each controlling a real agent wallet"
     >
       <div className="scene-player">
-        <span className="scene-caption">SIMULATION · ENSv2 WALLET EXAMPLE</span>
+        <span className="scene-caption">YOUR WALLET. YOUR AGENTS.</span>
         <button
           aria-label={playing ? 'Pause wallet demo' : 'Play wallet demo'}
           onClick={() => setPlaying(!playing)}
@@ -249,13 +249,12 @@ function WalletScene() {
                 <br />
                 {item.address.slice(0, 6)}…{item.address.slice(-4)}
               </span>
-              <span className="scene-zero-balance">Balance $0.00</span>
             </button>
           ))}
         </div>
       </div>
       <p className="scene-ownership-note">
-        Zero balance needed. These wallets spend from your parent wallet.
+        Agents spend from your wallet. No separate top-ups.
       </p>
       <div
         className="scene-request"
@@ -311,7 +310,7 @@ function WalletScene() {
         ))}
       </div>
       <p className="scene-footnote">
-        Fictional names, NFTs, addresses and payments. No funds move.
+        Demo · See how a payment works.
       </p>
     </div>
   );
