@@ -52,8 +52,8 @@ export function SpendingOverview({
             do their thing.
           </h1>
           <p>
-            One wallet for your money. A little room for your agents to spend.
-            You approve the payments and see it all here.
+            Each agent gets a real wallet, owned by an NFT you hold in yours.
+            Agents spend from your balance. You approve the payments.
           </p>
           <button className="primary" disabled={busy} onClick={onConnect}>
             {authLabel}
@@ -80,10 +80,10 @@ export function SpendingOverview({
           </div>
           <div>
             <span>03</span>
-            <h2>Always yours.</h2>
+            <h2>A wallet inside your wallet.</h2>
             <p>
-              Own each agent wallet as an NFT. Revoke its connection whenever
-              you need.
+              Each NFT in your wallet controls an agent wallet with its own
+              address. You hold the ownership; your agent gets a connection.
             </p>
           </div>
         </div>
@@ -139,14 +139,14 @@ function WalletScene() {
   return (
     <div
       className="wallet-scene"
-      aria-label="Illustration of agents spending from one wallet"
+      aria-label="Your wallet holds ownership NFTs, each controlling a real agent wallet"
     >
       <span className="scene-caption">ONE WALLET. YOUR AGENTS.</span>
       <div className="scene-source">
         <WayleaveMark width={38} height={38} />
         <div>
           <strong>Your wallet</strong>
-          <span>The money stays here.</span>
+          <span>Your funds + your ownership NFTs.</span>
         </div>
         <span className="source-dot" />
       </div>
@@ -155,25 +155,33 @@ function WalletScene() {
           <path d="M200 0v22M64 68V42Q64 22 84 22h232q20 0 20 20v26M200 22v46" />
         </svg>
       </div>
-      <div className="scene-agents">
-        {sceneAgents.map((item, index) => (
-          <button
-            key={item.name}
-            aria-pressed={selected === index}
-            onClick={() => setSelected(index)}
-          >
-            <span
-              className={`agent-sculpture ${item.shape}`}
-              aria-hidden="true"
+      <div className="scene-owned-wallets">
+        <span className="scene-ownership-label">NFTs held in your wallet</span>
+        <div className="scene-agents">
+          {sceneAgents.map((item, index) => (
+            <button
+              key={item.name}
+              aria-pressed={selected === index}
+              onClick={() => setSelected(index)}
             >
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>{item.name}</span>
-          </button>
-        ))}
+              <span
+                className={`agent-sculpture ${item.shape}`}
+                aria-hidden="true"
+              >
+                <i />
+                <i />
+                <i />
+              </span>
+              <span>{item.name}</span>
+              <span className="scene-nft-label">Ownership NFT</span>
+              <span className="scene-inner-wallet">Owns an agent wallet</span>
+            </button>
+          ))}
+        </div>
       </div>
+      <p className="scene-ownership-note">
+        Each NFT controls a real wallet with its own address.
+      </p>
       <div className="scene-request" key={selected} aria-live="polite">
         <div className="scene-request-heading">
           <span>EXAMPLE REQUEST</span>

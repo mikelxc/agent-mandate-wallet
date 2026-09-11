@@ -1936,3 +1936,54 @@ body {
     letter-spacing: -1.8px;
   }
 }
+
+/* Ownership is visible as a collection within the owner's wallet. */
+.scene-owned-wallets {
+  border: 1px solid #cbd3c6;
+  border-radius: 22px;
+  padding: 12px 8px 8px;
+}
+.scene-ownership-label {
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  color: #606c5b;
+  margin-bottom: 12px;
+}
+.scene-agents button {
+  gap: 8px;
+  background: #f5f7f2;
+}
+.scene-nft-label {
+  font-size: 8px;
+  color: #70786a;
+}
+.scene-inner-wallet {
+  border-top: 1px solid #dfe5da;
+  padding-top: 8px;
+  width: 100%;
+  font-size: 8px;
+  line-height: 1.5;
+  color: #444f3e;
+}
+.wallet-entry .scene-ownership-note {
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.6;
+  margin: 12px 4px 0;
+  color: #626d5a;
+}
+@media (max-width: 360px) {
+  .scene-agents {
+    gap: 5px;
+  }
+  .scene-agents button {
+    font-size: 9px;
+  }
+  .scene-source {
+    padding-inline: 14px;
+  }
+  .scene-source div span {
+    font-size: 9px;
+  }
+}
