@@ -15,12 +15,14 @@ const store = new Store(':memory:');
 await store.db.ready;
 const token = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('hex');
 const now = Math.floor(Date.now() / 1000);
+const publishedVersion = process.env.WAYLEAVE_VERIFY_PUBLISHED_MCP;
+if (publishedVersion && !/^\d+\.\d+\.\d+$/.test(publishedVersion)) throw new Error('Use an exact published MCP version');
 await store.createAgent({ name: 'live-history-verification', owner, account: account.toLowerCase(), tokenHash: hashToken(token), expiresAt: now + 300 }, now);
 let handler: ReturnType<typeof createApp>;
 const gateway = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: request => handler(request) });
 handler = createApp(store, chain, { gatewayOrigin: gateway.url.origin, history: historyFromEnv() });
 const transport = new StdioClientTransport({ command: process.execPath,
-  args: [new URL('../src/server.ts', import.meta.url).pathname], cwd: tmpdir(),
+  args: publishedVersion ? ['x', `wayleave-mcp@${publishedVersion}`] : [new URL('../src/server.ts', import.meta.url).pathname], cwd: tmpdir(),
   env: { PATH: process.env.PATH ?? '', WAYLEAVE_AGENT_TOKEN: token, WAYLEAVE_GATEWAY_URL: gateway.url.origin }, stderr: 'pipe' });
 const client = new Client({ name: 'live-history-verification', version: '1.0.0' });
 try {
@@ -47,7 +49,7 @@ try {
   if (!list.items?.length) throw new Error('Live sample transfers required');
   const context = await call('get_payment_context', { transactionHash: list.items[0].transactionHash, chainId: 11155111 });
   const summary = await call('summarize_spending', { groupBy: 'merchant', chainId: 11155111 });
-  console.log(JSON.stringify({ verifiedAt: new Date().toISOString(), authentication: 'ephemeral_local_fixture', data: 'live_graph_and_sepolia_rpc', account, owner,
+  console.log(JSON.stringify({ verifiedAt: new Date().toISOString(), mcp: publishedVersion ? `wayleave-mcp@${publishedVersion}` : 'local_source', authentication: 'ephemeral_local_fixture', data: 'live_graph_and_sepolia_rpc', account, owner,
     tools: ['list_payments', 'get_payment_context', 'summarize_spending'], transferIds: list.items.map((item: {id:string}) => item.id),
     contextTransfers: context.transfers.length, summary, coverage: list.coverage }, null, 2));
   }

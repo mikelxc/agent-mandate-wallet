@@ -1,0 +1,38 @@
+{
+  "verifiedAt": "2026-09-11T18:42:30Z",
+  "sourceCommit": "4d6610b",
+  "website": {
+    "canonicalUrl": "https://www.wayleave.xyz",
+    "apexRedirect": "https://wayleave.xyz → https://www.wayleave.xyz (308)",
+    "deploymentId": "dpl_FxiJjhyhv9utjNn53h2iu9MmULD7",
+    "deploymentUrl": "https://wayleave-ceh4osi3p-lxc-xyz.vercel.app",
+    "promoted": true,
+    "gatewayHealth": { "ok": true, "chainId": 11155111, "mode": "human_approval" },
+    "crosschainConfig": { "configured": true, "chainId": 5042002, "destinationChainId": 11155111 }
+  },
+  "mcp": {
+    "package": "wayleave-mcp@0.1.2",
+    "registryVerified": true,
+    "verifiedAt": "2026-09-11T18:40:21.361Z",
+    "authentication": "ephemeral_local_fixture",
+    "data": "live_graph_and_sepolia_rpc",
+    "tools": ["list_payments", "get_payment_context", "summarize_spending"],
+    "sampleTransfer": "11155111:0xd92c635f38601d9b298ac2eeac192fe333e7b9be56894235d327d2977f78678f:218"
+  },
+  "validation": {
+    "bunTests": 131,
+    "foundryTests": 61,
+    "anvilSmoke": "passed",
+    "typescript": "passed",
+    "localWebpackBuild": "passed",
+    "vercelProductionBuild": "passed",
+    "productionMobileUiTests": 3,
+    "uiTestScope": "Network navigation/reload and identity/unconfigured states; API responses mocked in browser tests. Live health/config checked separately.",
+    "localCheckLimitation": "Local Turbopack build blocked by sandbox port binding; remote production Turbopack build passed."
+  },
+  "outstandingLiveDemonstrations": [
+    "Arc-to-Sepolia CCTP burn, attestation and mint",
+    "Portable ENS agent enrollment, account association and revocation"
+  ],
+  "indexingScope": "Live Sepolia demo-token history only; no live Arc or Circle destination-USDC subgraph coverage."
+}
