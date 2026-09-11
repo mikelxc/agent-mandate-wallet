@@ -13,7 +13,7 @@ contract SimulatedCctpMessenger {
     function setFail(bool value) external { fail = value; }
     function depositForBurn(uint256 amount, uint32 destinationDomain, bytes32 mintRecipient, address burnToken, bytes32 destinationCaller, uint256 maxFee, uint32 finality) external {
         require(!fail, "simulated burn failure");
-        require(destinationDomain == 6 && destinationCaller == bytes32(0) && maxFee < amount && finality == 2000, "invalid route");
+        require(destinationDomain == 0 && destinationCaller == bytes32(0) && maxFee < amount && finality == 2000, "invalid route");
         MockUSDC(burnToken).transferFrom(msg.sender,address(this),amount);
         burned += amount; domain = destinationDomain; recipient = mintRecipient;
     }
@@ -28,7 +28,7 @@ contract CctpExecutionTest is KernelIntegrationTest {
         calls[0]=Call(address(token),0,abi.encodeCall(token.transferFrom,(owner,address(account),3e6)));
         calls[1]=Call(address(token),0,abi.encodeCall(token.approve,(address(messenger),0)));
         calls[2]=Call(address(token),0,abi.encodeCall(token.approve,(address(messenger),3e6)));
-        calls[3]=Call(address(messenger),0,abi.encodeCall(messenger.depositForBurn,(3e6,6,bytes32(uint256(uint160(vendor))),address(token),bytes32(0),1000,2000)));
+        calls[3]=Call(address(messenger),0,abi.encodeCall(messenger.depositForBurn,(3e6,0,bytes32(uint256(uint160(vendor))),address(token),bytes32(0),1000,2000)));
         calls[4]=Call(address(token),0,abi.encodeCall(token.approve,(address(messenger),0)));
         u.callData=abi.encodeCall(account.execute,(bytes32(uint256(1)<<248),abi.encode(calls)));
         u.signature=sig(OWNER_KEY,validator.authorizationDigest(address(account),ep.getUserOpHash(u)));

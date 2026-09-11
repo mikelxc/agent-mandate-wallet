@@ -11,10 +11,16 @@ let handler: ReturnType<typeof createHostedGateway> | undefined;
 async function gateway(request: Request) {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
-  const origins = process.env.MANDATE_DASHBOARD_ORIGINS?.split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  if (!url || !authToken || !origins?.length) {
+  const origins = Array.from(
+    new Set([
+      'https://wayleave.xyz',
+      'https://www.wayleave.xyz',
+      ...(process.env.MANDATE_DASHBOARD_ORIGINS?.split(',') ?? [])
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ]),
+  );
+  if (!url || !authToken) {
     return Response.json(
       {
         error:

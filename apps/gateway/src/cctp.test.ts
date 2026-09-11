@@ -69,7 +69,7 @@ test('owner lifecycle persists ambiguous source, rejects changed hash, and keeps
     expect((await call(`/${op.id}/source`,{transactionHash:`0x${'ef'.repeat(32)}`})).status).toBe(409);
     included=true;
     expect((await (await call(`/${op.id}/source`,{transactionHash:hash})).json()).status).toBe('attestation_pending');
-    expect((await (await call(`/${op.id}/attestation`,{})).json()).mint.chainId).toBe(84532);
+    expect((await (await call(`/${op.id}/attestation`,{})).json()).mint.chainId).toBe(11155111);
     const settled=await (await call(`/${op.id}/destination`,{transactionHash:hash})).json();
     expect(settled.status).toBe('settled'); expect(settled.delivery).toBe('not_recorded');
     expect((await (await call(`/${op.id}/destination`,{transactionHash:hash})).json()).revision).toBe(settled.revision);

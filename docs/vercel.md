@@ -59,7 +59,7 @@ bunx vercel integration add tursocloud/database --plan starter \
 
 The integration supplies server-only `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
 Also set `MANDATE_DASHBOARD_ORIGINS` to
-`https://way-leave.vercel.app,https://agent-mandate-wallet-web.vercel.app`.
+`https://wayleave.xyz,https://www.wayleave.xyz`.
 Leave `MANDATE_GATEWAY_ORIGIN` unset to use the in-project gateway. That optional
 build-time setting still supports forwarding to an external HTTPS gateway.
 Never use `NEXT_PUBLIC_*` names for database credentials or signing keys.
@@ -77,7 +77,7 @@ WalletConnect wallets can combine connection and authentication; injected wallet
 use Reown's sign-in view. Authentication grants no spending authority.
 
 Agent setup snippets now include the deployed `/gateway` URL. The MCP client
-accepts only local HTTP or the two named Wayleave HTTPS gateway URLs, refuses
+accepts only local HTTP or `https://www.wayleave.xyz/gateway`, refuses
 credentials/query strings in the URL, and does not follow bearer-token redirects.
 
 Passkey onboarding remains disabled without the separately configured factory and
@@ -85,8 +85,8 @@ relayer. This deployment is not evidence that the passkey, ENS, Arc or Ledger
 integrations are live. Passkeys are hostname-bound; choose a stable domain before
 enrolling hosted credentials.
 
-Register the eventual dashboard domain in the Reown project's allowed origins
-as required. The existing Reown project ID is public; relayer keys, database
+Register `https://www.wayleave.xyz` in the Reown project's allowed origins. The
+existing Reown project ID is public; relayer keys, database
 contents, and test keystores must remain server-side. The root
 `.vercelignore` excludes local environment files, `.secrets`, and `.local` from
 CLI source uploads. The developer signing endpoint exists only in the opt-in
@@ -128,7 +128,7 @@ Turso configuration is present.
   redaction and revocation with a simulated chain. `bun run smoke` passed on Anvil.
 - At this stage, live gateway deployment was pending Turso marketplace terms acceptance
   and database provisioning. These local checks alone did not prove hosted verification.
-- `MANDATE_DASHBOARD_ORIGINS` is configured in Vercel production for both named aliases.
+- `MANDATE_DASHBOARD_ORIGINS` was configured in Vercel production for the deployment aliases used at that time.
   No production deployment or database had yet been created at the local-test stage.
 
 ## Production release — September 9, 2026
@@ -137,7 +137,8 @@ Turso configuration is present.
   `iad1`, and connected it to this project's production environment only.
 - Published the frontend and gateway together as Vercel deployment
   `dpl_838BaERNta1vwgQ8xypt3K73H16P` (Ready), built with Bun 1.4.1 and Next.js 16.3.4.
-- Canonical site: https://way-leave.vercel.app. Deployment inspection:
+- Canonical site: https://www.wayleave.xyz. The apex domain redirects here with
+  HTTP 308. Deployment inspection:
   https://vercel.com/tapants/agent-mandate-wallet-web/838BaERNta1vwgQ8xypt3K73H16P.
 - Live `/gateway/health` returned HTTP 200 with `ok: true`, chain `11155111`,
   `human_approval` mode, and `Cache-Control: no-store`. The function ran in `iad1`.
@@ -152,8 +153,8 @@ Turso configuration is present.
   endpoints with one disposable login signature and displayed "Owner verified". No page
   crash or `file:///` warning was observed. Anonymous-session 401 responses and nonblocking
   Coinbase analytics DNS failures appeared in the console. No real user wallet was used.
-- The former `agent-mandate-wallet-web.vercel.app` alias is no longer attached and returns
-  404; use `way-leave.vercel.app`. No legacy alias was reassigned during this release.
+- The former Vercel alias is no longer the canonical entry point; use
+  `www.wayleave.xyz`. No legacy alias was reassigned during this release.
 
 ## Native WalletConnect authentication fix — September 9, 2026
 
@@ -221,8 +222,8 @@ Turso configuration is present.
   and links to expanded funding settings with the account ID prefilled from the
   deployed validator. No automatic allowance, deposit, or payment is performed.
 - Released isolated HEAD plus these payment changes as production deployment
-  `dpl_8cUQCGDxa49QuRgHEuArCWeZqNYd`, Ready and aliased to
-  https://way-leave.vercel.app. Existing uncommitted wallet-login changes were
+  `dpl_8cUQCGDxa49QuRgHEuArCWeZqNYd`, Ready and aliased to the production
+  domain used at that time. Existing uncommitted wallet-login changes were
   excluded. Vercel's production build and TypeScript validation passed.
 - Validation: 42 gateway tests, workspace type checks, local Anvil payment/replay/
   ownership-handover smoke test, live gateway health 200, and browser confirmation
@@ -233,8 +234,8 @@ Turso configuration is present.
 
 ## Inline payment setup — September 11, 2026
 
-- Released `dpl_EfYnthmn81VyHVSGpFpTCVcGbVJm` (Ready) to
-  https://way-leave.vercel.app from the isolated payment release source.
+- Released `dpl_EfYnthmn81VyHVSGpFpTCVcGbVJm` (Ready) to the production
+  domain used at that time from the isolated payment release source.
 - Review now opens an inline funding check and walkthrough. Missing demo tokens,
   exact-amount allowance and gas shortfall are separate, explicit wallet steps;
   confirmed funding proceeds to exact-payment preparation. Already funded requests

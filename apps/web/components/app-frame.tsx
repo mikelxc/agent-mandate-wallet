@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { WayleaveMark } from './wayleave-mark';
 import './app-frame.css';
+import { NetworkSelector } from './network-selector';
 
 export function AppFrame({
   children,
@@ -25,6 +26,7 @@ export function AppFrame({
           </span>
           wayleave<span className="app-testnet">{network} testnet</span>
         </Link>
+        <NetworkSelector network={network} />
         <nav aria-label="Main navigation">
           <Link
             href="/"

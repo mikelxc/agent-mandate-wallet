@@ -1,6 +1,6 @@
 import { http } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { foundry, arcTestnet, baseSepolia } from 'wagmi/chains';
+import { foundry, arcTestnet } from 'wagmi/chains';
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { RouterController } from '@reown/appkit-controllers';
@@ -16,7 +16,7 @@ const devWalletEnabled =
   process.env.NEXT_PUBLIC_MANDATE_DEV_WALLET === 'true';
 const adapter = new WagmiAdapter({
   projectId,
-  networks: [hackathonSepolia, arcTestnet, baseSepolia, foundry],
+  networks: [hackathonSepolia, arcTestnet, foundry],
   connectors: [
     ...(devWalletEnabled
       ? [
@@ -36,7 +36,6 @@ const adapter = new WagmiAdapter({
     [foundry.id]: http('http://127.0.0.1:8545'),
     [hackathonSepolia.id]: http(),
     [arcTestnet.id]: http(),
-    [baseSepolia.id]: http(),
   },
   ssr: true,
 });
@@ -45,7 +44,7 @@ export const walletConfig = adapter.wagmiConfig;
 const appKit = createAppKit({
   adapters: [adapter],
   projectId,
-  networks: [hackathonSepolia, arcTestnet, baseSepolia, foundry],
+  networks: [hackathonSepolia, arcTestnet, foundry],
   defaultNetwork: hackathonSepolia,
   siweConfig: devWalletEnabled ? undefined : ownerAuth,
   universalProviderConfigOverride: walletConnectSessionConfig,

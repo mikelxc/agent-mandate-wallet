@@ -109,14 +109,14 @@ export function createCctpRoute(options: { store: Store; audience: string; authe
       } catch { return json({ error: 'Cross-chain agent request could not be completed' }, 409); }
     }
     if (path !== '/crosschain' && !path.startsWith('/crosschain/')) return null;
-    if (path === '/crosschain/config' && request.method === 'GET') return json({ configured: !!chain, chainId: 5042002, destinationChainId: 84532, entryPoint: options.deployment?.entryPoint, nativeDecimals: 18, tokenDecimals: 6 });
+    if (path === '/crosschain/config' && request.method === 'GET') return json({ configured: !!chain, chainId: 5042002, destinationChainId: 11155111, entryPoint: options.deployment?.entryPoint, nativeDecimals: 18, tokenDecimals: 6 });
     if (request.method !== 'GET' && request.headers.get('origin') !== new URL(options.audience).origin) return json({ error: 'Dashboard origin required' }, 403);
     const cookie = request.headers.get('cookie')?.match(/(?:^|;\s*)mandate_session=([a-f0-9]{64})(?:;|$)/)?.[1];
     const owner = cookie && await store.session(digest(cookie), now());
     if (!owner) return json({ error: 'Sign in with your wallet' }, 401);
     if (!await store.takeRateLimit(`cctp:${owner}`, now(), 60)) return json({ error: 'Rate limit exceeded' }, 429);
     try {
-      if (path === '/crosschain' && request.method === 'GET') return json({ operations: await operations.list(owner), available: !!chain, mode: 'owner_approved_testnet', route: 'Arc Testnet → Base Sepolia' });
+      if (path === '/crosschain' && request.method === 'GET') return json({ operations: await operations.list(owner), available: !!chain, mode: 'owner_approved_testnet', route: 'Arc Testnet → Ethereum Sepolia' });
       if (!chain) return json({ error: 'Arc deployment is not configured', code: 'arc_not_configured' }, 503);
       let body: Record<string, unknown> = {};
       if (request.method === 'POST') {
@@ -139,6 +139,8 @@ export function createCctpRoute(options: { store: Store; audience: string; authe
       if (!operation) return json({ error: 'Not found' }, 404);
       if (request.method === 'GET' && !match[2]) return json(operation);
       if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      // Persisted requests retain their signed route. Never reuse a preparation from a retired route.
+      parseCctpIntent(operation.intent);
       switch (match[2]) {
         case 'prepare': {
           if (operation.prepared) return json({ operation, prepared: operation.prepared, summary: cctpPaymentSummary(operation.intent) });

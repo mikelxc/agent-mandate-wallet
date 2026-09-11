@@ -46,6 +46,11 @@ function notify(session: SIWESession | null) {
 
 export const ownerAuth = createSIWEConfig({
   required: true,
+  // The cookie proves the wallet identity. Each payment route independently
+  // verifies account ownership and signs for its own chain.
+  signOutOnNetworkChange: false,
+  signOutOnAccountChange: true,
+  signOutOnDisconnect: true,
   async getMessageParams() {
     const data = await prepareOwnerAuth();
     signingChallenge = data;

@@ -1,5 +1,8 @@
 .secrets/
 .local/
+.agents/
+skills-lock.json
+docs/plans/hackathon-prizes.md
 .env
 .env.*
 **/.env

@@ -21,7 +21,7 @@ It cannot sign payments, change ownership, or grant token allowances. Never ask 
 2. The owner opens Wayleave’s Connect an agent screen, connects and verifies their wallet, chooses or creates an agent wallet, and creates a separate connection for this client. Keys last 24 hours and can be revoked independently.
 3. Obtain that connection key through private client settings. This document deliberately omits it. Do not overwrite an existing valid key with the placeholder, or put keys in chat, logs, source control, or shared documents.
 4. ${input.destination}. Merge the server entry with existing configuration; preserve other servers. Generic MCP clients must support local stdio processes; this is not a remote HTTP MCP endpoint.
-5. Replace <WAYLEAVE_AGENT_TOKEN> privately with the new key. The host launches the pinned package wayleave-mcp@0.1.1 using bunx; no repository checkout is required.
+5. Replace <WAYLEAVE_AGENT_TOKEN> privately with the new key. The host launches the pinned package wayleave-mcp@0.1.2 using bunx; no repository checkout is required.
 
 \`\`\`${input.format}
 ${input.config}

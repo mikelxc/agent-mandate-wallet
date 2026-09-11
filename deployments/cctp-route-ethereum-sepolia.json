@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-09-11T18:26:37.604Z",
+  "route": {
+    "sourceChainId": 5042002,
+    "sourceDomain": 26,
+    "destinationChainId": 11155111,
+    "destinationDomain": 0,
+    "sourceToken": "0x3600000000000000000000000000000000000000",
+    "destinationToken": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "tokenMessenger": "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+    "messageTransmitter": "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+    "tokenDecimals": 6,
+    "nativeDecimals": 18
+  },
+  "verification": {
+    "method": "Read-only eth_chainId, localDomain, decimals and getCode calls",
+    "sourceChainId": 5042002,
+    "destinationChainId": 11155111,
+    "sourceCircleDomain": 26,
+    "destinationCircleDomain": 0,
+    "sourceUsdcDecimals": 6,
+    "destinationUsdcDecimals": 6,
+    "arcDeploymentContractsHaveCode": true,
+    "realTransferVerified": false
+  },
+  "arcDeploymentEvidence": "arc-testnet.json"
+}

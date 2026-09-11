@@ -14,10 +14,10 @@ Configure a compatible MCP host with the version-pinned package:
   "mcpServers": {
     "wayleave": {
       "command": "bunx",
-      "args": ["wayleave-mcp@0.1.1"],
+      "args": ["wayleave-mcp@0.1.2"],
       "env": {
         "WAYLEAVE_AGENT_TOKEN": "<one-time dashboard key>",
-        "WAYLEAVE_GATEWAY_URL": "https://way-leave.vercel.app/gateway"
+        "WAYLEAVE_GATEWAY_URL": "https://www.wayleave.xyz/gateway"
       }
     }
   }
@@ -29,14 +29,14 @@ Codex uses the equivalent TOML shape:
 ```toml
 [mcp_servers.wayleave]
 command = "bunx"
-args = ["wayleave-mcp@0.1.1"]
+args = ["wayleave-mcp@0.1.2"]
 
 [mcp_servers.wayleave.env]
 WAYLEAVE_AGENT_TOKEN = "<one-time dashboard key>"
-WAYLEAVE_GATEWAY_URL = "https://way-leave.vercel.app/gateway"
+WAYLEAVE_GATEWAY_URL = "https://www.wayleave.xyz/gateway"
 ```
 
-The equivalent npm runner command is `npx -y wayleave-mcp@0.1.1`. The dashboard
+The equivalent npm runner command is `npx -y wayleave-mcp@0.1.2`. The dashboard
 uses a fixed version instead of `latest` because the process receives a bearer
 credential. It enables copying only after a fresh client-specific credential is
 created.
@@ -105,6 +105,6 @@ Instead of `WAYLEAVE_AGENT_TOKEN`, configure `WAYLEAVE_ENS_IDENTITY` (the owner'
 
 `WAYLEAVE_GATEWAY_URL` still selects an explicitly trusted gateway. ENS records cannot redirect authentication to another endpoint. Challenge audience/name/key checks and redirect rejection apply before any signature is submitted. A short-lived bearer session is renewed locally as needed; revoked registrations and memberships fail gateway revalidation. Existing `WAYLEAVE_AGENT_TOKEN` takes precedence if configured. Optional `WAYLEAVE_ACCOUNT` selects an owner-associated account when an identity has multiple accounts; it is a selection hint, never authority.
 
-### Arc to Base Sepolia proposals
+### Arc to Ethereum Sepolia proposals
 
-`propose_crosschain_payment` accepts account, funding owner, recipient, amount, maximum Circle fee, business reference and idempotency key. The tool fixes the supported route to Arc Testnet → Base Sepolia and sends the proposal to the scoped agent endpoint. It requires portable identity with a verified Arc account association and `propose_payment` permission; legacy Sepolia bearer connections do not acquire Arc access. Amount is the 6-decimal USDC source debit, merchant receipt is debit minus the actual Circle fee, and source gas is additional. Only the owner can approve the exact payment. `get_crosschain_payment` returns proposal status and separate source/destination evidence, not signing payloads. Neither tool signs or submits payments.
+`propose_crosschain_payment` accepts account, funding owner, recipient, amount, maximum Circle fee, business reference and idempotency key. The tool fixes the supported route to Arc Testnet → Ethereum Sepolia and sends the proposal to the scoped agent endpoint. It requires portable identity with a verified Arc account association and `propose_payment` permission; legacy Sepolia bearer connections do not acquire Arc access. Amount is the 6-decimal USDC source debit, merchant receipt is debit minus the actual Circle fee, and source gas is additional. Only the owner can approve the exact payment. `get_crosschain_payment` returns proposal status and separate source/destination evidence, not signing payloads. Neither tool signs or submits payments.

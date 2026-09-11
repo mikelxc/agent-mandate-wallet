@@ -7,9 +7,9 @@ import { kernelAbi } from './generated/Kernel';
  * Native Arc USDC (18 decimals) and ERC20 USDC (6 decimals) share a balance.
  */
 export const arcCctpRoute = Object.freeze({
-  sourceChainId: 5042002, sourceDomain: 26, destinationChainId: 84532, destinationDomain: 6,
+  sourceChainId: 5042002, sourceDomain: 26, destinationChainId: 11155111, destinationDomain: 0,
   sourceToken: '0x3600000000000000000000000000000000000000' as Address,
-  destinationToken: '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as Address,
+  destinationToken: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' as Address,
   tokenMessenger: '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA' as Address,
   messageTransmitter: '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275' as Address,
   tokenDecimals: 6, nativeDecimals: 18,
@@ -22,8 +22,8 @@ export const cctpAbi = parseAbi([
   'event MessageSent(bytes message)',
 ]);
 export type CctpIntent = {
-  version: 1; kind: 'cctp_payment'; sourceChainId: 5042002; destinationChainId: 84532;
-  sourceDomain: 26; destinationDomain: 6; sourceToken: Address; destinationToken: Address;
+  version: 1; kind: 'cctp_payment'; sourceChainId: 5042002; destinationChainId: 11155111;
+  sourceDomain: 26; destinationDomain: 0; sourceToken: Address; destinationToken: Address;
   account: Address; fundingOwner: Address; recipient: Address;
   /** Integer 6-decimal units. Merchant receives amount minus actual Circle fee. */
   amount: string; maxFee: string; amountSemantics: 'source_debit';
@@ -45,7 +45,7 @@ function textField(value: unknown): string {
 export function parseCctpIntent(value: unknown): CctpIntent {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid CCTP intent');
   const v = value as Record<string, unknown>;
-  const constants = { version: 1, kind: 'cctp_payment', sourceChainId: 5042002, destinationChainId: 84532, sourceDomain: 26, destinationDomain: 6, amountSemantics: 'source_debit', minFinalityThreshold: 2000 } as const;
+  const constants = { version: 1, kind: 'cctp_payment', sourceChainId: 5042002, destinationChainId: 11155111, sourceDomain: 26, destinationDomain: 0, amountSemantics: 'source_debit', minFinalityThreshold: 2000 } as const;
   for (const [key, expected] of Object.entries(constants)) if (v[key] !== expected) throw new Error(`Unsupported CCTP ${key}`);
   const sourceToken = address(v.sourceToken), destinationToken = address(v.destinationToken);
   if (sourceToken !== getAddress(arcCctpRoute.sourceToken) || destinationToken !== getAddress(arcCctpRoute.destinationToken)) throw new Error('Unsupported CCTP token');
@@ -83,7 +83,7 @@ export function parseCctpMessage(message: Hex, value: CctpIntent, attested = fal
   const part = (offset: number, bytes: number): Hex => `0x${message.slice(2 + offset * 2, 2 + (offset + bytes) * 2)}`;
   const number = (offset: number, bytes = 32) => BigInt(part(offset, bytes));
   const sameAddress = (offset: number, expected: Address) => part(offset, 32).toLowerCase() === padHex(expected, { size: 32 }).toLowerCase();
-  if (number(0, 4) !== 1n || number(148, 4) !== 1n || number(4, 4) !== 26n || number(8, 4) !== 6n ||
+  if (number(0, 4) !== 1n || number(148, 4) !== 1n || number(4, 4) !== 26n || number(8, 4) !== 0n ||
     !sameAddress(44, arcCctpRoute.tokenMessenger) || !sameAddress(76, arcCctpRoute.tokenMessenger) || part(108, 32) !== zeroHash ||
     number(140, 4) !== 2000n || !sameAddress(152, i.sourceToken) || !sameAddress(184, i.recipient) || number(216) !== BigInt(i.amount) ||
     !sameAddress(248, i.account) || number(280) !== BigInt(i.maxFee)) throw new Error('CCTP message does not match approved payment');

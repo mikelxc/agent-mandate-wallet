@@ -1,5 +1,5 @@
 import { createPublicClient, decodeEventLog, erc20Abi, http, isAddress, isAddressEqual, type Address, type Hex, type TransactionReceipt, zeroAddress } from 'viem';
-import { arcTestnet, baseSepolia } from 'viem/chains';
+import { arcTestnet, sepolia } from 'viem/chains';
 import { arcCctpRoute as r, cctpAbi, cctpOwnerPayment, parseCctpIntent, parseCctpMessage, entryPointAbi, kernelAccountFactoryAbi, nFTOwnerValidatorAbi, ownerAuthorization, packedPair, type CctpIntent } from '@mandate/sdk';
 import { unpack, type Prepared } from './chain';
 
@@ -13,11 +13,11 @@ export interface ArcChain {
   sourceReceipt(intent: CctpIntent, prepared: Prepared, transactionHash: Hex): Promise<CctpSourceReceipt>;
   destinationReceipt(intent: CctpIntent, message: Hex, transactionHash: Hex): Promise<CctpDestinationReceipt>;
 }
-export function liveArcChain(d: ArcDeployment, rpc = process.env.ARC_RPC_URL ?? 'https://rpc.testnet.arc.io', destinationRpc = process.env.BASE_SEPOLIA_RPC_URL ?? 'https://sepolia.base.org'): ArcChain {
+export function liveArcChain(d: ArcDeployment, rpc = process.env.ARC_RPC_URL ?? 'https://rpc.testnet.arc.io', destinationRpc = process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com'): ArcChain {
   const source = createPublicClient({ chain: arcTestnet, transport: http(rpc) });
-  const destination = createPublicClient({ chain: baseSepolia, transport: http(destinationRpc) });
+  const destination = createPublicClient({ chain: sepolia, transport: http(destinationRpc) });
   async function guard() {
-    if (await source.getChainId() !== r.sourceChainId || await destination.getChainId() !== r.destinationChainId) throw new Error('Arc Testnet / Base Sepolia RPC required');
+    if (await source.getChainId() !== r.sourceChainId || await destination.getChainId() !== r.destinationChainId) throw new Error('Arc Testnet / Ethereum Sepolia RPC required');
     for (const address of [d.registry, d.validator, d.entryPoint, d.kernel, r.tokenMessenger]) {
       const code = address && await source.getCode({ address });
       if (!address || isAddressEqual(address, zeroAddress) || !code || code === '0x') throw new Error('Arc deployment is incomplete');

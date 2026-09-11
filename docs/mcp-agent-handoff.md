@@ -7,7 +7,7 @@ Wayleave MCP installation and live gateway testing completed successfully on Sep
 - Package: `wayleave-mcp@0.1.1`, launched using `bunx`.
 - MCP server identity: `wayleave-agent-tools`, version `0.1.1`.
 - Installed in this machine’s global Codex configuration: `~/.codex/config.toml`.
-- Gateway: `https://way-leave.vercel.app/gateway`.
+- Gateway: `https://www.wayleave.xyz/gateway`.
 - Tests used a separate MCP client running the published package. Tool availability inside a new agent task still requires the host to load the configured server. Do not assume installation means the current task has the tools.
 - No blockchain transaction was signed or executed during testing.
 
@@ -22,7 +22,7 @@ args = ["wayleave-mcp@0.1.1"]
 
 [mcp_servers.wayleave.env]
 WAYLEAVE_AGENT_TOKEN = "<provision separately; never paste into a handoff>"
-WAYLEAVE_GATEWAY_URL = "https://way-leave.vercel.app/gateway"
+WAYLEAVE_GATEWAY_URL = "https://www.wayleave.xyz/gateway"
 ```
 
 Use plain TOML: no escaped underscores or `@`, and no Markdown link syntax inside the URL value. Keep credentials out of source files, logs, frontend code, and shared documents.
@@ -75,7 +75,7 @@ Treat this as a historical snapshot. Refresh `get_account` before relying on acc
 - Business reference: `MCP installation test - one base unit to agent account`
 - Idempotency key: `mcp-installation-test-20260911-01`
 - Expiry: Unix timestamp `1789087364` (15 minutes after proposal preparation)
-- Dashboard: https://way-leave.vercel.app/?operation=d0445cc9-61dd-47d5-8947-6b4cc505867f
+- Dashboard: https://www.wayleave.xyz/?operation=d0445cc9-61dd-47d5-8947-6b4cc505867f
 
 This request was left unsigned. Its status and expiry must be checked again before further use. Do not reuse this test key for a different intent.
 

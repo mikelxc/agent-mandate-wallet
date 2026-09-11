@@ -1,5 +1,5 @@
 import { hackathonSepolia } from '@mandate/sdk';
-import { arcTestnet, baseSepolia } from 'viem/chains';
+import { arcTestnet } from 'viem/chains';
 
 const sepoliaCaipNetwork = `eip155:${hackathonSepolia.id}`;
 
@@ -7,6 +7,6 @@ const sepoliaCaipNetwork = `eip155:${hackathonSepolia.id}`;
 // Anvil node. Keep foundry in wagmi for the local test wallet, but never include
 // it in the namespace proposed to mobile or desktop WalletConnect wallets.
 export const walletConnectSessionConfig = {
-  chains: { eip155: [sepoliaCaipNetwork, `eip155:${arcTestnet.id}`, `eip155:${baseSepolia.id}`] },
+  chains: { eip155: [sepoliaCaipNetwork, `eip155:${arcTestnet.id}`] },
   defaultChain: sepoliaCaipNetwork,
 };

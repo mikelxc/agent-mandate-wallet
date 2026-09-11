@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useConnection, usePublicClient, useWalletClient } from 'wagmi';
-import { arcTestnet, baseSepolia } from 'viem/chains';
+import { arcTestnet, sepolia } from 'viem/chains';
 import { erc20Abi, formatUnits, parseUnits, type Address, type Hex } from 'viem';
 import { arcCctpRoute, cctpMintCall, cctpOwnerPayment, entryPointAbi, ownerAuthorization, parseCctpIntent, type CctpIntent } from '@mandate/sdk';
 import type { Prepared } from '@mandate/gateway/chain';
@@ -25,13 +25,14 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return value as T;
 }
 const asOperation = (p: Prepared, signature: Hex) => ({ ...p.op, nonce: BigInt(p.op.nonce), preVerificationGas: BigInt(p.op.preVerificationGas), signature });
+const currentRoute = (payment: Payment) => { try { parseCctpIntent(payment.intent); return true; } catch { return false; } };
 const usdc = (value: string) => formatUnits(BigInt(value), 6);
 
 export function CrosschainPayments() {
   const { address } = useConnection();
   const { data: wallet } = useWalletClient();
   const sourceClient = usePublicClient({ chainId: arcTestnet.id });
-  const destinationClient = usePublicClient({ chainId: baseSepolia.id });
+  const destinationClient = usePublicClient({ chainId: sepolia.id });
   const [configured, setConfigured] = useState<boolean>();
   const [entryPoint, setEntryPoint] = useState<Address>();
   const [gasDeposit, setGasDeposit] = useState('');
@@ -78,7 +79,7 @@ export function CrosschainPayments() {
   async function connected(payment: Payment, chainId: number) {
     if (!address || !wallet || currentOwner.current !== address || wallet.account.address.toLowerCase() !== payment.intent.fundingOwner.toLowerCase())
       throw new Error('Connect the owner who approved this payment.');
-    if (await wallet.getChainId() !== chainId) throw new Error(`Switch your wallet to ${chainId === arcTestnet.id ? 'Arc Testnet' : 'Base Sepolia'}, then retry.`);
+    if (await wallet.getChainId() !== chainId) throw new Error(`Switch your wallet to ${chainId === arcTestnet.id ? 'Arc Testnet' : 'Ethereum Sepolia'}, then retry.`);
     return wallet;
   }
   async function prepare(payment: Payment) {
@@ -112,7 +113,7 @@ export function CrosschainPayments() {
     await api(`/${payment.id}/source`, { transactionHash: hash }); await refresh();
   }
   async function submitDestination(payment: Payment) {
-    const signer = await connected(payment, baseSepolia.id);
+    const signer = await connected(payment, sepolia.id);
     if (!payment.circle || !destinationClient) throw new Error('Retrieve the Circle attestation first.');
     const call = cctpMintCall(payment.circle.message, payment.circle.attestation, payment.intent);
     let hash = payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination;
@@ -122,7 +123,7 @@ export function CrosschainPayments() {
       if (previous?.status === 'reverted') hash = undefined;
     }
     if (!hash) {
-      hash = await signer.sendTransaction({ chain: baseSepolia, to: call.to, data: call.data, value: 0n });
+      hash = await signer.sendTransaction({ chain: sepolia, to: call.to, data: call.data, value: 0n });
       remember(payment.id, 'destination', hash, signer.account.address);
     }
     await api(`/${payment.id}/destination`, { transactionHash: hash }).catch(() => undefined);
@@ -130,7 +131,7 @@ export function CrosschainPayments() {
     await api(`/${payment.id}/destination`, { transactionHash: hash }); await refresh();
   }
   return <section className="crosschain-panel">
-    <p>ARC TESTNET → BASE SEPOLIA</p><h1>Pay across chains</h1>
+    <p>ARC TESTNET → ETHEREUM SEPOLIA</p><h1>Pay across chains</h1>
     <p>Approve a USDC payment from your Arc account. Follow its source transaction and destination receipt separately.</p>
     {configured === false && <p role="status">Arc account deployment is not configured yet. Cross-chain payment execution will become available after its deployment is verified.</p>}
     {configured === undefined && !error && <p role="status">Checking payment availability…</p>}
@@ -139,7 +140,7 @@ export function CrosschainPayments() {
       <div className="crosschain-actions">
         <button disabled={busy} onClick={() => run(async () => { const { openWalletPicker } = await import('../lib/wallet-config'); await openWalletPicker(); })}>{address ? 'Wallet connection' : 'Connect wallet'}</button>
         <button disabled={busy || !wallet} onClick={() => run(async () => { await wallet!.switchChain({ id: arcTestnet.id }); })}>Switch to Arc</button>
-        <button disabled={busy || !wallet} onClick={() => run(async () => { await wallet!.switchChain({ id: baseSepolia.id }); })}>Switch to Base Sepolia</button>
+        <button disabled={busy || !wallet} onClick={() => run(async () => { await wallet!.switchChain({ id: sepolia.id }); })}>Switch to Ethereum Sepolia</button>
         <button disabled={busy || !address} onClick={() => run(refresh)}>Load payments</button>
       </div>
       <form onSubmit={e => { e.preventDefault(); void run(async () => {
@@ -151,20 +152,20 @@ export function CrosschainPayments() {
       }); }}>
         <div className="crosschain-fields">
           <label className="crosschain-wide">Arc NFAT account<input required value={account} onChange={e => {setAccount(e.target.value); setRequestKey('');}} placeholder="0x…" /></label>
-          <label className="crosschain-wide">Merchant address on Base Sepolia<input required value={recipient} onChange={e => {setRecipient(e.target.value); setRequestKey('');}} placeholder="0x…" /></label>
+          <label className="crosschain-wide">Merchant address on Ethereum Sepolia<input required value={recipient} onChange={e => {setRecipient(e.target.value); setRequestKey('');}} placeholder="0x…" /></label>
           <label>Source debit (USDC)<input required inputMode="decimal" value={amount} onChange={e => {setAmount(e.target.value); setRequestKey('');}} /></label>
           <label>Maximum Circle fee (USDC)<input required inputMode="decimal" value={maxFee} onChange={e => {setMaxFee(e.target.value); setRequestKey('');}} /></label>
           <label className="crosschain-wide">Payment reference<input required maxLength={128} value={reference} onChange={e => {setReference(e.target.value); setRequestKey('');}} /></label>
         </div>
-        <p>The merchant receives the source debit minus the actual Circle fee. Arc source gas is paid in USDC; Base Sepolia destination gas is paid in ETH. Your owner wallet needs USDC for the payment and transaction gas, an exact token allowance to this account, and a funded account gas deposit. Arc native USDC and its token balance are the same funds.</p>
+        <p>The merchant receives the source debit minus the actual Circle fee. Arc source gas is paid in USDC; Ethereum Sepolia destination gas is paid in ETH. Your owner wallet needs USDC for the payment and transaction gas, an exact token allowance to this account, and a funded account gas deposit. Arc native USDC and its token balance are the same funds.</p>
         <button type="submit" disabled={busy || !address}>Create payment request</button>
       </form>
       <label>Optional gas deposit amount (USDC)<input inputMode="decimal" value={gasDeposit} onChange={event => setGasDeposit(event.target.value)} placeholder="Amount to escrow for account gas" /></label>
-      {payments.map(payment => <article className="crosschain-record" key={payment.id}>
+      {payments.map(payment => !currentRoute(payment) ? <article className="crosschain-record" key={payment.id}><h2>{payment.intent.businessReference}</h2><p>This saved request targets a route no longer supported by this release. Its approved terms are unchanged. A request with an existing source transaction needs reconciliation on its original route.</p></article> : <article className="crosschain-record" key={payment.id}>
         <h2>{payment.intent.businessReference}</h2>
         <dl><dt>State</dt><dd>{payment.status.replaceAll('_', ' ')}</dd><dt>Source debit</dt><dd>{usdc(payment.intent.amount)} USDC</dd><dt>Minimum received</dt><dd>{usdc((BigInt(payment.intent.amount) - BigInt(payment.intent.maxFee)).toString())} USDC</dd><dt>Merchant</dt><dd>{payment.intent.recipient}</dd><dt>Account</dt><dd>{payment.intent.account}</dd></dl>
         {(payment.source?.transactionHash ?? payment.sourceTransactionHash ?? recovery[payment.id]?.source) && <p><a href={`https://testnet.arcscan.app/tx/${payment.source?.transactionHash ?? payment.sourceTransactionHash ?? recovery[payment.id]?.source}`} target="_blank" rel="noreferrer">Source transaction</a></p>}
-        {(payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination) && <p><a href={`https://sepolia.basescan.org/tx/${payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination}`} target="_blank" rel="noreferrer">Destination transaction</a></p>}
+        {(payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination) && <p><a href={`https://sepolia.etherscan.io/tx/${payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination}`} target="_blank" rel="noreferrer">Destination transaction</a></p>}
         {payment.destination && <p>Merchant received {usdc(payment.destination.merchantAmount)} USDC. Service delivery is separate.</p>}
         {payment.prepared && <p>Maximum account gas budget: {formatUnits((BigInt(payment.prepared.op.gasFees) & ((1n << 128n) - 1n)) * ((BigInt(payment.prepared.op.accountGasLimits) >> 128n) + (BigInt(payment.prepared.op.accountGasLimits) & ((1n << 128n) - 1n)) + BigInt(payment.prepared.op.preVerificationGas)), 18)} USDC. Actual source gas is determined onchain.</p>}
         <div className="crosschain-actions">
@@ -187,7 +188,7 @@ export function CrosschainPayments() {
           {!payment.signature && !payment.source && <><button disabled={busy} onClick={() => run(() => prepare(payment))}>Prepare payment</button><button disabled={busy || !payment.prepared} onClick={() => run(() => approve(payment))}>Approve exact payment</button></>}
           {payment.signature && !payment.source && <button disabled={busy} onClick={() => run(() => submitSource(payment))}>{payment.sourceTransactionHash || recovery[payment.id]?.source ? 'Check source receipt' : 'Submit on Arc'}</button>}
           {payment.source && !payment.destination && <button disabled={busy} onClick={() => run(async () => { await api(`/${payment.id}/attestation`, {}); await refresh(); })}>Check Circle attestation</button>}
-          {payment.circle && !payment.destination && <button disabled={busy} onClick={() => run(() => submitDestination(payment))}>{payment.destinationTransactionHash || recovery[payment.id]?.destination ? 'Resume destination mint' : 'Mint on Base Sepolia'}</button>}
+          {payment.circle && !payment.destination && <button disabled={busy} onClick={() => run(() => submitDestination(payment))}>{payment.destinationTransactionHash || recovery[payment.id]?.destination ? 'Resume destination mint' : 'Mint on Ethereum Sepolia'}</button>}
         </div>
       </article>)}
     </>}

@@ -4,8 +4,8 @@ import { createOwnerChallengeCache } from './owner-challenge';
 const now = Date.parse('2026-09-10T12:00:00Z');
 const challenge = {
   nonce: 'a'.repeat(64),
-  domain: 'way-leave.vercel.app',
-  uri: 'https://way-leave.vercel.app',
+  domain: 'www.wayleave.xyz',
+  uri: 'https://www.wayleave.xyz',
   statement: 'Sign in to Wayleave.',
   issuedAt: new Date(now).toISOString(),
   expirationTime: new Date(now + 300_000).toISOString(),

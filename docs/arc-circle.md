@@ -1,6 +1,10 @@
 # Arc and Circle payments
 
-The implementation supports one explicitly configured route: Arc Testnet (5042002, Circle domain 26) to Base Sepolia (84532, domain 6). The external-owner NFAT stack was deployed to Arc Testnet with explicit user authorization on September 11, 2026. No real Circle transfer has been performed. Existing Sepolia deployment scripts remain unchanged; other public-chain deployments still require explicit authorization.
+The implementation supports one explicitly configured route: Arc Testnet (5042002, Circle domain 26) to Ethereum Sepolia (11155111, domain 0). The external-owner NFAT stack was deployed to Arc Testnet with explicit user authorization on September 11, 2026. No real Circle transfer has been performed. Existing Sepolia deployment scripts remain unchanged; other public-chain deployments still require explicit authorization.
+
+The current route uses Ethereum Sepolia Circle USDC `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` and destination domain **0**, distinct from EVM chain ID 11155111. The historical Arc deployment manifest retains the originally planned Base route; it is deployment evidence, not current routing configuration. Existing requests are never rewritten to a different destination; requests for the retired route cannot be approved or submitted through this release.
+
+Read-only verification of the current route passed on September 11 at `18:26:37 UTC`: RPC chain IDs 5042002/11155111, Circle domains 26/0, both USDC interfaces at six decimals, and Arc deployment code presence. [Current route evidence](../deployments/cctp-route-ethereum-sepolia.json) is separate from the historical deployment manifest. No funds moved.
 
 ## Verified testnet deployment
 
@@ -12,7 +16,7 @@ Actual deployment gas was 13,260,625, costing 0.29173375 native USDC; the deploy
 
 ## Configuration and verification
 
-Set `ARC_RPC_URL` and `BASE_SEPOLIA_RPC_URL` to testnet RPCs. Set all four deployment values: `ARC_REGISTRY`, `ARC_VALIDATOR`, `ARC_ENTRY_POINT`, `ARC_KERNEL`. These must identify a verified external-owner NFAT/Kernel deployment on Arc; do not substitute Sepolia addresses. With these absent, the gateway reports Arc unavailable. Partial configuration fails closed.
+Set `ARC_RPC_URL` and `SEPOLIA_RPC_URL` to testnet RPCs. Set all four deployment values: `ARC_REGISTRY`, `ARC_VALIDATOR`, `ARC_ENTRY_POINT`, `ARC_KERNEL`. These must identify a verified external-owner NFAT/Kernel deployment on Arc; do not substitute Sepolia addresses. With these absent, the gateway reports Arc unavailable. Partial configuration fails closed.
 
 Run `bun scripts/arc-status.ts` for a read-only RPC/domain/token preflight. It does not establish Kernel compiler-target compatibility, passkey compatibility, or successful payments. Those require deployment and execution evidence. The adapter checks both RPC chain IDs, deployment code presence, Circle domains and ERC-20 decimals before preparing or verifying operations. Approval simulation checks the actual signed batch before submission.
 
@@ -40,7 +44,7 @@ Mount `createCctpRoute` through the gateway integration routes and supply the da
 - The owner sends `EntryPoint.handleOps` on Arc using `prepared.op` and that signature.
 - `POST /crosschain/:id/source` with `{ transactionHash }`: persist the hash before reconciliation, require successful inner UserOperation and one matching Circle wire message.
 - `POST /crosschain/:id/attestation` with `{}`: poll Circle sandbox, match immutable wire fields to the source message and approved terms; return `{ operation, mint }` when ready, or HTTP 202 while pending.
-- A wallet/relayer sends the returned direct `receiveMessage` call on Base Sepolia.
+- A wallet/relayer sends the returned direct `receiveMessage` call on Ethereum Sepolia.
 - `POST /crosschain/:id/destination` with `{ transactionHash }`: verify direct mint input, consumed Circle nonce and exact USDC mint effects before marking `settled`.
 
 Agent integrations may supply an explicit Arc-scoped authentication callback to enable `POST /agent/crosschain` and `GET /agent/crosschain/:id`. It must prove the account/owner/connection association on Arc. Existing Sepolia bearer tokens are not automatically accepted. Agent output excludes owner signatures and prepared execution payloads. Agents can only propose or read their own operations; all approvals remain owner-only.

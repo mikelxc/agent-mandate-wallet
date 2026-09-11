@@ -1,12 +1,12 @@
 # Arc and Circle cross-chain payments
 
-Status: initial implementation complete, September 11, 2026. The fixed Arc Testnet to Base Sepolia route, owner-approved execution, durable reconciliation, and UI are locally tested. Read-only Circle configuration checks passed. Arc contract deployment and a real transfer remain outstanding; see [implementation and verification](../arc-circle.md).
+Status: initial implementation complete, September 11, 2026. The fixed Arc Testnet to Ethereum Sepolia route, owner-approved execution, durable reconciliation, and UI are locally tested. Read-only Circle configuration checks passed. Arc contract deployment is verified; a real cross-chain transfer remains outstanding; see [implementation and verification](../arc-circle.md).
 
 ## Outcome
 
 An NFAT and its Kernel account live on Arc. An agent proposes a USDC payment to a merchant on another supported chain, and the owner approves its exact terms. Wayleave tracks source execution, destination settlement and service delivery. The NFT stays on Arc; a merchant does not need a destination NFAT account.
 
-Start with Arc Testnet to Base Sepolia using CCTP. Use [Graph MCP history](subgraph-mcp.md) for historical reconciliation and [ENSv2 identity](ensv2-portable-identity.md) for portable agent enrollment. Each integration has its own evidence and authority boundary.
+Start with Arc Testnet to Ethereum Sepolia using CCTP. Use [Graph MCP history](subgraph-mcp.md) for historical reconciliation and [ENSv2 identity](ensv2-portable-identity.md) for portable agent enrollment. Each integration has its own evidence and authority boundary.
 
 ## Current foundation and compatibility gate
 

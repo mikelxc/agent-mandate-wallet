@@ -77,7 +77,7 @@ const agentHosts: Array<{
   { id: 'cursor', name: 'Cursor', detail: 'Editor · Agent' },
   { id: 'generic', name: 'Generic MCP', detail: 'Any local stdio client' },
 ];
-const mcpPackage = 'wayleave-mcp@0.1.1';
+const mcpPackage = 'wayleave-mcp@0.1.2';
 async function api<T>(path: string, data?: unknown): Promise<T> {
   const response = await fetch(`/gateway${path}`, {
     method: data === undefined ? 'GET' : 'POST',
@@ -751,7 +751,7 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
     : `<create-a-${agentHost}-connection>`;
   const agentGateway =
     uiReady && !['localhost', '127.0.0.1'].includes(window.location.hostname)
-      ? 'https://way-leave.vercel.app/gateway'
+      ? 'https://www.wayleave.xyz/gateway'
       : 'http://127.0.0.1:3001';
   const jsonServer = JSON.stringify(
     {

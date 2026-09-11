@@ -6,7 +6,7 @@ import './spending.css';
 export const viewport: Viewport = { themeColor: '#f3f4f4' };
 export const metadata: Metadata = {
   applicationName: 'Wayleave',
-  metadataBase: new URL('https://way-leave.vercel.app'),
+  metadataBase: new URL('https://www.wayleave.xyz'),
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

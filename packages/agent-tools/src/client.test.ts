@@ -52,20 +52,22 @@ test("rejects untrusted gateway URLs and does not echo token in failures", async
 test("uses only approved HTTPS deployment hosts and never follows bearer-token redirects", async () => {
   const client = createGatewayClient({
     token: "secret",
-    baseUrl: "https://way-leave.vercel.app/gateway",
+    baseUrl: "https://www.wayleave.xyz/gateway",
     fetchImpl: fakeFetch((url, init) => {
-      expect(url).toBe("https://way-leave.vercel.app/gateway/agent/account");
+      expect(url).toBe("https://www.wayleave.xyz/gateway/agent/account");
       expect(init?.redirect).toBe("error");
       return Response.json({});
     }),
   });
   await client.getAccount();
   for (const baseUrl of [
-    "http://way-leave.vercel.app/gateway",
-    "https://way-leave.vercel.app.evil.example/gateway",
-    "https://way-leave.vercel.app/gateway?token=x",
-    "https://name:secret@way-leave.vercel.app/gateway",
-    "https://way-leave.vercel.app:8080/gateway",
+    "http://www.wayleave.xyz/gateway",
+    "https://www.wayleave.xyz.evil.example/gateway",
+    "https://www.wayleave.xyz/gateway?token=x",
+    "https://name:secret@www.wayleave.xyz/gateway",
+    "https://www.wayleave.xyz:8080/gateway",
+    "https://wayleave.xyz/gateway",
+    "https://agent-mandate-wallet-web.vercel.app/gateway",
   ]) {
     expect(() => createGatewayClient({ token: "secret", baseUrl })).toThrow("trusted Wayleave");
   }

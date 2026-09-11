@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createGatewayClient } from "./client.js";
 import { paymentIntentSchema, type PaymentIntentInput } from "./schema.js";
 
-const server = new McpServer({ name: "wayleave-agent-tools", version: "0.1.1" });
+const server = new McpServer({ name: "wayleave-agent-tools", version: "0.1.2" });
 const client = createGatewayClient();
 const result = (value: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(value) }],
@@ -91,7 +91,7 @@ const crosschainInput = z.object({
   businessReference: z.string().min(1).max(128), idempotencyKey: z.string().min(1).max(128),
 }).strict();
 server.registerTool("propose_crosschain_payment", {
-  description: "Propose an exact Arc Testnet USDC debit for payment to Base Sepolia. Requires an owner-linked Arc agent connection and human approval; never signs or submits funds. Source gas is additional, merchant receipt is source debit minus actual Circle fee.",
+  description: "Propose an exact Arc Testnet USDC debit for payment to Ethereum Sepolia. Requires an owner-linked Arc agent connection and human approval; never signs or submits funds. Source gas is additional, merchant receipt is source debit minus actual Circle fee.",
   inputSchema: crosschainInput.shape as any,
 }, async (input: z.infer<typeof crosschainInput>) => {
   try { return result(await client.proposeCrosschainPayment({

@@ -35,7 +35,7 @@ test('walkthrough explains real authority and identity without simulating comple
   );
   await expect(page.locator('.mobile-config-preview')).toContainText('bunx');
   await expect(page.locator('.mobile-config-preview')).toContainText(
-    'wayleave-mcp@0.1.1',
+    'wayleave-mcp@0.1.2',
   );
   await expect(page.getByLabel('Wayleave checkout path')).toHaveCount(0);
   const codex = page.getByRole('button', {

@@ -26,6 +26,14 @@ const client = new Client({ name: 'live-history-verification', version: '1.0.0' 
 try {
   await client.connect(transport);
   const tools = (await client.listTools()).tools.map(tool => tool.name);
+  const mode = Bun.argv[2];
+  if (mode === '--list') {
+    console.log(JSON.stringify(await client.listTools(), null, 2));
+  } else if (mode === '--call') {
+    const name = Bun.argv[3];
+    if (!['get_account', 'list_payments', 'get_payment_context', 'summarize_spending'].includes(name)) throw new Error('Read-only evaluation tools only');
+    console.log(JSON.stringify(await client.callTool({name, arguments: JSON.parse(Bun.argv[4] ?? '{}')}), null, 2));
+  } else {
   async function call(name: string, args: Record<string, unknown>) {
     if (!tools.includes(name)) throw new Error(`Missing ${name}`);
     const result = await client.callTool({ name, arguments: args });
@@ -42,4 +50,5 @@ try {
   console.log(JSON.stringify({ verifiedAt: new Date().toISOString(), authentication: 'ephemeral_local_fixture', data: 'live_graph_and_sepolia_rpc', account, owner,
     tools: ['list_payments', 'get_payment_context', 'summarize_spending'], transferIds: list.items.map((item: {id:string}) => item.id),
     contextTransfers: context.transfers.length, summary, coverage: list.coverage }, null, 2));
+  }
 } finally { await client.close(); gateway.stop(true); store.close(); }

@@ -7,7 +7,7 @@ import { createSiweAuth, loginStatement } from "./siwe";
 import { createHostedGateway } from "./hosted";
 import type { Chain } from "./chain";
 
-const origin = "https://way-leave.vercel.app";
+const origin = "https://www.wayleave.xyz";
 const owner = privateKeyToAccount(generatePrivateKey());
 const other = privateKeyToAccount(generatePrivateKey());
 const stores: Store[] = [];
@@ -107,7 +107,7 @@ for (const [name, overrides] of Object.entries({
   });
 }
 
-test("nonce is bound to its issuing origin, even between allowed deployment aliases", async () => {
+test("nonce is bound to its issuing origin, even between configured deployment origins", async () => {
   const f = fixture();
   const nonce = await f.auth.nonce();
   const alias = "https://agent-mandate-wallet-web.vercel.app";

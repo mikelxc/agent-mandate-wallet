@@ -48,7 +48,7 @@ function resolveDashboardUrl(value: string | undefined): string | undefined {
       (url.protocol === "http:" && ["127.0.0.1", "localhost"].includes(url.hostname)) ||
       (url.protocol === "https:" &&
         !url.port &&
-        ["way-leave.vercel.app", "agent-mandate-wallet-web.vercel.app"].includes(url.hostname))
+        url.hostname === "www.wayleave.xyz")
     )
   )
     throw new Error("Dashboard URL must be local HTTP or a trusted Wayleave HTTPS gateway");
@@ -161,7 +161,7 @@ function gatewayUrl(value: string | undefined): string {
         url.pathname === "/") ||
       (url.protocol === "https:" &&
         !url.port &&
-        ["way-leave.vercel.app", "agent-mandate-wallet-web.vercel.app"].includes(url.hostname) &&
+        url.hostname === "www.wayleave.xyz" &&
         ["/gateway", "/gateway/"].includes(url.pathname))
     )
   ) {
