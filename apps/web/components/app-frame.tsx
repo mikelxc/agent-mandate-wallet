@@ -2,13 +2,16 @@ import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { WayleaveMark } from './wayleave-mark';
+import './app-frame.css';
 
 export function AppFrame({
   children,
   active = 'agents',
+  network = 'Sepolia',
 }: {
   children: ReactNode;
-  active?: 'agents' | 'account' | 'tools' | 'connect';
+  active?: 'agents' | 'account' | 'tools' | 'connect' | 'identity' | 'crosschain';
+  network?: 'Sepolia' | 'Arc';
 }) {
   return (
     <div className="wayleave-app">
@@ -20,7 +23,7 @@ export function AppFrame({
           <span>
             <WayleaveMark width={32} height={32} />
           </span>
-          wayleave<span className="app-testnet">Sepolia testnet</span>
+          wayleave<span className="app-testnet">{network} testnet</span>
         </Link>
         <nav aria-label="Main navigation">
           <Link
@@ -41,13 +44,19 @@ export function AppFrame({
           >
             Connect an agent
           </Link>
+          <Link href="/identity" aria-current={active === 'identity' ? 'page' : undefined}>
+            Identity
+          </Link>
+          <Link href="/crosschain" aria-current={active === 'crosschain' ? 'page' : undefined}>
+            Cross-chain payments
+          </Link>
         </nav>
       </header>
       <main id="app-main" className="account-home">
         {children}
       </main>
       <footer className="app-footer">
-        <span>Sepolia · Test funds only</span>
+        <span>{network} · Test funds only</span>
         <Link href="/advanced">
           Developer tools <ArrowUpRight size={13} />
         </Link>

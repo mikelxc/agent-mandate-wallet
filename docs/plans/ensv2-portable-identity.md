@@ -1,6 +1,6 @@
 # ENSv2 portable identity and agent permissions
 
-Status: planned, September 11, 2026. Existing Sepolia naming evidence is recorded in [ENSv2 setup](../ens-v2.md); portable enrollment and authentication are additional work.
+Status: implementation added, September 11, 2026; live enrollment and portability verification remain pending. See [implementation and verification boundaries](../portable-identity.md). Existing Sepolia naming evidence is recorded in [ENSv2 setup](../ens-v2.md); portable enrollment and authentication are additional work.
 
 ## Outcome
 

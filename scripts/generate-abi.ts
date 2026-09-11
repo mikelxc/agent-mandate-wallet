@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 await mkdir("packages/sdk/src/generated", { recursive: true });
 for (const name of [
+  "WayleaveAgentRegistry",
   "AccountFactory",
   "OperatingAccount",
   "MockUSDC",

@@ -1,6 +1,6 @@
 # Arc and Circle cross-chain payments
 
-Status: planned, September 11, 2026. No Arc deployment or Circle execution is established by this document.
+Status: initial implementation complete, September 11, 2026. The fixed Arc Testnet to Base Sepolia route, owner-approved execution, durable reconciliation, and UI are locally tested. Read-only Circle configuration checks passed. Arc contract deployment and a real transfer remain outstanding; see [implementation and verification](../arc-circle.md).
 
 ## Outcome
 

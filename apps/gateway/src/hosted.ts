@@ -1,6 +1,7 @@
 import type { Store } from "./store";
 import type { Chain } from "./chain";
 import { createApp } from "./app";
+import { runtimeIntegrations } from "./runtime-integrations";
 
 /** Serve the existing gateway in-process, without trusting forwarded host headers. */
 export function createHostedGateway(store: Store, chain: Chain, origins: string[]) {
@@ -14,7 +15,7 @@ export function createHostedGateway(store: Store, chain: Chain, origins: string[
       throw new Error("Gateway origins must be exact HTTPS origins");
     handlers.set(
       origin,
-      createApp(store, chain, { dashboardOrigin: origin, gatewayOrigin: origin }),
+      createApp(store, chain, { dashboardOrigin: origin, gatewayOrigin: origin, ...runtimeIntegrations(store, chain, origin) }),
     );
   }
   return async (request: Request) => {

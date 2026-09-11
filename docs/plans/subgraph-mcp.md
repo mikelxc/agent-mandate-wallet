@@ -1,6 +1,6 @@
 # Subgraph integration for agent payment history
 
-Status: planned, September 11, 2026. This document describes intended behavior; it does not establish a live Graph deployment.
+Status: initial implementation complete, September 11, 2026. The Sepolia mapping, account-scoped gateway history, and MCP tools are implemented and locally tested. Deployment and live RPC comparison remain outstanding; Arc indexing is a later extension. See [setup and verification](../../packages/subgraph/README.md).
 
 ## Outcome
 

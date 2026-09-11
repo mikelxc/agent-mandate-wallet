@@ -1,0 +1,34 @@
+# Public-chain facts only. Immutable logs are reverted by Graph Node on reorg.
+type Account @entity(immutable: true) {
+  id: Bytes!
+  tokenId: BigInt!
+  initialOwner: Bytes!
+  registry: Bytes!
+  label: String!
+  blockNumber: BigInt!
+}
+type PaymentTransfer @entity(immutable: false) {
+  id: ID!
+  account: Bytes!
+  token: Bytes!
+  from: Bytes!
+  to: Bytes!
+  amount: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  timestamp: BigInt!
+  userOpHash: Bytes
+}
+type UserOperation @entity(immutable: true) {
+  id: ID!
+  account: Bytes!
+  transactionHash: Bytes!
+  userOpHash: Bytes!
+  success: Boolean!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  logIndex: BigInt!
+  timestamp: BigInt!
+}

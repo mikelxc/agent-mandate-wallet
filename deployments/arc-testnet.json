@@ -1,0 +1,134 @@
+{
+  "chainId": 5042002,
+  "network": "Arc Testnet",
+  "checkedAt": "2026-09-11T17:35:22.475Z",
+  "deployer": "0x96B0D15128748cE191B79c75560Ed93695788865",
+  "kernelRevision": "f2a84a332ec5a722e7e95a0d64601905c3c87fe9",
+  "entryPoint": {
+    "address": "0x433709009B8330FDa32311DF1C2AFA402eD8D009",
+    "version": "0.9.0",
+    "codeHash": "0x4912531cbb1316092e1c25164d8fd78bdb94374d990be9575246e6d98e38a25a",
+    "existingDeployment": true,
+    "canonicalSepoliaRuntimeMatchedExceptChainIdAndDomainSeparator": true
+  },
+  "token": {
+    "address": "0x3600000000000000000000000000000000000000",
+    "symbol": "USDC",
+    "decimals": 6,
+    "nativeDecimals": 18,
+    "nativeAndTokenShareBalance": true,
+    "circleIssued": true
+  },
+  "circle": {
+    "sourceDomain": 26,
+    "destinationDomain": 6,
+    "destinationChainId": 84532,
+    "tokenMessenger": "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+    "messageTransmitter": "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275"
+  },
+  "contracts": [
+    {
+      "name": "KernelUUPS",
+      "type": "CREATE",
+      "address": "0x1de2280927f27B98607cF5029EA0C10D909Bd773",
+      "transactionHash": "0xc8dd5bfddfcea34b97bfc00a2e4d99eda72c4a0d0e8fffc286f350e2d69acf55",
+      "blockNumber": "61600587",
+      "codeHash": "0x83642150a162837059ed871fa064eee83b922845af93eefe06d625a10953a9e6",
+      "gasUsed": "4698116",
+      "effectiveGasPrice": "22000000000",
+      "runtimeMatchesArtifactExcludingImmutablesAndMetadata": true
+    },
+    {
+      "name": "KernelImmutableECDSA",
+      "type": "CREATE",
+      "address": "0x278e90915f0787F8DCB1aA791DfeE6a6c0E380B3",
+      "transactionHash": "0xf2c6a677100fc24e2b5869943d33a035f48bb25793a106d3aa230338c6cb0b10",
+      "blockNumber": "61600592",
+      "codeHash": "0x354146856316a7d7c84b2360fac48ea6900ebbdd7ffaa40aaea31e2419e20291",
+      "gasUsed": "4754350",
+      "effectiveGasPrice": "22000000000",
+      "runtimeMatchesArtifactExcludingImmutablesAndMetadata": true
+    },
+    {
+      "name": "KernelFactory",
+      "type": "CREATE",
+      "address": "0x06f085A6c6E4f12Ea1044B708412168674e6faD4",
+      "transactionHash": "0xf18392f039751484fa07d6eb9802a183668dfddca2b99186934509386d2b259b",
+      "blockNumber": "61600596",
+      "codeHash": "0x6d8bfb2807606a93d673acf6f8c2905c8bd326f61b378aa4084b0660bef3a8ad",
+      "gasUsed": "610838",
+      "effectiveGasPrice": "22000000000",
+      "runtimeMatchesArtifactExcludingImmutablesAndMetadata": true
+    },
+    {
+      "name": "NFTOwnerValidator",
+      "type": "CREATE",
+      "address": "0xe4cB1515BD7aC3D43f979392517EB35964A7b7cc",
+      "transactionHash": "0x806bf2f0dc2fd5d7fc153aa382aa41a4b56ec27e81b160e93a37bc72a1f2ab4e",
+      "blockNumber": "61600599",
+      "codeHash": "0x784066dd1f1236d02ea5f55203da2a03746e9583afeb5d43ab885518632799b1",
+      "gasUsed": "841294",
+      "effectiveGasPrice": "22000000000",
+      "runtimeMatchesArtifactExcludingImmutablesAndMetadata": true
+    },
+    {
+      "name": "KernelAccountFactory",
+      "type": "CREATE",
+      "address": "0x39cB47aA65594767d1e456bd329Aad849EC98345",
+      "transactionHash": "0xd6dd6f0eea05923b5693cf8ae96abf650e094f838007d9c70a8c732750b3ccd7",
+      "blockNumber": "61600603",
+      "codeHash": "0xd86295ef003927b35cabf99346578e8c16bb089a6b8a268417a800d7a2f12e8b",
+      "gasUsed": "1958603",
+      "effectiveGasPrice": "22000000000",
+      "runtimeMatchesArtifactExcludingImmutablesAndMetadata": true
+    },
+    {
+      "name": "KernelAccountFactory",
+      "type": "CALL",
+      "address": "0x39cB47aA65594767d1e456bd329Aad849EC98345",
+      "transactionHash": "0x0d329bacfdaf212e19e262380dc1687819505bfc4f4da445886318a3d5b1b326",
+      "blockNumber": "61600606",
+      "codeHash": "0xd86295ef003927b35cabf99346578e8c16bb089a6b8a268417a800d7a2f12e8b",
+      "gasUsed": "397424",
+      "effectiveGasPrice": "22000000000"
+    }
+  ],
+  "demoAccount": {
+    "address": "0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d",
+    "tokenId": "1",
+    "label": "arc-research",
+    "owner": "0x96B0D15128748cE191B79c75560Ed93695788865",
+    "epoch": "1",
+    "rootValidator": "0xe4cB1515BD7aC3D43f979392517EB35964A7b7cc",
+    "identityAdapter": "0x0000000000000000000000000000000000000000",
+    "transactionHash": "0x0d329bacfdaf212e19e262380dc1687819505bfc4f4da445886318a3d5b1b326",
+    "blockNumber": "61600606",
+    "codeHash": "0xaaa52c8cc8a0e3fd27ce756cc6b4e70c51423e9b597b11f32d3e49f8b1fc890d"
+  },
+  "gas": {
+    "totalGasUsed": "13260625",
+    "paidNativeUSDC": "0.29173375",
+    "deployerBalanceAfterUSDC": "19.70826625",
+    "maxFeePerGas": "42000000000"
+  },
+  "verification": {
+    "deploymentReceipts": true,
+    "runtimeArtifactMatchExcludingImmutablesAndMetadata": true,
+    "nfatOwnershipAndValidatorBinding": true,
+    "canonicalEntryPointRuntime": true,
+    "cctpTransfer": false,
+    "passkey": false,
+    "explorerSourceVerification": false
+  },
+  "compiler": {
+    "version": "0.8.33",
+    "evmVersion": "prague",
+    "viaIR": true,
+    "optimizerRuns": 200
+  },
+  "sourceSHA256": {
+    "packages/contracts/script/DeployKernelArc.s.sol": "ffebb2fc32ba4eead863093e19327af3da959e26cdb516b6bbc67971d37d5832",
+    "packages/contracts/src/KernelAccountFactory.sol": "5740c8693a3ed1ca80af54fc0f0e4b1233c85df703bd670cf7757d65b5dd0d31",
+    "packages/contracts/src/NFTOwnerValidator.sol": "63253dc55be925369739e4398c04c083eebd71f494dfa071405efafc090bcd61"
+  }
+}

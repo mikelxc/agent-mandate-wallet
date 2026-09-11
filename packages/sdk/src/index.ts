@@ -31,3 +31,8 @@ export function validLabel(value: string): boolean { return /^[a-z0-9][a-z0-9-]{
 
 export * from "./passkey";
 export { passkeyAccountFactoryAbi } from "./generated/PasskeyAccountFactory";
+export * from './cctp';
+
+export * from "./portable-identity";
+
+export { wayleaveAgentRegistryAbi } from "./generated/WayleaveAgentRegistry";

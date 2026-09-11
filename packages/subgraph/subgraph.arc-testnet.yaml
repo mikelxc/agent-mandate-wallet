@@ -1,0 +1,84 @@
+specVersion: 1.3.0
+description: Wayleave registered NFAT token activity and EntryPoint outcomes on Arc Testnet
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Registry
+    network: arc-testnet
+    source:
+      address: "0x39cB47aA65594767d1e456bd329Aad849EC98345"
+      abi: Registry
+      startBlock: 61600603
+    context:
+      chainId:
+        type: String
+        data: "5042002"
+      token:
+        type: Bytes
+        data: "0x3600000000000000000000000000000000000000"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities: [Account, PaymentTransfer, UserOperation]
+      abis:
+        - name: Registry
+          file: ./abis/Registry.json
+      eventHandlers:
+        - event: AccountCreated(indexed uint256,indexed address,indexed address,string,bytes32)
+          handler: handleAccountCreated
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: Token
+    network: arc-testnet
+    source:
+      address: "0x3600000000000000000000000000000000000000"
+      abi: Token
+      startBlock: 61600603
+    context:
+      chainId:
+        type: String
+        data: "5042002"
+      token:
+        type: Bytes
+        data: "0x3600000000000000000000000000000000000000"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities: [Account, PaymentTransfer, UserOperation]
+      abis:
+        - name: Token
+          file: ./abis/Token.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: EntryPoint
+    network: arc-testnet
+    source:
+      address: "0x433709009B8330FDa32311DF1C2AFA402eD8D009"
+      abi: EntryPoint
+      startBlock: 61600603
+    context:
+      chainId:
+        type: String
+        data: "5042002"
+      token:
+        type: Bytes
+        data: "0x3600000000000000000000000000000000000000"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities: [Account, PaymentTransfer, UserOperation]
+      abis:
+        - name: EntryPoint
+          file: ./abis/EntryPoint.json
+      eventHandlers:
+        - event: UserOperationEvent(indexed bytes32,indexed address,indexed address,uint256,bool,uint256,uint256)
+          handler: handleUserOperation
+          receipt: true
+      file: ./src/mapping.ts

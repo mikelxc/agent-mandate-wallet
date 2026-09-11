@@ -21,7 +21,9 @@
     "@modelcontextprotocol/sdk": "1.30.0",
     "@types/bun": "latest",
     "typescript": "5.9.3",
-    "zod": "4.5.4"
+    "zod": "4.5.4",
+    "@mandate/sdk": "workspace:*",
+    "viem": "2.56.3"
   },
   "engines": {
     "node": ">=20"
@@ -33,7 +35,7 @@
     "agent"
   ],
   "license": "MIT",
-  "homepage": "https://way-leave.vercel.app",
+  "homepage": "https://www.wayleave.xyz",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mikelxc/agent-mandate-wallet.git",

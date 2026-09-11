@@ -14,6 +14,10 @@ if (gatewayOrigin) {
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@mandate/sdk', '@mandate/protocol', '@mandate/gateway'],
+  webpack(config) {
+    config.resolve.alias['@base-org/account$'] = '@base-org/account/browser';
+    return config;
+  },
   turbopack: {
     // Reown is browser-only. The Base connector's Node entry imports optional
     // server payment SDKs that this wallet does not use.

@@ -3,10 +3,13 @@ import { isAddress, type Hex, decodeAbiParameters, hexToBytes, bytesToHex } from
 import { createSiweMessage } from "viem/siwe";
 import { canonicalIntentHash, parsePaymentIntent, ProtocolError } from "@mandate/protocol";
 import { sepoliaDeployment, validLabel, type PasskeyPublicKey } from "@mandate/sdk";
-import { Store } from "./store";
+import { Store, type Agent } from "./store";
 import { PaymentPreparationError, type Chain, type Prepared } from "./chain";
 import { createSiweAuth } from "./siwe";
+import { HistoryService, HistoryInputError, parseHistoryFilters } from "./history";
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
+/** Optional integrations own their authentication; the common host/origin checks run first. */
+export type GatewayRoute = (request: Request) => Promise<Response | null>;
 const secret = () => randomBytes(32).toString("hex");
 class HttpError extends Error {
   constructor(
@@ -99,12 +102,24 @@ export function createApp(
     dashboardOrigin?: string;
     gatewayOrigin?: string;
     now?: () => number;
+    routes?: GatewayRoute[];
+    history?: HistoryService;
+    authenticatePortableAgent?: (request: Request) => Promise<(Agent & { scopes: string[] }) | null>;
   } = {},
 ) {
   const dashboardOrigin = options.dashboardOrigin ?? "http://localhost:3000";
   const gatewayOrigin = options.gatewayOrigin ?? "http://127.0.0.1:3001";
   const now = options.now ?? (() => Math.floor(Date.now() / 1000));
   const siwe = createSiweAuth(store, chain, dashboardOrigin, now);
+  const history = options.history ?? new HistoryService();
+  async function paymentHistory(path: string, url: URL, account: string) {
+    const input = Object.fromEntries(url.searchParams);
+    if (path.endsWith("/summary"))
+      return history.summarize(account, { ...parseHistoryFilters(input), groupBy: input.groupBy as "merchant" | "chain" | undefined });
+    if (path.endsWith("/context"))
+      return history.context(account, { chainId: parseHistoryFilters(input).chainId, transactionHash: input.transactionHash ?? "" });
+    return history.list(account, parseHistoryFilters(input));
+  }
   async function limit(key: string) {
     if (!(await store.takeRateLimit(key, now()))) deny(429, "Request rate exceeded");
   }
@@ -192,19 +207,33 @@ export function createApp(
         return new Response(null, { status: 204, headers });
       }
       const path = url.pathname;
+      for (const route of options.routes ?? []) {
+        const response = await route(request);
+        if (response) {
+          const combined = new Headers(response.headers);
+          headers.forEach((value, key) => combined.set(key, value));
+          return new Response(response.body, { status: response.status, headers: combined });
+        }
+      }
       if (path === "/health" && request.method === "GET")
         return json({ ok: true, chainId: 11155111, mode: "human_approval" });
       if (path.startsWith("/agent/")) {
         const bearer = request.headers.get("authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-        const agent = bearer && (await store.authenticateAgent(hashToken(bearer), now()));
+        const legacy = bearer && (await store.authenticateAgent(hashToken(bearer), now()));
+        const portable = !legacy && options.authenticatePortableAgent ? await options.authenticatePortableAgent(request) : null;
+        const agent = legacy || portable;
         if (!agent) deny(401, "Invalid or revoked agent connection");
+        const requiredScope = request.method === "GET" ? "read" : "propose_payment";
+        if (portable && !portable.scopes.includes(requiredScope)) deny(403, "Agent permission required");
         await limit(`agent:${agent.id}`);
         await own(agent.account, agent.owner);
+        if (/^\/agent\/payments(?:\/(summary|context))?$/.test(path) && request.method === "GET")
+          return json(await paymentHistory(path, url, agent.account));
         if (path === "/agent/account" && request.method === "GET")
           return json({
             agent,
             balances: await chain.balances(agent.account, agent.owner),
-            permissions: ["read", "propose"],
+            permissions: portable ? portable.scopes : ["read", "propose"],
             chainId: 11155111,
           });
         if (path === "/agent/operations" && request.method === "POST") {
@@ -432,6 +461,12 @@ export function createApp(
       const owner = cookie && (await store.session(hashToken(cookie), now()));
       if (!owner) deny(401, "Sign in with your wallet");
       await limit(`owner:${owner}`);
+      if (/^\/history\/payments(?:\/(summary|context))?$/.test(path) && request.method === "GET") {
+        const account = url.searchParams.get("account");
+        if (!account || !isAddress(account)) deny(400, "An account address is required");
+        await own(account, owner);
+        return json(await paymentHistory(path, url, account));
+      }
       if (path === "/auth/session" && request.method === "GET")
         return json({ address: owner, chainId: 11155111 });
       if (path === "/agents" && request.method === "GET")
@@ -547,6 +582,7 @@ export function createApp(
       }
       deny(404, "Route not found");
     } catch (error) {
+      if (error instanceof HistoryInputError) return json({ error: error.message }, 400);
       if (error instanceof PaymentPreparationError)
         return json({ error: error.message, code: error.code }, 422);
       if (error instanceof HttpError) return json({ error: error.message }, error.status);

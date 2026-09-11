@@ -94,3 +94,17 @@ Wayleave is the public project and MCP server name. The npm package is
 `wayleave-mcp`.
 
 For a local owner dashboard on a different port, set `WAYLEAVE_DASHBOARD_URL=http://127.0.0.1:3020`. Start the gateway with matching `MANDATE_DASHBOARD_ORIGIN=http://127.0.0.1:3020`. Local source responses include readable demo-token amounts, setup guidance and verified payment status while preserving the underlying fields. These additions are included in version 0.1.1.
+
+### Indexed history
+
+`list_payments`, `get_payment_context`, and `summarize_spending` read the connected account's public indexed history through the gateway. No account override or raw GraphQL is exposed. A server-configured Wayleave subgraph is required; `coverage.status: not_configured` does not mean there were no payments. Inspect coverage start, indexed block, indexing errors and truncation before reasoning about missing activity. Amounts are integer token base units. Token transfers, UserOperation outcomes, cross-chain settlement and service delivery are separate evidence. See `packages/subgraph/README.md` in the repository for deployment and live-verification instructions.
+
+### Portable ENSv2 authentication (opt-in)
+
+Instead of `WAYLEAVE_AGENT_TOKEN`, configure `WAYLEAVE_ENS_IDENTITY` (the owner's identity name), `WAYLEAVE_ENS_AGENT_NAME` (the enrolled child name), and `WAYLEAVE_ENS_AGENT_PRIVATE_KEY` in the local MCP process environment. Provision a dedicated enrollment key through your normal secret manager; never paste it into a chat or use an owner wallet key. The key signs only the gateway's bounded authentication challenge. It does not authorize transactions. The owner must first enroll that key with the required scopes and explicitly associate the identity with the target account in Wayleave.
+
+`WAYLEAVE_GATEWAY_URL` still selects an explicitly trusted gateway. ENS records cannot redirect authentication to another endpoint. Challenge audience/name/key checks and redirect rejection apply before any signature is submitted. A short-lived bearer session is renewed locally as needed; revoked registrations and memberships fail gateway revalidation. Existing `WAYLEAVE_AGENT_TOKEN` takes precedence if configured. Optional `WAYLEAVE_ACCOUNT` selects an owner-associated account when an identity has multiple accounts; it is a selection hint, never authority.
+
+### Arc to Base Sepolia proposals
+
+`propose_crosschain_payment` accepts account, funding owner, recipient, amount, maximum Circle fee, business reference and idempotency key. The tool fixes the supported route to Arc Testnet → Base Sepolia and sends the proposal to the scoped agent endpoint. It requires portable identity with a verified Arc account association and `propose_payment` permission; legacy Sepolia bearer connections do not acquire Arc access. Amount is the 6-decimal USDC source debit, merchant receipt is debit minus the actual Circle fee, and source gas is additional. Only the owner can approve the exact payment. `get_crosschain_payment` returns proposal status and separate source/destination evidence, not signing payloads. Neither tool signs or submits payments.

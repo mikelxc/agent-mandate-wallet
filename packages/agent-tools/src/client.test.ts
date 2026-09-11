@@ -167,3 +167,18 @@ test("describes execution evidence without overstating finality or delivery", as
   const expired = (await client.getOperation("expired")) as any;
   expect(expired.human.status).toBe("Payment request expired");
 });
+
+test("history tools bind to authenticated routes without accepting an account or upstream URL", async () => {
+  const paths: string[] = [];
+  const client = createGatewayClient({ token: "secret", fetchImpl: fakeFetch((url, init) => {
+    paths.push(new URL(url).pathname + new URL(url).search);
+    expect(init?.headers).toMatchObject({ Authorization: "Bearer secret" });
+    return Response.json({ coverage: { status: "not_configured" } });
+  }) });
+  await client.listPayments({ chainId: 11155111, first: 10 });
+  await client.summarizeSpending({ from: 100, groupBy: "merchant" });
+  await client.getPaymentContext({ transactionHash: "0x" + "a".repeat(64) });
+  expect(paths[0]).toBe("/agent/payments?chainId=11155111&first=10");
+  expect(paths[1]).toBe("/agent/payments/summary?from=100&groupBy=merchant");
+  expect(paths[2]).toStartWith("/agent/payments/context?transactionHash=0x");
+});
