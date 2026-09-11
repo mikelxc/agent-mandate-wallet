@@ -2294,6 +2294,45 @@ body {
   }
 }
 
+.account-home .archived-records {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.account-home .archived-records summary {
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+.account-home .archived-records summary span {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.account-home .archive-actions,
+.account-home .archive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.account-home .archive-actions { flex-wrap: wrap; }
+.account-home .archive-actions small { flex: 1 1 180px; }
+.account-home .archive-row { border-top: 1px solid var(--line); }
+.account-home .archive-row > div { flex: 1; min-width: 0; }
+.account-home .archive-row strong,
+.account-home .archive-row small { display: block; overflow-wrap: anywhere; }
+.account-home .archive-row strong { font-size: 12px; font-weight: 500; }
+.account-home .archive-row small { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.account-home .archived-records .text-button { font-size: 11px; flex-shrink: 0; }
+.account-home .archive-empty { font-size: 12px; padding: 8px 0; }
+.account-home .connections-panel .agent-row { padding-block: 10px; gap: 10px; }
+.account-home .connections-panel .agent-row strong { font-size: 13px; }
+.account-home .connections-panel .agent-row p { font-size: 11px; }
+.account-home .operation-card { padding: 16px; }
+.account-home .operation-top strong { font-size: 14px; }
+.account-home .operation-top p { font-size: 11px; }
+
 /* Product polish: clear whole-control selection, optically centered platform marks. */
 .account-home .agent-host-logo,
 .account-home .desktop-host-picker .agent-host-logo {

@@ -1,5 +1,6 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { ArchivedRecords } from './archived-records';
 import { SetupRouteGuard } from './setup-route-guard';
 import Link from 'next/link';
 import { SpendingOverview } from './spending-overview';
@@ -641,6 +642,15 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
   const activeAgents = agents.filter(
     (item) => !item.revokedAt && item.expiresAt * 1000 > renderTime,
   );
+  const archivedAgents = agents.filter(
+    (item) => !!item.revokedAt || item.expiresAt * 1000 <= renderTime,
+  );
+  const filteredOperations = operations.filter((op) =>
+    requestedOperation ? op.id === requestedOperation : activityAgent === 'all' || op.agentId === activityAgent,
+  );
+  const archivedOperations = requestedOperation ? [] : filteredOperations.filter((op) => op.intent.expiresAt * 1000 <= renderTime);
+  const currentOperations = requestedOperation ? filteredOperations : filteredOperations.filter((op) => op.intent.expiresAt * 1000 > renderTime);
+  const archiveKey = `wayleave.hidden.${address?.toLowerCase() ?? 'disconnected'}`;
   const selectedAccount =
     account || activeAgents[0]?.account || agents[0]?.account || '';
   const hasAccount = isAddress(selectedAccount);
@@ -1595,16 +1605,16 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   <h3>Connected agents</h3>
                   <span>{activeAgents.length.toString().padStart(2, '0')}</span>
                 </div>
-                {!agents.length ? (
+                {!activeAgents.length ? (
                   <div className="compact-empty">
                     <Bot size={19} />
                     <div>
-                      <strong>No agents yet</strong>
+                      <strong>No active agents</strong>
                       <p>Set up an agent to get started.</p>
                     </div>
                   </div>
                 ) : (
-                  agents.map((a) => (
+                  activeAgents.map((a) => (
                     <div className="agent-row" key={a.id}>
                       <span
                         className={`agent-avatar ${a.revokedAt ? 'muted' : ''}`}
@@ -1642,6 +1652,16 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     </div>
                   ))
                 )}
+                <ArchivedRecords
+                  key={`${archiveKey}.agents`}
+                  title="Expired & revoked agents"
+                  storageKey={`${archiveKey}.agents`}
+                  records={archivedAgents.map((agent) => ({
+                    id: agent.id,
+                    title: agent.name,
+                    detail: `${agent.revokedAt ? 'Revoked' : 'Expired'} · ${new Date((agent.revokedAt ?? agent.expiresAt) * 1000).toLocaleDateString()}`,
+                  }))}
+                />
               </section>
 
               <section className="panel permission-card">
@@ -1782,11 +1802,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 </select>
               </label>
             )}
-            {!operations.filter(
-              (op) =>
-                (!requestedOperation || op.id === requestedOperation) &&
-                (activityAgent === 'all' || op.agentId === activityAgent),
-            ).length ? (
+            {!currentOperations.length && !archivedOperations.length ? (
               <div className="approval-empty">
                 <span>
                   <Circle size={10} />
@@ -1812,12 +1828,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </div>
             ) : (
               <div className="operation-list">
-                {operations
-                  .filter(
-                    (op) =>
-                      (!requestedOperation || op.id === requestedOperation) &&
-                      (activityAgent === 'all' || op.agentId === activityAgent),
-                  )
+                {currentOperations
                   .map((op) => {
                     const amount = formatUnits(BigInt(op.intent.amount), 6);
                     const agentName =
@@ -2029,6 +2040,17 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   })}
               </div>
             )}
+            {!requestedOperation && <ArchivedRecords
+              key={`${archiveKey}.activity`}
+              title="Expired activity"
+              storageKey={`${archiveKey}.activity`}
+              records={archivedOperations.map((op) => ({
+                id: op.id,
+                title: op.intent.businessReference,
+                detail: `${formatUnits(BigInt(op.intent.amount), 6)} demo USDC · ${op.execution ? (op.execution.success ? 'Paid' : 'Failed') : op.status === 'rejected' ? 'Rejected' : op.status === 'approved' ? 'Signed · expired' : 'Expired'} · ${new Date(op.createdAt * 1000).toLocaleDateString()}`,
+                href: `/?operation=${encodeURIComponent(op.id)}`,
+              }))}
+            />}
           </section>
         )}
 

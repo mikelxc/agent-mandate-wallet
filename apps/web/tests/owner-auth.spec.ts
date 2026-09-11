@@ -32,7 +32,18 @@ for (const validSignature of [true, false])
     const gateway = createHostedGateway(store, chain, [
       new URL(baseURL!).origin,
     ]);
-    await store.createAgent({ owner: owner.address.toLowerCase(), name: 'Existing agent', account: '0x1111111111111111111111111111111111111111', tokenHash: 'test-existing-token-hash', expiresAt: Math.floor(Date.now() / 1000) + 86400 }, Math.floor(Date.now() / 1000));
+    const seededAgent = await store.createAgent({ owner: owner.address.toLowerCase(), name: 'Existing agent', account: '0x1111111111111111111111111111111111111111', tokenHash: 'test-existing-token-hash', expiresAt: Math.floor(Date.now() / 1000) + 86400 }, Math.floor(Date.now() / 1000));
+    await store.propose(seededAgent, {
+      chainId: 11155111,
+      account: seededAgent.account,
+      fundingOwner: owner.address.toLowerCase(),
+      token: '0x2222222222222222222222222222222222222222',
+      recipient: '0x3333333333333333333333333333333333333333',
+      amount: '1000000',
+      businessReference: 'Old payment request',
+      idempotencyKey: 'expired-ui-test',
+      expiresAt: Math.floor(Date.now() / 1000) - 60,
+    }, 'expired-ui-test-hash', Math.floor(Date.now() / 1000) - 3600);
     let nfatBalance = 0;
     let balanceReads = 0;
     await page.route((url) => url.hostname === new URL(sepolia.rpcUrls.default.http[0]).hostname || url.hostname === 'rpc.walletconnect.org', async (route) => {
@@ -208,13 +219,40 @@ for (const validSignature of [true, false])
         expect(guide).toContain('<WAYLEAVE_AGENT_TOKEN>');
         expect(guide).not.toContain(token);
         await page.locator('.agent-row').last().getByRole('button', { name: 'Revoke' }).click();
-        await expect(page.locator('.agent-row').last()).toContainText('Revoked');
+        await expect(page.locator('.agent-row')).toHaveCount(1);
+        const agentArchive = page.locator('.archived-records').filter({ hasText: 'Expired & revoked agents' });
+        await expect(agentArchive).not.toHaveAttribute('open', '');
+        await agentArchive.locator('summary').click();
+        await expect(agentArchive.locator('.archive-row')).toContainText('Revoked');
+        await agentArchive.getByRole('button', { name: 'Hide Generic MCP connection', exact: true }).click();
+        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
+
         await expect(page.getByLabel('Agent connection key', { exact: true })).toHaveCount(0);
         for (const width of [390, 1280]) {
           await page.setViewportSize({ width, height: 900 });
           await page.screenshot({ path: `/tmp/wayleave-connect-${width}.png`, fullPage: true });
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         }
+
+        await page.getByRole('link', { name: 'Spending', exact: true }).click();
+        const activityArchive = page.locator('.archived-records').filter({ hasText: 'Expired activity' });
+        await expect(activityArchive).not.toHaveAttribute('open', '');
+        await activityArchive.locator('summary').click();
+        await expect(activityArchive.locator('.archive-row')).toContainText('Old payment request');
+        await expect(page.locator('.operation-card')).toHaveCount(0);
+        await activityArchive.getByRole('link', { name: 'View', exact: true }).click();
+        await expect(page.locator('.operation-card')).toContainText('Old payment request');
+        await page.getByRole('button', { name: 'View all payments', exact: true }).click();
+        await activityArchive.locator('summary').click();
+        await activityArchive.getByRole('button', { name: 'Hide all', exact: true }).click();
+        await expect(activityArchive.locator('.archive-row')).toHaveCount(0);
+        await page.getByRole('link', { name: 'Connect an agent', exact: true }).click();
+        await agentArchive.locator('summary').click();
+        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
+        await agentArchive.getByRole('button', { name: 'Restore hidden (1)', exact: true }).click();
+        await expect(agentArchive.locator('.archive-row')).toHaveCount(1);
+        await agentArchive.getByRole('button', { name: 'Hide all', exact: true }).click();
+        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
 
       } else {
         expect(verified).toBe(false);
