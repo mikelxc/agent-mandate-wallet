@@ -1246,7 +1246,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           )}
         </div>
 
-        <div className="mobile-step-nav" aria-label="Onboarding steps">
+        <fieldset className="mobile-step-nav" aria-label="Onboarding steps">
           {walkthroughOrder.map((step, index) => (
             <button
               key={step}
@@ -1257,7 +1257,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               onClick={() => setMobileStep(step)}
             />
           ))}
-        </div>
+        </fieldset>
         <output className="mobile-status" aria-live="polite">
           {message !== 'Sign in to connect an agent and review its requests.'
             ? message
