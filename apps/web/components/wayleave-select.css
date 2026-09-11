@@ -1,0 +1,133 @@
+button.wayleave-select {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 7px;
+  padding: 10px 12px;
+  border: 1px solid #dfe2df;
+  border-radius: 8px;
+  background: #f8f9f7;
+  color: #303630;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  box-shadow: 0 1px 2px #26344d04;
+}
+button.wayleave-select:hover:not(:disabled),
+button.wayleave-select[data-popup-open] {
+  transform: none;
+  background: #e9ece8;
+  border-color: #b9c3b8;
+}
+button.wayleave-select:focus-visible {
+  outline: 3px solid #899c8555;
+  outline-offset: 3px;
+}
+.wayleave-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wayleave-select-chevron {
+  display: flex;
+  flex-shrink: 0;
+  color: #727773;
+  transition: transform 0.15s ease;
+}
+[data-popup-open] > .wayleave-select-chevron {
+  transform: rotate(180deg);
+}
+button.wayleave-select--badge {
+  width: auto;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: #e9ece8;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wayleave-select-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #879681;
+  flex-shrink: 0;
+}
+.wayleave-select-positioner {
+  z-index: 100;
+  max-width: calc(100vw - 24px);
+}
+.wayleave-select-popup {
+  width: max(var(--anchor-width), 220px);
+  max-width: calc(100vw - 24px);
+  max-height: var(--available-height);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid #dfe2df;
+  border-radius: 16px;
+  background: #fcfdfb;
+  color: #303630;
+  box-shadow:
+    0 6px 16px #26344d0a,
+    0 20px 48px #26344d1a;
+  font-family: inherit;
+}
+.wayleave-select-heading {
+  padding: 9px 10px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #727773;
+}
+.wayleave-select-list {
+  margin: 0;
+  padding: 0;
+}
+.wayleave-select-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 34px 11px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  overflow-wrap: anywhere;
+}
+.wayleave-select-option[data-selected] {
+  background: #e9ece8;
+  color: #374832;
+}
+.wayleave-select-option[data-highlighted] {
+  background: #dfe6dc;
+}
+.wayleave-select-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.wayleave-select-copy small {
+  font-size: 11px;
+  color: #727773;
+}
+.wayleave-select-check {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  color: #597151;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wayleave-select-chevron {
+    transition: none;
+  }
+}

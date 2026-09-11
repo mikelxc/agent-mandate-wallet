@@ -1,4 +1,6 @@
 'use client';
+
+import { WayleaveSelect } from '@/components/wayleave-select';
 import { useState } from 'react';
 import PasskeyOnboarding from '../../components/account-access';
 import { AppFrame } from '../../components/app-frame';
@@ -401,22 +403,12 @@ export default function AdvancedWorkspace() {
                       </>
                     ) : (
                       <>
-                        <label>
+                        <label htmlFor="developer-network">
                           Network
-                          <select
-                            value={
-                              wallet.chainId === 11155111 ? 11155111 : 31337
-                            }
-                            onChange={(e) =>
-                              switchChain.mutate({
-                                chainId: Number(e.target.value),
-                              })
-                            }
+                          <WayleaveSelect id="developer-network" label="Network" value={wallet.chainId === 11155111 ? '11155111' : '31337'}
+                            onValueChange={value => switchChain.mutate({ chainId: Number(value) })}
                             disabled={!wallet.isConnected}
-                          >
-                            <option value={31337}>Anvil · local</option>
-                            <option value={11155111}>Sepolia · ENSv2</option>
-                          </select>
+                            options={[{ value: '31337', label: 'Anvil · local' }, { value: '11155111', label: 'Sepolia · ENSv2' }]} />
                         </label>
                         <label>
                           Factory address

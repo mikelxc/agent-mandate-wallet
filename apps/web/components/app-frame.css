@@ -1,8 +1,48 @@
-.network-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 100%; }
-.network-picker label { font-size: 11px; color: var(--muted); }
-.network-picker select { max-width: 210px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper, #fff); color: var(--ink); font: inherit; font-size: 12px; }
-.network-picker button { min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--ink); font-size: 12px; cursor: pointer; }
-.network-picker [role="alert"] { max-width: 260px; font-size: 12px; }
+.app-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.network-picker {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.network-wallet-switch {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  cursor: pointer;
+}
+.network-picker [role='alert'] {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  width: 240px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .app-brand-group {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .network-picker {
+    flex: 1;
+  }
+}
 @media (max-width: 1440px) {
   .wayleave-app .app-header {
     height: auto;

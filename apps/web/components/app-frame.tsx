@@ -11,7 +11,13 @@ export function AppFrame({
   network = 'Sepolia',
 }: {
   children: ReactNode;
-  active?: 'agents' | 'account' | 'tools' | 'connect' | 'identity' | 'crosschain';
+  active?:
+    | 'agents'
+    | 'account'
+    | 'tools'
+    | 'connect'
+    | 'identity'
+    | 'crosschain';
   network?: 'Sepolia' | 'Arc';
 }) {
   return (
@@ -20,13 +26,15 @@ export function AppFrame({
         Skip to content
       </a>
       <header className="app-header">
-        <Link href="/" className="app-brand">
-          <span>
-            <WayleaveMark width={32} height={32} />
-          </span>
-          wayleave<span className="app-testnet">{network} testnet</span>
-        </Link>
-        <NetworkSelector network={network} />
+        <div className="app-brand-group">
+          <Link href="/" className="app-brand">
+            <span>
+              <WayleaveMark width={32} height={32} />
+            </span>
+            wayleave
+          </Link>
+          <NetworkSelector network={network} />
+        </div>
         <nav aria-label="Main navigation">
           <Link
             href="/"
@@ -46,10 +54,16 @@ export function AppFrame({
           >
             Connect an agent
           </Link>
-          <Link href="/identity" aria-current={active === 'identity' ? 'page' : undefined}>
+          <Link
+            href="/identity"
+            aria-current={active === 'identity' ? 'page' : undefined}
+          >
             Identity
           </Link>
-          <Link href="/crosschain" aria-current={active === 'crosschain' ? 'page' : undefined}>
+          <Link
+            href="/crosschain"
+            aria-current={active === 'crosschain' ? 'page' : undefined}
+          >
             Cross-chain payments
           </Link>
         </nav>

@@ -1,4 +1,6 @@
 'use client';
+
+import { WayleaveSelect } from '@/components/wayleave-select';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { ArchivedRecords } from './archived-records';
 import { SetupRouteGuard } from './setup-route-guard';
@@ -1787,19 +1789,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               )}
             </div>
             {!requestedOperation && signedIn && agents.length > 1 && (
-              <label className="activity-filter">
+              <label className="activity-filter" htmlFor="activity-agent">
                 Show activity for
-                <select
-                  value={activityAgent}
-                  onChange={(event) => setActivityAgent(event.target.value)}
-                >
-                  <option value="all">All agents</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
+                <WayleaveSelect id="activity-agent" label="Show activity for" value={activityAgent} onValueChange={setActivityAgent}
+                  options={[{ value: 'all', label: 'All agents' }, ...agents.map(agent => ({ value: agent.id, label: agent.name }))]} />
               </label>
             )}
             {!currentOperations.length && !archivedOperations.length ? (

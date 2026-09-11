@@ -1,4 +1,6 @@
 'use client';
+
+import { WayleaveSelect } from '@/components/wayleave-select';
 import { useState } from 'react';
 import { useConnection, useConnect, useConnectors, useSignMessage, useWriteContract, usePublicClient, useSwitchChain } from 'wagmi';
 import { portableIdentityDeployment, identityProofMessage, type PortableIdentity, type IdentityProof } from '@mandate/sdk';
@@ -71,7 +73,7 @@ export function PortableIdentityPanel({ gatewayAudience }: {
       {verified && <section aria-label="Attach payment account">
         <h3>Add a payment account when you’re ready</h3>
         <p>Both this identity and the payment account must authorize the association. This does not authorize spending.</p>
-        <label>Account network<select value={paymentChain} onChange={e => setPaymentChain(Number(e.target.value))}><option value={5042002}>Arc Testnet</option><option value={11155111}>Sepolia</option></select></label>
+        <label htmlFor="account-network">Account network<WayleaveSelect id="account-network" label="Account network" value={String(paymentChain)} onValueChange={value => setPaymentChain(Number(value))} options={[{ value: '5042002', label: 'Arc Testnet' }, { value: '11155111', label: 'Sepolia' }]} /></label>
         <label>Payment account address<input value={paymentAccount} onChange={e => setPaymentAccount(e.target.value)} placeholder="0x…"/></label>
         <button disabled={busy} onClick={() => void run(async () => {
                     if (!isAddress(paymentAccount))

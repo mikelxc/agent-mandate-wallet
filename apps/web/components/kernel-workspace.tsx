@@ -1,4 +1,6 @@
 'use client';
+
+import { WayleaveSelect } from '@/components/wayleave-select';
 import { useEffect, useRef, useState } from 'react';
 import {
   useAccount,
@@ -562,23 +564,16 @@ export function KernelWorkspace({ compact = false }: { compact?: boolean }) {
             )}
             {walletChoices.length > 0 ? (
               <div className="wallet-selection">
-                <label>
+                <label htmlFor="spending-wallet">
                   Spending wallet
-                  <select
-                    value={recoverId}
-                    onChange={(event) => {
-                      setRecoverId(event.target.value);
+                  <WayleaveSelect id="spending-wallet" label="Spending wallet" value={recoverId}
+                    onValueChange={value => {
+                      setRecoverId(value);
                       setAccount(undefined);
                       setId(undefined);
                       setBalanceDetails(undefined);
                     }}
-                  >
-                    {walletChoices.map((choice) => (
-                      <option key={choice.id} value={choice.id}>
-                        {choice.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={walletChoices.map(choice => ({ value: choice.id, label: choice.name }))} />
                 </label>
                 <button
                   className="secondary"
