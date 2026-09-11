@@ -2293,3 +2293,230 @@ body {
     flex-wrap: wrap;
   }
 }
+
+/* Product polish: clear whole-control selection, optically centered platform marks. */
+.account-home .agent-host-logo,
+.account-home .desktop-host-picker .agent-host-logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.account-home .agent-host-logo img {
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: auto;
+  object-fit: contain;
+}
+.account-home .desktop-host-picker button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 13px 4px 5px;
+  border-color: #d5d9e1;
+  background: #fffefb;
+  color: #555d6b;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.account-home .desktop-host-picker button:hover:not(:disabled) {
+  border-color: #9aa6bb;
+  background: #f6f8fb;
+  transform: translateY(-1px);
+}
+.account-home .desktop-host-picker button.selected {
+  border-color: #687895;
+  background: #e3e8f1;
+  color: #263149;
+  box-shadow: 0 0 0 2px rgba(104, 120, 149, 0.12);
+}
+.account-home .desktop-host-picker button .agent-host-logo,
+.account-home .desktop-host-picker button.selected .agent-host-logo {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d9dee7;
+  border-radius: 50%;
+  color: #343d4e;
+  background: #fff;
+}
+.account-home .desktop-host-picker .agent-host-logo img {
+  width: 18px;
+  height: 18px;
+}
+.account-home .agent-host-picker button {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+.account-home .agent-host-picker button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.account-home .agent-host-picker button.selected {
+  border-color: #687895;
+  background: #e3e8f1;
+  box-shadow:
+    0 0 0 2px rgba(104, 120, 149, 0.11),
+    0 12px 28px rgba(39, 48, 66, 0.08);
+}
+.account-home .agent-host-picker button > .agent-host-logo,
+.account-home .agent-host-picker button.selected > .agent-host-logo {
+  color: #343d4e;
+  background: #fff;
+  border: 1px solid #d9dee7;
+  border-radius: 11px;
+}
+.account-home .agent-host-picker button > svg {
+  right: 10px;
+  top: 10px;
+  width: 17px;
+  height: 17px;
+  padding: 3px;
+  border-radius: 50%;
+  color: #fff;
+  background: #596985;
+}
+
+/* Small shared refinements keep the app feeling like one considered surface. */
+.app-header nav {
+  background: rgba(255, 255, 252, 0.72);
+  box-shadow: 0 8px 28px rgba(37, 43, 55, 0.04);
+  backdrop-filter: blur(12px);
+}
+.app-header nav a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.app-header nav a:hover {
+  transform: translateY(-1px);
+}
+.app-header nav a[aria-current] {
+  background: #fffefb;
+  box-shadow:
+    0 1px 2px rgba(35, 41, 52, 0.06),
+    0 6px 18px rgba(35, 41, 52, 0.06);
+}
+.account-home :is(.primary, .secondary, .mobile-primary, .wallet-empty-action) {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+.account-home :is(.primary, .secondary, .mobile-primary, .wallet-empty-action):hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.account-home .primary:hover:not(:disabled),
+.account-home .mobile-primary:hover:not(:disabled) {
+  background: #273143;
+  box-shadow: 0 10px 24px rgba(39, 49, 67, 0.14);
+}
+.scene-agents button[aria-pressed='true'] {
+  border-color: #8e9bb2;
+  background: #fff;
+  box-shadow:
+    0 0 0 2px rgba(104, 120, 149, 0.1),
+    0 10px 22px rgba(39, 48, 66, 0.07);
+}
+.account-home .connections-workspace .connection-page {
+  width: min(100%, 720px);
+  margin: 12px auto 32px;
+  padding: 38px 40px;
+  border: 1px solid #dadee5;
+  border-radius: 24px;
+  background: #fffefb;
+  box-shadow: 0 18px 48px rgba(39, 48, 66, 0.05);
+}
+.account-home .connections-workspace .connection-page > svg {
+  box-sizing: content-box;
+  margin-bottom: 22px;
+  padding: 12px;
+  border-radius: 14px;
+  color: #4d5d7a;
+  background: #e2e7f0;
+}
+.wallet-empty-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid #d8dce5;
+  border-radius: 20px;
+  background: #fffefb;
+  box-shadow: 0 16px 42px rgba(39, 48, 66, 0.045);
+}
+.wallet-empty-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #4d5d7a;
+  background: #e2e7f0;
+}
+.wallet-empty-state strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+.wallet-empty-state p {
+  max-width: 520px;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.wallet-empty-action {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid #d0d5df;
+  border-radius: 12px;
+  color: #30394a;
+  background: #f5f7fa;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wallet-empty-action:hover {
+  border-color: #99a5b9;
+  background: #edf1f6;
+}
+@media (max-width: 640px) {
+  .account-home .connections-workspace .connection-page {
+    margin: 0 auto 24px;
+    padding: 28px 24px;
+    border-radius: 20px;
+  }
+  .wallet-empty-state {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 20px;
+  }
+  .wallet-empty-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-home .desktop-host-picker button:hover:not(:disabled),
+  .account-home .agent-host-picker button:hover:not(:disabled),
+  .app-header nav a:hover,
+  .account-home :is(.primary, .secondary, .mobile-primary, .wallet-empty-action):hover:not(:disabled) {
+    transform: none;
+  }
+}

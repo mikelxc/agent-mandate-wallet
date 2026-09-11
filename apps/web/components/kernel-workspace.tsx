@@ -30,6 +30,7 @@ import {
   usdc,
   validLabel,
 } from '@mandate/sdk';
+import { ArrowRight, Wallet } from 'lucide-react';
 
 export function KernelWorkspace({ compact = false }: { compact?: boolean }) {
   const { address, chainId, connector } = useAccount();
@@ -528,12 +529,37 @@ export function KernelWorkspace({ compact = false }: { compact?: boolean }) {
     return (
       <section className="wallet-manager">
         {!address ? (
-          <p>
-            <a href="/">Connect your wallet to view spending access →</a>
-          </p>
+          <div className="wallet-empty-state">
+            <span className="wallet-empty-icon" aria-hidden="true">
+              <Wallet size={22} />
+            </span>
+            <div>
+              <strong>Connect your wallet to see its agent wallets.</strong>
+              <p>
+                Verify ownership on the Spending page, then return here to
+                review each wallet’s access.
+              </p>
+            </div>
+            <a className="wallet-empty-action" href="/">
+              Go to Spending <ArrowRight size={15} />
+            </a>
+          </div>
         ) : (
           <>
-            {walletLoadError && <p role="alert">{walletLoadError}</p>}
+            {walletLoadError && (
+              <div className="wallet-empty-state" role="alert">
+                <span className="wallet-empty-icon" aria-hidden="true">
+                  <Wallet size={22} />
+                </span>
+                <div>
+                  <strong>Verify this wallet to load its access.</strong>
+                  <p>{walletLoadError}</p>
+                </div>
+                <a className="wallet-empty-action" href="/">
+                  Go to Spending <ArrowRight size={15} />
+                </a>
+              </div>
+            )}
             {walletChoices.length > 0 ? (
               <div className="wallet-selection">
                 <label>
@@ -564,10 +590,21 @@ export function KernelWorkspace({ compact = false }: { compact?: boolean }) {
               </div>
             ) : (
               !walletLoadError && (
-                <p>
-                  No agent wallets to show.{' '}
-                  <a href="/?setup=1">Connect an agent →</a>
-                </p>
+                <div className="wallet-empty-state">
+                  <span className="wallet-empty-icon" aria-hidden="true">
+                    <Wallet size={22} />
+                  </span>
+                  <div>
+                    <strong>No agent wallets yet.</strong>
+                    <p>
+                      Connect an agent to create its wallet and set a visible
+                      spending boundary.
+                    </p>
+                  </div>
+                  <a className="wallet-empty-action" href="/?setup=1">
+                    Connect an agent <ArrowRight size={15} />
+                  </a>
+                </div>
               )
             )}
             {account && (
