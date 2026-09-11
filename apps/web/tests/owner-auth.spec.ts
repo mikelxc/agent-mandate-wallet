@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { decodeFunctionData, encodeFunctionResult, multicall3Abi, verifyMessage, type Address, type Hex } from 'viem';
@@ -13,8 +12,10 @@ test.setTimeout(60_000);
 for (const validSignature of [true, false])
   test(`Reown wallet flow ${validSignature ? 'verifies ownership' : 'rejects a wrong-wallet signature'}`, async ({
     page,
+    context,
     baseURL,
   }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const owner = privateKeyToAccount(generatePrivateKey());
     const signer = validSignature
       ? owner
@@ -209,11 +210,9 @@ for (const validSignature of [true, false])
         await expect(page.locator('.agent-row')).toHaveCount(2);
         await expect(page.locator('.agent-row').last()).toContainText('Generic MCP connection');
         const token = await page.getByLabel('Agent connection key', { exact: true }).inputValue();
-        const downloaded = page.waitForEvent('download');
-        await page.getByRole('button', { name: 'Download agent setup (.md)', exact: true }).first().click();
-        const download = await downloaded;
-        expect(download.suggestedFilename()).toBe('wayleave-generic-setup.md');
-        const guide = await readFile((await download.path())!, 'utf8');
+        await page.getByRole('button', { name: 'Copy agent setup guide', exact: true }).first().click();
+        await expect(page.locator('.mobile-status')).toContainText('Agent setup guide copied.');
+        const guide = await page.evaluate(() => navigator.clipboard.readText());
         expect(guide).toContain('local stdio');
         expect(guide).toContain('get_account');
         expect(guide).toContain('<WAYLEAVE_AGENT_TOKEN>');

@@ -789,7 +789,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         : agentHost === 'generic'
           ? 'Add the server to your client’s local stdio MCP settings; adapt the JSON wrapper to its format'
           : 'Add to claude_desktop_config.json';
-  function downloadGuide() {
+  function copySetupGuide() {
     const guide = buildAgentSetupGuide({
       host: selectedHost.name,
       destination: mcpDestination,
@@ -798,13 +798,18 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       gateway: agentGateway,
       account: selectedAccount,
     });
-    const url = URL.createObjectURL(new Blob([guide], { type: 'text/markdown;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `wayleave-${agentHost}-setup.md`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setMessage('Agent setup guide downloaded. Supply the connection key separately in the client’s private settings.');
+    void navigator.clipboard
+      .writeText(guide)
+      .then(() =>
+        setMessage(
+          'Agent setup guide copied. Supply the connection key separately in the client’s private settings.',
+        ),
+      )
+      .catch(() =>
+        setMessage(
+          'Clipboard unavailable. Select and copy the agent setup guide.',
+        ),
+      );
   }
   const identityName = agentEnsName(identityLabel);
   const identityLoaded =
@@ -1232,7 +1237,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               >
                 <Clipboard size={16} /> Copy {selectedHost.name} setup
               </button>
-              <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
+              <button className="secondary" onClick={copySetupGuide}><Clipboard size={16} /> Copy agent setup guide</button>
               <p className="mobile-trust">
                 {mcpDestination}.{' '}
                 {agentGateway.startsWith('http://127.0.0.1')
@@ -1276,7 +1281,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               ? `Wallet connected: ${address.slice(0, 6)}…${address.slice(-4)}. ${signedIn ? 'Create a separate connection for each agent app, or revoke its access below.' : 'Verify ownership to load and manage your connections.'}`
               : 'Connect your wallet to create and manage agent connections. Your agent can read and request payments; you approve spending.'}</p>
             {!signedIn && <button className="primary" disabled={!uiReady || busy || authStage !== 'idle'} onClick={() => void run(login)}>{uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} /></button>}
-            <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
+            <button className="secondary" onClick={copySetupGuide}><Clipboard size={16} /> Copy agent setup guide</button>
             <p>The guide contains no connection key. Supports Codex, Claude, Cursor, and generic local stdio MCP clients.</p>
           </section>
         )}
@@ -1577,7 +1582,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           <Clipboard size={14} /> Copy
                         </button>
                       </div>
-                      <button className="secondary" onClick={downloadGuide}>Download agent setup (.md)</button>
+                      <button className="secondary" onClick={copySetupGuide}><Clipboard size={14} /> Copy agent setup guide</button>
                       <p>The guide omits your key. Supply it separately in private client settings.</p>
                       <div className="tool-chips">
                         <span>
