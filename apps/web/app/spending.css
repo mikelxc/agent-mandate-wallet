@@ -1987,3 +1987,271 @@ body {
     font-size: 9px;
   }
 }
+/* The public introduction is self-contained; navigation remains in the workspace. */
+.wayleave-app:has(.wallet-entry) .app-header nav {
+  display: none;
+}
+.scene-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.scene-player .scene-caption {
+  margin: 0;
+  text-align: left;
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.scene-player button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  border: 1px solid #cbd3c6;
+  border-radius: 20px;
+  padding: 8px 10px;
+  background: #f5f7f2;
+  cursor: pointer;
+}
+.scene-source {
+  max-width: 310px;
+}
+.scene-source div .scene-parent-balance {
+  margin-top: 4px;
+  color: #4e5d48;
+  font-size: 9px;
+}
+.scene-nft-label {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.scene-nft-label b {
+  display: block;
+  font-weight: 500;
+  color: #75806e;
+  font-size: 8px;
+}
+.scene-inner-wallet {
+  font-variant-numeric: tabular-nums;
+}
+.scene-zero-balance {
+  font-size: 9px;
+  color: #626d5a;
+}
+.scene-funding-flow {
+  opacity: 0;
+  stroke: #566c45;
+  stroke-width: 3px;
+  stroke-dasharray: 7 10;
+}
+.wallet-scene[data-phase='2'] .scene-funding-flow {
+  opacity: 1;
+  animation: funding-stream 900ms linear infinite;
+}
+.wallet-scene[data-phase='3'] .scene-status {
+  background: #dfead7;
+}
+.wallet-scene[data-phase='0'] .scene-request {
+  animation: incoming-request 500ms ease both;
+}
+.wallet-scene[data-phase='3'] .scene-receipt svg {
+  animation: outgoing-transaction 650ms ease both;
+}
+.wallet-scene[data-playing='false'] .scene-funding-flow {
+  animation-play-state: paused;
+}
+.scene-timeline {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.scene-timeline button {
+  flex: 1;
+  display: grid;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  color: #737f6a;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.scene-timeline button span {
+  height: 3px;
+  border-radius: 4px;
+  background: #cfd7c8;
+}
+.scene-timeline button[aria-current] {
+  color: #303d27;
+}
+.scene-timeline button[aria-current] span {
+  background: #5d714c;
+}
+.landing-connect {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  border-top: 1px solid #dfe4dc;
+  padding-top: 60px;
+  margin-top: 12px;
+  scroll-margin-top: 28px;
+}
+.landing-connect h2 {
+  font-size: 36px;
+  letter-spacing: -1.4px;
+  font-weight: 600;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+.wallet-entry .landing-connect p {
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 380px;
+}
+.landing-connect .primary {
+  display: inline-flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.connection-guide-steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+.connection-guide-steps li {
+  display: flex;
+  gap: 20px;
+}
+.connection-guide-steps li > span {
+  color: #8b9584;
+  font-size: 11px;
+  padding-top: 3px;
+}
+.connection-guide-steps h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.wallet-entry .connection-guide-steps p {
+  font-size: 12px;
+  margin: 0;
+}
+.connection-guide-steps details {
+  border-top: 1px solid #dfe4dc;
+  margin-top: 28px;
+  padding-top: 18px;
+  font-size: 12px;
+}
+.connection-guide-steps summary {
+  cursor: pointer;
+}
+.wallet-entry .connection-guide-steps details p {
+  margin-top: 12px;
+}
+@keyframes funding-stream {
+  to {
+    stroke-dashoffset: -34;
+  }
+}
+@keyframes incoming-request {
+  from {
+    opacity: 0.4;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes outgoing-transaction {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (max-width: 640px) {
+  .landing-connect {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding-top: 36px;
+  }
+  .landing-connect h2 {
+    font-size: 32px;
+  }
+  .scene-player .scene-caption {
+    font-size: 7px;
+  }
+  .scene-player button {
+    font-size: 9px;
+  }
+}
+.scene-transfer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  color: #727e68;
+  font-size: 9px;
+}
+.scene-transfer span {
+  flex: 1;
+  text-align: center;
+  line-height: 1.5;
+}
+.scene-transfer i {
+  position: relative;
+  width: 28px;
+  height: 1px;
+  background: #becab5;
+}
+.scene-transfer i::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  top: -2px;
+  left: 0;
+  border-radius: 50%;
+  background: #536c40;
+  opacity: 0;
+}
+.wallet-scene[data-phase='2'] .scene-transfer i:first-of-type::after,
+.wallet-scene[data-phase='3'] .scene-transfer i:last-of-type::after {
+  opacity: 1;
+  animation: transfer-dot 1.2s ease-in-out infinite;
+}
+.wallet-scene[data-playing='false'] .scene-transfer i::after {
+  animation-play-state: paused;
+}
+@keyframes transfer-dot {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(24px);
+  }
+}
+@media (max-width: 360px) {
+  .scene-agents button {
+    padding-inline: 2px;
+  }
+  .scene-nft-label {
+    font-size: 8px;
+  }
+  .scene-transfer {
+    font-size: 8px;
+    gap: 3px;
+  }
+  .scene-transfer i {
+    width: 16px;
+  }
+}

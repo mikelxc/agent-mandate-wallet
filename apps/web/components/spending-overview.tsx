@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ConnectionGuide } from './connection-guide';
 import { WayleaveMark } from './wayleave-mark';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Pause, Play, Check } from 'lucide-react';
 import type { AgentConnection, Operation } from '@mandate/protocol';
 
 type Payment = Operation & {
@@ -62,7 +63,7 @@ export function SpendingOverview({
           <span className="entry-note">
             Your keys stay yours. Your funds stay together.
           </span>
-          <Link href="/connect" className="entry-help">
+          <Link href="#connect-agent" className="entry-help">
             Start from your agent <ArrowRight size={14} />
           </Link>
         </div>
@@ -87,6 +88,7 @@ export function SpendingOverview({
             </p>
           </div>
         </div>
+        <ConnectionGuide />
       </section>
     );
   return (
@@ -113,6 +115,9 @@ export function SpendingOverview({
 const sceneAgents = [
   {
     name: 'Research agent',
+    ens: 'research.wayleave.eth',
+    nft: '101',
+    address: '0x1111111111111111111111111111111111111101',
     task: 'A paper worth reading.',
     amount: '$4.00',
     recipient: 'Research library',
@@ -120,6 +125,9 @@ const sceneAgents = [
   },
   {
     name: 'Travel agent',
+    ens: 'travel.wayleave.eth',
+    nft: '102',
+    address: '0x2222222222222222222222222222222222222202',
     task: 'The next stop, sorted.',
     amount: '$12.00',
     recipient: 'Travel service',
@@ -127,6 +135,9 @@ const sceneAgents = [
   },
   {
     name: 'Coding agent',
+    ens: 'coding.wayleave.eth',
+    nft: '103',
+    address: '0x3333333333333333333333333333333333333303',
     task: 'A little more compute.',
     amount: '$2.50',
     recipient: 'Compute provider',
@@ -135,24 +146,80 @@ const sceneAgents = [
 ];
 function WalletScene() {
   const [selected, setSelected] = useState(0);
+  const [phase, setPhase] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPlaying(!preference.matches);
+    const update = () => {
+      if (preference.matches) setPlaying(false);
+    };
+    preference.addEventListener('change', update);
+    return () => preference.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setTimeout(() => {
+      if (phase === 3) {
+        setSelected((current) => (current + 1) % sceneAgents.length);
+        setPhase(0);
+      } else setPhase((current) => current + 1);
+    }, 2400);
+    return () => window.clearTimeout(timer);
+  }, [playing, phase, selected]);
   const agent = sceneAgents[selected];
+  const phases = [
+    'Request received',
+    'Owner approves · demo',
+    'Spending from your wallet',
+    'Transaction sent · demo',
+  ];
+  const selectAgent = (index: number) => {
+    setSelected(index);
+    setPhase(0);
+    setPlaying(false);
+  };
   return (
     <div
       className="wallet-scene"
+      data-phase={phase}
+      data-playing={playing}
       aria-label="Your wallet holds ownership NFTs, each controlling a real agent wallet"
     >
-      <span className="scene-caption">ONE WALLET. YOUR AGENTS.</span>
+      <div className="scene-player">
+        <span className="scene-caption">SIMULATION · ENSv2 WALLET EXAMPLE</span>
+        <button
+          aria-label={playing ? 'Pause wallet demo' : 'Play wallet demo'}
+          onClick={() => setPlaying(!playing)}
+        >
+          {playing ? <Pause size={13} /> : <Play size={13} />}
+          {playing ? 'Pause' : 'Play'}
+        </button>
+      </div>
       <div className="scene-source">
         <WayleaveMark width={38} height={38} />
         <div>
           <strong>Your wallet</strong>
           <span>Your funds + your ownership NFTs.</span>
+          <span className="scene-parent-balance">
+            $250.00 USDC · example balance
+          </span>
         </div>
         <span className="source-dot" />
       </div>
       <div className="scene-branches" aria-hidden="true">
         <svg viewBox="0 0 400 68">
           <path d="M200 0v22M64 68V42Q64 22 84 22h232q20 0 20 20v26M200 22v46" />
+          <path
+            className="scene-funding-flow"
+            d={
+              selected === 0
+                ? 'M200 0v22H84Q64 22 64 42v26'
+                : selected === 1
+                  ? 'M200 0v68'
+                  : 'M200 0v22h116q20 0 20 20v26'
+            }
+          />
         </svg>
       </div>
       <div className="scene-owned-wallets">
@@ -162,7 +229,7 @@ function WalletScene() {
             <button
               key={item.name}
               aria-pressed={selected === index}
-              onClick={() => setSelected(index)}
+              onClick={() => selectAgent(index)}
             >
               <span
                 className={`agent-sculpture ${item.shape}`}
@@ -173,19 +240,31 @@ function WalletScene() {
                 <i />
               </span>
               <span>{item.name}</span>
-              <span className="scene-nft-label">Ownership NFT</span>
-              <span className="scene-inner-wallet">Owns an agent wallet</span>
+              <span className="scene-nft-label">
+                {item.ens}
+                <b>NFT #{item.nft}</b>
+              </span>
+              <span className="scene-inner-wallet" title={item.address}>
+                Resolves to
+                <br />
+                {item.address.slice(0, 6)}…{item.address.slice(-4)}
+              </span>
+              <span className="scene-zero-balance">Balance $0.00</span>
             </button>
           ))}
         </div>
       </div>
       <p className="scene-ownership-note">
-        Each NFT controls a real wallet with its own address.
+        Zero balance needed. These wallets spend from your parent wallet.
       </p>
-      <div className="scene-request" key={selected} aria-live="polite">
+      <div
+        className="scene-request"
+        key={selected}
+        aria-live={playing ? 'off' : 'polite'}
+      >
         <div className="scene-request-heading">
-          <span>EXAMPLE REQUEST</span>
-          <span className="scene-status">Your approval needed</span>
+          <span>{phase === 3 ? 'EXAMPLE TRANSACTION' : 'EXAMPLE REQUEST'}</span>
+          <span className="scene-status">{phases[phase]}</span>
         </div>
         <h2>{agent.task}</h2>
         <div className="scene-amount">
@@ -193,12 +272,46 @@ function WalletScene() {
           <span>USDC · {agent.recipient}</span>
         </div>
         <div className="scene-receipt">
-          <span>Requested by {agent.name.toLowerCase()}</span>
-          <span>↗</span>
+          <span>
+            {phase === 0
+              ? `From ${agent.name.toLowerCase()} → you`
+              : phase === 1
+                ? 'Your approval is required before spending'
+                : phase === 2
+                  ? 'Your wallet → agent wallet → recipient'
+                  : `Sent to ${agent.recipient.toLowerCase()}`}
+          </span>
+          {phase === 3 ? <Check size={13} /> : <ArrowRight size={13} />}
         </div>
       </div>
+      <div
+        className="scene-transfer"
+        aria-label="Payment route from your wallet through the agent wallet to the recipient"
+      >
+        <span>Your wallet</span>
+        <i aria-hidden="true" />
+        <span>Agent wallet</span>
+        <i aria-hidden="true" />
+        <span>{agent.recipient}</span>
+      </div>
+      <div className="scene-timeline" aria-label="Demo payment stages">
+        {['Request', 'Approve', 'Spend', 'Sent'].map((label, index) => (
+          <button
+            key={label}
+            aria-label={`Show ${label.toLowerCase()} stage`}
+            aria-current={phase === index ? 'step' : undefined}
+            onClick={() => {
+              setPhase(index);
+              setPlaying(false);
+            }}
+          >
+            <span />
+            {label}
+          </button>
+        ))}
+      </div>
       <p className="scene-footnote">
-        A preview of how it works. Choose an agent to explore.
+        Fictional names, NFTs, addresses and payments. No funds move.
       </p>
     </div>
   );
