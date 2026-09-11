@@ -9,8 +9,8 @@ export default function Connect() {
         <TerminalSquare size={26} strokeWidth={1.4} />
         <h1>Connect your agent</h1>
         <p>
-          Wayleave gives your agent two tools: check its wallet and request a
-          payment. You approve payments here.
+          Your agent can check its wallet, request a payment, and follow its
+          status. You approve the spending here.
         </p>
         <ol>
           <li>

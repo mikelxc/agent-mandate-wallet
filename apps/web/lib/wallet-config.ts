@@ -50,7 +50,7 @@ const appKit = createAppKit({
   experimental_preferUniversalLinks: true,
   metadata: {
     name: 'Wayleave',
-    description: 'Your accounts, agents and approvals',
+    description: 'Agent wallets, owned by you',
     url:
       typeof window === 'undefined'
         ? 'http://localhost:3000'
@@ -58,9 +58,13 @@ const appKit = createAppKit({
     icons:
       typeof window === 'undefined'
         ? []
-        : [`${window.location.origin}/favicon.svg`],
+        : [`${window.location.origin}/icon-192.png`],
   },
-  themeMode: 'dark',
+  themeMode: 'light',
+  themeVariables: {
+    '--w3m-accent': '#252a27',
+    '--w3m-border-radius-master': '4px',
+  },
   features: {
     analytics: false,
     email: false,

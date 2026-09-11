@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { WayleaveMark } from './wayleave-mark';
 
 export function AppFrame({
   children,
@@ -17,7 +18,7 @@ export function AppFrame({
       <header className="app-header">
         <Link href="/" className="app-brand">
           <span>
-            <ShieldCheck size={23} />
+            <WayleaveMark width={32} height={32} />
           </span>
           wayleave<span className="app-testnet">Sepolia testnet</span>
         </Link>
