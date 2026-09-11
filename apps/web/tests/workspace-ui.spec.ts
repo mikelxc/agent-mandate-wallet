@@ -30,6 +30,28 @@ for (const width of [320, 390, 1280]) {
     await expect(
       page.getByRole('heading', { name: 'Connect your wallet.' }),
     ).toBeVisible();
+    const setupCard = page.locator('.mobile-agent-onboarding');
+    const cardBounds = await setupCard.boundingBox();
+    const progressBounds = await page
+      .getByRole('group', { name: 'Onboarding steps' })
+      .boundingBox();
+    expect(cardBounds).not.toBeNull();
+    expect(progressBounds).not.toBeNull();
+    expect(
+      Math.abs(
+        progressBounds!.x +
+          progressBounds!.width / 2 -
+          (cardBounds!.x + cardBounds!.width / 2),
+      ),
+    ).toBeLessThan(2);
+    await expect(page.locator('.mobile-step-meta')).toHaveCSS(
+      'justify-content',
+      'center',
+    );
+    await expect(page.locator('.mobile-status')).toHaveCSS(
+      'text-align',
+      'center',
+    );
     await page.getByRole('button', { name: 'View dashboard' }).click();
     await page.reload();
     await expect(

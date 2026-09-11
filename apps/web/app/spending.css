@@ -2559,3 +2559,22 @@ body {
     transform: none;
   }
 }
+
+/* Keep the setup card's utility, progress, and status elements on one axis. */
+.account-home .mobile-onboarding-top button {
+  margin-left: auto;
+}
+.account-home .mobile-agent-onboarding[data-step='1'] .mobile-step-meta {
+  justify-content: center;
+  text-align: center;
+}
+.account-home .mobile-step-nav {
+  width: fit-content;
+  min-inline-size: 0;
+  margin-inline: auto;
+  border: 0;
+  justify-content: center;
+}
+.account-home .mobile-status {
+  text-align: center;
+}
