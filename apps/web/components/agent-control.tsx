@@ -2180,13 +2180,25 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             </code>
                           </div>
                           <div>
-                            <small>ACCOUNT</small>
-                            <code>
+                            <small>{requestedOperation ? 'AGENT WALLET' : 'ACCOUNT'}</small>
+                            <code title={op.intent.account}>
                               {op.intent.account.slice(0, 8)}…
                               {op.intent.account.slice(-6)}
                             </code>
                           </div>
+                          {requestedOperation && (
+                            <div>
+                              <small>PAYING FROM</small>
+                              <code>{op.intent.fundingOwner}</code>
+                            </div>
+                          )}
                         </div>
+                        {requestedOperation && op.status === 'approval_required' && !expired && (
+                          <p className="request-approval-note">
+                            <ShieldCheck size={16} aria-hidden="true" />
+                            Review the details before approving in your wallet.
+                          </p>
+                        )}
                         {op.decisionReason && (
                           <p className="decision-note">{op.decisionReason}</p>
                         )}

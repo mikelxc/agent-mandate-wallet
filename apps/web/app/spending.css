@@ -1119,17 +1119,18 @@ summary:focus-visible {
     gap: 14px;
   }
 }
-.account-home .desktop-agent-pro.focused-payment {
-  max-width: 620px;
-  padding-top: 40px;
+/* A request is a focused review surface, with the amount leading the decision. */
+.account-home .desktop-agent-pro.focused-payment.show-on-mobile {
+  width: calc(100% - 48px);
+  max-width: 680px;
+  margin-inline: auto;
+  padding: 48px 0 72px;
 }
 .account-home .focused-payment .approval-panel {
   border-top: 0;
-  padding-top: 0;
+  padding: 0;
 }
 .account-home .focused-payment .approval-head {
-  display: flex;
-  align-items: center;
   margin-bottom: 24px;
 }
 .account-home .focused-payment .approval-head > div:first-child {
@@ -1137,31 +1138,186 @@ summary:focus-visible {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 20px;
+  gap: 16px;
+}
+.account-home .focused-payment .approval-head h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.account-home .focused-payment .approval-head .text-button {
+  min-height: 44px;
+  color: #626b65;
+  font-size: 12px;
 }
 .account-home .focused-payment .operation-card {
-  border: 0;
-  padding: 0;
-}
-.account-home .focused-payment .payment-summary {
-  background: none;
-  padding: 20px 0;
-}
-.account-home .focused-payment .payment-summary > div:first-child strong {
-  font-size: 32px;
-  font-weight: 500;
-  line-height: 1.2;
-}
-.account-home .focused-payment .payment-summary > div:first-child strong span {
-  font-size: 16px;
-  color: #727773;
+  margin-top: 0;
+  padding: 32px;
+  border: 1px solid #e6e9e6;
+  border-radius: 28px;
+  background: white;
+  box-shadow: 0 8px 32px #252a2705;
 }
 .account-home .focused-payment .operation-top {
-  padding-bottom: 20px;
-  border-bottom: 1px solid #dfe2df;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eceeec;
+}
+.account-home .focused-payment .operation-top .agent-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #f0f2ef;
+  color: #626b65;
+}
+.account-home .focused-payment .operation-top strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.account-home .focused-payment .operation-top p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #626b65;
+}
+.account-home .focused-payment .status {
+  white-space: nowrap;
+  color: #526458;
+}
+.account-home .focused-payment .status.blocked {
+  color: #a04d46;
+}
+.account-home .focused-payment .payment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+.account-home .focused-payment .payment-summary > div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 16px;
+  padding: 17px 0;
+  border-bottom: 1px solid #eceeec;
+}
+.account-home .focused-payment .payment-summary small {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: #626b65;
+}
+.account-home .focused-payment .payment-summary > div:first-child {
+  display: block;
+  padding: 30px 0;
+}
+.account-home .focused-payment .payment-summary > div:first-child strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.account-home .focused-payment .payment-summary > div:first-child strong span {
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 400;
+  color: #626b65;
+  letter-spacing: -0.02em;
+}
+.account-home .focused-payment .payment-summary code {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #454e48;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+}
+.account-home .focused-payment .request-approval-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 22px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #626b65;
+}
+.account-home .focused-payment .request-approval-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.account-home .focused-payment .operation-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 24px;
+}
+.account-home .focused-payment .operation-actions button {
+  min-height: 48px;
+}
+.account-home .focused-payment .review-sheet {
+  padding: 24px 0 0;
+  border-radius: 0;
 }
 .account-home .focused-payment .status-toast {
   order: 4;
+}
+@media (max-width: 640px) {
+  .account-home .desktop-agent-pro.focused-payment.show-on-mobile {
+    width: calc(100% - 32px);
+    padding: 24px 0 48px;
+  }
+  .account-home .focused-payment .approval-head h2 {
+    font-size: 21px;
+  }
+  .account-home .focused-payment .operation-card {
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+  .account-home .focused-payment .operation-top {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .account-home .focused-payment .operation-top .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .account-home .focused-payment .payment-summary > div {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .account-home .focused-payment .payment-summary > div:first-child strong {
+    font-size: 42px;
+  }
+  .account-home .focused-payment .operation-actions {
+    gap: 12px;
+  }
+  .account-home .focused-payment .operation-actions .primary {
+    padding-inline: 20px;
+    white-space: nowrap;
+  }
+  .account-home .focused-payment .operation-actions .text-button {
+    padding-inline: 8px;
+  }
+}
+@media (max-width: 360px) {
+  .account-home .focused-payment .approval-head > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0;
+  }
+  .account-home .focused-payment .approval-head .text-button {
+    padding-left: 0;
+  }
 }
 .account-home .account-page {
   max-width: 680px;
