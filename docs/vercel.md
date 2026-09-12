@@ -208,6 +208,40 @@ Turso configuration is present.
   Browser automation does not establish successful iOS app handoff. A challenge
   that expires while the picker remains open can still require a network refresh.
 
+## Mobile authentication network scope — September 12, 2026 (local)
+
+- AppKit 1.8.23's `WalletConnectConnector.authenticate()` obtains all registered
+  networks directly and bypasses `universalProviderConfigOverride`. This exposed
+  local Anvil (`eip155:31337`) to native authentication despite the existing
+  public-testnet session filter. This is a potential cause of mobile connection
+  rejection; the reported physical-wallet failure has not been reproduced.
+- Both AppKit and its wagmi adapter now register only Sepolia and Arc testnet
+  during normal use. Anvil remains available in explicit developer-wallet mode,
+  where SIWE is disabled. The session proposal override remains in place.
+- Validation: 24 focused tests, frontend TypeScript, and four browser regressions
+  passed (valid/invalid ownership signatures and mobile/desktop QR pickers).
+  The new regression exercises the installed Reown connector's authentication
+  chain selection with a stubbed authentication transport.
+- This change has not been deployed or verified with a physical mobile wallet.
+
+## Mobile signing error diagnosis — September 12, 2026 (local)
+
+- Inspected live deployment `dpl_D5mesT5vx5jyGiWNzWK4RtbMveCk` and the reported
+  `0qxx0jfec2x3w.js` bundle. Both AppKit and wagmi still registered Anvil; the
+  preceding local network-scope change was absent from this deployment.
+- The installed Reown adapter discarded all wagmi signing errors, replacing
+  them with `WagmiAdapter:signMessage - Sign message failed`. The local
+  `OwnerWalletAdapter` uses the same wagmi message-signing action and preserves
+  the original failure details. This improves diagnosis; it does not establish
+  why the reported physical wallet failed or fix a failed mobile handoff.
+- Five browser tests passed: valid and invalid ownership signatures, a provider
+  signing failure retaining its original details without gateway verification,
+  and mobile/desktop QR pickers. No real mobile wallet was used.
+- Production build, frontend TypeScript, and 24 focused unit/gateway tests also
+  passed. A cached Turbopack sandbox permission error was cleared by moving its
+  generated cache aside before rebuilding.
+- These signing diagnostics have not been deployed.
+
 ## Payment review funding errors — September 10, 2026
 
 - Read-only diagnosis of the reported production operation found 100 demo USDC

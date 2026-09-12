@@ -2,21 +2,22 @@ import { http } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { foundry, arcTestnet } from 'wagmi/chains';
 import { createAppKit } from '@reown/appkit/react';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { RouterController } from '@reown/appkit-controllers';
 import { hackathonSepolia } from '@mandate/sdk';
 import { getDevWalletProvider } from './dev-wallet';
 import { ownerAuth, prepareOwnerAuth } from './owner-auth';
-import { walletConnectSessionConfig } from './wallet-connect';
+import { getWalletNetworks, walletConnectSessionConfig } from './wallet-connect';
+import { OwnerWalletAdapter } from './wallet-adapter';
 
 // Public project identifier, not a wallet credential or signing key.
 const projectId = '74fcd78221a94fe49836612d214f6e3e';
 const devWalletEnabled =
   process.env.NODE_ENV === 'development' &&
   process.env.NEXT_PUBLIC_MANDATE_DEV_WALLET === 'true';
-const adapter = new WagmiAdapter({
+const networks = getWalletNetworks(devWalletEnabled);
+const adapter = new OwnerWalletAdapter({
   projectId,
-  networks: [hackathonSepolia, arcTestnet, foundry],
+  networks,
   connectors: [
     ...(devWalletEnabled
       ? [
@@ -44,7 +45,7 @@ export const walletConfig = adapter.wagmiConfig;
 const appKit = createAppKit({
   adapters: [adapter],
   projectId,
-  networks: [hackathonSepolia, arcTestnet, foundry],
+  networks,
   defaultNetwork: hackathonSepolia,
   siweConfig: devWalletEnabled ? undefined : ownerAuth,
   universalProviderConfigOverride: walletConnectSessionConfig,

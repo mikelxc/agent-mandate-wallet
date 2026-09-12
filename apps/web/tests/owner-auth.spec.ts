@@ -9,12 +9,17 @@ import type { Chain } from '../../gateway/src/chain';
 
 test.setTimeout(60_000);
 
-for (const validSignature of [true, false])
-  test(`Reown wallet flow ${validSignature ? 'verifies ownership' : 'rejects a wrong-wallet signature'}`, async ({
+for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
+  test(`Reown wallet flow ${outcome === 'valid' ? 'verifies ownership' : outcome === 'wrong-wallet' ? 'rejects a wrong-wallet signature' : 'preserves the wallet signing error'}`, async ({
     page,
     context,
     baseURL,
   }) => {
+    const validSignature = outcome === 'valid';
+    const signingErrors: string[] = [];
+    page.on('console', message => {
+      if (message.type() === 'error') signingErrors.push(message.text());
+    });
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const owner = privateKeyToAccount(generatePrivateKey());
     const signer = validSignature
@@ -106,6 +111,7 @@ for (const validSignature of [true, false])
     await page.exposeFunction('signOwnershipTestMessage', async (raw: Hex) => {
       signatures++;
       expect(verified).toBe(false);
+      if (outcome === 'provider-error') throw new Error('Wallet session expired; reconnect the wallet');
       return signer.signMessage({ message: { raw } });
     });
     await page.addInitScript(
@@ -182,6 +188,16 @@ for (const validSignature of [true, false])
       expect(verified).toBe(false);
       expect(nonceRequests).toBe(1);
       await modal.getByRole('button', { name: 'Sign', exact: true }).click();
+      if (outcome === 'provider-error') {
+        await expect.poll(() => signingErrors.join('\n')).toContain('Wallet session expired; reconnect the wallet');
+        expect(signingErrors.join('\n')).not.toContain('WagmiAdapter:signMessage - Sign message failed');
+        expect(verificationStatus).toBe(0);
+        expect(signatures).toBe(1);
+        expect(verified).toBe(false);
+        expect(cookie).not.toContain('mandate_session=');
+        await expect(modal.getByRole('button', { name: 'Sign', exact: true })).toBeVisible();
+        return;
+      }
       await expect
         .poll(() => verificationStatus, { timeout: 20_000 })
         .toBe(validSignature ? 200 : 401);
