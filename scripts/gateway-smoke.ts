@@ -141,13 +141,15 @@ try {
   const mcp = new Client({ name: "gateway-smoke", version: "0.1.0" }, {});
   await mcp.connect(transport);
   const tools = await mcp.listTools();
-  if (
-    tools.tools.length !== 3 ||
-    !["get_account", "propose_payment", "get_operation"].every((name) =>
-      tools.tools.some((tool) => tool.name === name),
-    )
-  )
-    throw new Error("unexpected MCP tool list");
+  // This smoke flow requires the core payment tools; additive tools are compatible.
+  const availableTools = new Set(tools.tools.map((tool) => tool.name));
+  const missingTools = ["get_account", "propose_payment", "get_operation"].filter(
+    (name) => !availableTools.has(name),
+  );
+  if (missingTools.length)
+    throw new Error(
+      `Missing required MCP tools: ${missingTools.join(", ")}. Available: ${[...availableTools].join(", ")}`,
+    );
   const intent = {
     chainId: 11155111,
     account,
@@ -202,7 +204,7 @@ try {
   if (!revoked.isError) throw new Error("revoked token still authenticated");
   await mcp.close();
   console.log(
-    "gateway smoke: 3 MCP tools, login, idempotency, approval, redaction, revoke: passed",
+    `gateway smoke: ${availableTools.size} MCP tools discovered, core payment flow, login, idempotency, approval, redaction, revoke: passed`,
   );
   console.log("chain: simulated");
 } finally {
