@@ -285,6 +285,17 @@ Turso configuration is present.
   29 focused unit/gateway/SDK tests, and seven browser checks. An initial browser
   failure was an unrelated concurrent copy-button test expectation; rerunning
   against the matching committed UI passed.
+- Published commit `021e536` to main and production deployment
+  `dpl_4SxdT9kDsq57itgg7e178arYjYhm` (Ready), aliased to
+  https://www.wayleave.xyz. Inspection:
+  https://vercel.com/lxc-xyz/wayleave/4SxdT9kDsq57itgg7e178arYjYhm.
+- All seven browser checks passed again against the deployed frontend, using
+  mocked gateway requests. Both real relay paths also passed again against the
+  live gateway: one disposable login signature per path, verification 200,
+  Owner verified, and logout 200. No public-chain transactions were submitted.
+- The reported MetaMask, Trust, and Rainbow mobile-app failures remain
+  unconfirmed by these software-wallet tests; physical-device error details
+  are still needed if the updated sign-in flow fails.
 
 ## Payment review funding errors — September 10, 2026
 
