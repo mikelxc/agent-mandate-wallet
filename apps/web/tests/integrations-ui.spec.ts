@@ -5,7 +5,7 @@ test('network selection opens the matching payment flow and preserves it on relo
   await page.route('**/gateway/crosschain/config', route => route.fulfill({json:{configured:false,chainId:5042002,destinationChainId:11155111}}));
   await page.goto('/identity');
   const network = page.getByLabel('Payment network', {exact:true});
-  await expect(network).toContainText('Sepolia testnet');
+  await expect(network).toContainText('Sepolia');
   await network.click();
   await page.getByRole('option', { name: 'Arc testnet', exact: false }).click();
   await expect(page).toHaveURL(/\/crosschain$/);
@@ -14,9 +14,9 @@ test('network selection opens the matching payment flow and preserves it on relo
   await expect(network).toContainText('Arc testnet');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await network.click();
-  await page.getByRole('option', { name: 'Sepolia testnet', exact: false }).click();
+  await page.getByRole('option', { name: 'Sepolia', exact: false }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(network).toContainText('Sepolia testnet');
+  await expect(network).toContainText('Sepolia');
 });
 test('portable identity starts with a name and keeps discovery separate from authentication', async ({ page }) => {
   await page.route('**/gateway/identity/discover?**', route => route.fulfill({json:{error:'Name not found on the selected deployment'},status:400}));

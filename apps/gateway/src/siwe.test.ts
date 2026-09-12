@@ -62,6 +62,15 @@ test("Reown verifies a real EOA signature, creates a secure session, and rejects
   await expect(f.auth.verify(text, proof)).rejects.toThrow("expired or used");
 });
 
+test("explains a wrong-network login without consuming the Sepolia challenge", async () => {
+  const f = fixture();
+  const nonce = await f.auth.nonce();
+  const arc = message(nonce, { chainId: 5042002 });
+  await expect(f.auth.verify(arc, await owner.signMessage({ message: arc }))).rejects.toThrow('Switch to Sepolia');
+  const sepolia = message(nonce);
+  expect((await f.auth.verify(sepolia, await owner.signMessage({ message: sepolia }))).chainId).toBe(11155111);
+});
+
 test("rejects wrong signatures without consuming the valid challenge", async () => {
   const f = fixture();
   const text = message(await f.auth.nonce());

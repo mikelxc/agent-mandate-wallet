@@ -111,6 +111,10 @@ button.wayleave-select--badge {
 .wayleave-select-option[data-highlighted] {
   background: #dfe6dc;
 }
+.wayleave-select-option[data-disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .wayleave-select-copy {
   display: grid;
   gap: 3px;

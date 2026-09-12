@@ -195,6 +195,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
         expect(signatures).toBe(1);
         expect(verified).toBe(false);
         expect(cookie).not.toContain('mandate_session=');
+        await expect(page.locator('.mobile-status')).toContainText('Sign-in failed: Wallet session expired; reconnect the wallet');
         await expect(modal.getByRole('button', { name: 'Sign', exact: true })).toBeVisible();
         return;
       }

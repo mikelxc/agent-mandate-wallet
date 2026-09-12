@@ -1,8 +1,11 @@
 import {
   createSIWEConfig,
   formatMessage,
+  getDidAddress,
   type SIWESession,
 } from '@reown/appkit-siwe';
+import { getAddress } from 'viem';
+import { reportOwnerAuthError } from './owner-auth-error';
 import {
   createOwnerChallengeCache,
   type OwnerChallenge,
@@ -67,12 +70,27 @@ export const ownerAuth = createSIWEConfig({
     return (signingChallenge ?? (await prepareOwnerAuth())).nonce;
   },
   createMessage({ address, ...args }) {
-    return formatMessage(args, address);
+    if (args.chainId !== 11155111) {
+      const error = new Error('Switch your wallet to Sepolia before signing in.');
+      reportOwnerAuthError(error);
+      throw error;
+    }
+    // WalletConnect accounts can be lowercase. EIP-4361 requires an EIP-55
+    // address in the message; stricter wallets reject the lowercase variant.
+    const walletAddress = address.startsWith('did:pkh:')
+      ? getDidAddress(address)
+      : address;
+    if (!walletAddress) throw new Error('Wallet address is missing from sign-in request.');
+    const owner = getAddress(walletAddress);
+    return formatMessage(args, `did:pkh:eip155:${args.chainId}:${owner}`);
   },
   async verifyMessage({ message, signature }) {
     try {
       await request<SIWESession>('/auth/siwe/verify', { message, signature });
       return true;
+    } catch (error) {
+      reportOwnerAuthError(error);
+      throw error;
     } finally {
       challenge.clear();
       signingChallenge = undefined;

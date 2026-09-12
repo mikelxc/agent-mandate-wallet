@@ -4,7 +4,7 @@ import { Select } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 import './wayleave-select.css';
 
-type Choice = { value: string; label: string; description?: string };
+type Choice = { value: string; label: string; description?: string; disabled?: boolean };
 
 export function WayleaveSelect({
   value,
@@ -58,6 +58,7 @@ export function WayleaveSelect({
                   key={option.value}
                   value={option.value}
                   label={option.label}
+                  disabled={option.disabled}
                   className="wayleave-select-option"
                 >
                   <div className="wayleave-select-copy">

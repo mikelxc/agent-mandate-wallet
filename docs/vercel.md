@@ -262,6 +262,30 @@ Turso configuration is present.
   they do not verify a physical mobile wallet or live gateway login.
 - Physical mobile connection/signing remains to be retested by the owner.
 
+## Mobile wallet follow-up and chain labels — September 12, 2026
+
+- The owner reported continued MetaMask/Rainbow signing errors and a Trust
+  sign-in-message mismatch. Real production relay checks with a disposable
+  software wallet passed both separate `personal_sign` and native
+  `session_authenticate`: each used one login signature, received verification
+  HTTP 200, displayed Owner verified, and logged out with HTTP 200. These checks
+  do not reproduce a physical wallet application's behavior.
+- Opening or retrying sign-in now selects Sepolia explicitly; AppKit's stored
+  active network can otherwise override `defaultNetwork`. Message creation
+  rejects other chains before signing, and the gateway retains its Sepolia-only
+  validation while explaining network mismatches. A rejected network does not
+  consume the challenge. SIWE message addresses use EIP-55 checksum formatting.
+- Wallet and gateway failure details now appear in the page status, as well as
+  the console, so an underlying failure can be reported beyond AppKit's generic
+  toast. This is diagnostic support, not proof the physical-wallet issue is fixed.
+- The network display name is now Sepolia; its custom ENS resolver is preserved.
+  The payment network selectors include a disabled Mainnet — coming soon option.
+  Mainnet is not registered as an enabled wallet or payment network.
+- The isolated release passed its production build, gateway TypeScript check,
+  29 focused unit/gateway/SDK tests, and seven browser checks. An initial browser
+  failure was an unrelated concurrent copy-button test expectation; rerunning
+  against the matching committed UI passed.
+
 ## Payment review funding errors — September 10, 2026
 
 - Read-only diagnosis of the reported production operation found 100 demo USDC

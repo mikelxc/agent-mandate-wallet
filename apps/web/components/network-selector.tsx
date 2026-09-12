@@ -32,13 +32,19 @@ export function NetworkSelector({
         options={[
           {
             value: 'Sepolia',
-            label: 'Sepolia testnet',
+            label: 'Sepolia',
             description: 'Agent spending · Test funds',
           },
           {
             value: 'Arc',
             label: 'Arc testnet',
             description: 'Cross-chain payments · Test funds',
+          },
+          {
+            value: 'Mainnet',
+            label: 'Mainnet — coming soon',
+            description: 'Not available yet',
+            disabled: true,
           },
         ]}
         onValueChange={(next) => {

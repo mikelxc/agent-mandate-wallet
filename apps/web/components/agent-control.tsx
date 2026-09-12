@@ -257,9 +257,15 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
         setMobileStep(6);
       }
     }
+    function signInFailed(event: Event) {
+      setMessage((event as CustomEvent<string>).detail);
+      setAuthStage('idle');
+    }
+    window.addEventListener('wayleave:owner-auth-error', signInFailed);
     window.addEventListener('wayleave:owner-session', sessionChanged);
     return () => {
       cancelled = true;
+      window.removeEventListener('wayleave:owner-auth-error', signInFailed);
       window.removeEventListener('wayleave:owner-session', sessionChanged);
     };
   }, [address]);

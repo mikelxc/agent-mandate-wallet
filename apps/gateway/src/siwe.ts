@@ -40,10 +40,11 @@ export function createSiweAuth(store: Store, chain: Chain, origin: string, now: 
         challenge.expiresAt <= now()
       )
         throw new Error("Sign-in challenge expired or used");
+      if (parsed.chainId !== 11155111)
+        throw new Error("This sign-in was signed for a different network. Switch to Sepolia and try again.");
       if (
         !parsed.address ||
         !isAddress(parsed.address) ||
-        parsed.chainId !== 11155111 ||
         parsed.version !== "1" ||
         parsed.uri !== origin ||
         (parsed.scheme && parsed.scheme !== new URL(origin).protocol.slice(0, -1)) ||

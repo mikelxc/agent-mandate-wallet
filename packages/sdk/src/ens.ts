@@ -37,7 +37,7 @@ export const ensV2RegistryAbi = parseAbi([
 
 export const hackathonSepolia = {
   ...sepolia,
-  name: 'Sepolia (ENSv2 Hackathon)',
+  name: 'Sepolia',
   contracts: {
     ...sepolia.contracts,
     ensUniversalResolver: {

@@ -89,6 +89,9 @@ for (const width of [390, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
+    await page.addInitScript(() => {
+      localStorage.setItem('@appkit/active_caip_network_id', 'eip155:5042002');
+    });
     let authRequests = 0;
     await page.route('**/gateway/**', (route) => {
       const path = new URL(route.request().url()).pathname;
@@ -117,6 +120,7 @@ for (const width of [390, 1280]) {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'Connect wallet' }).click();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('@appkit/active_caip_network_id'))).toBe('eip155:11155111');
     const modal = page.locator('w3m-modal');
     await expect(
       modal.getByText('Connect Wallet', { exact: true }),

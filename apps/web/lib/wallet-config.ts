@@ -80,13 +80,19 @@ const appKit = createAppKit({
 export async function openWalletPicker() {
   if (!appKit)
     throw new Error('Wallet picker is only available in the browser.');
-  if (!devWalletEnabled) await prepareOwnerAuth();
+  if (!devWalletEnabled) {
+    // defaultNetwork does not override AppKit's persisted active network.
+    // The gateway's ownership challenge is explicitly bound to Sepolia.
+    await appKit.switchNetwork(hackathonSepolia, { throwOnFailure: true });
+    await prepareOwnerAuth();
+  }
   await appKit.open({ view: 'Connect', namespace: 'eip155' });
 }
 
 export async function verifyConnectedOwner() {
   if (!appKit)
     throw new Error('Wallet picker is only available in the browser.');
+  await appKit.switchNetwork(hackathonSepolia, { throwOnFailure: true });
   await prepareOwnerAuth();
   // Give Safari a fresh user gesture after challenge preparation/network switching.
   // Calling signIn here starts the wallet redirect after those asynchronous tasks.
