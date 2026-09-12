@@ -222,7 +222,8 @@ Turso configuration is present.
   passed (valid/invalid ownership signatures and mobile/desktop QR pickers).
   The new regression exercises the installed Reown connector's authentication
   chain selection with a stubbed authentication transport.
-- This change has not been deployed or verified with a physical mobile wallet.
+- At this local validation stage, this change had not been deployed or verified
+  with a physical mobile wallet. See the release evidence below.
 
 ## Mobile signing error diagnosis — September 12, 2026 (local)
 
@@ -240,7 +241,26 @@ Turso configuration is present.
 - Production build, frontend TypeScript, and 24 focused unit/gateway tests also
   passed. A cached Turbopack sandbox permission error was cleared by moving its
   generated cache aside before rebuilding.
-- These signing diagnostics have not been deployed.
+- At this local validation stage, these signing diagnostics had not been deployed.
+
+## Mobile wallet production release — September 12, 2026
+
+- Pushed wallet fix commit `39423b8` to `main` and deployed a clean archive of
+  that commit to the verified `lxc-xyz/wayleave` Vercel project. Existing unrelated
+  working-directory changes were not included.
+- Production deployment `dpl_21dHvnPZGPDfoHSy7zvLc34myc14` is Ready and aliased to
+  https://www.wayleave.xyz. Inspection:
+  https://vercel.com/lxc-xyz/wayleave/21dHvnPZGPDfoHSy7zvLc34myc14.
+- Vercel's frozen Bun install, production compilation, and TypeScript checks
+  passed. Live `/gateway/health` returned 200 with `ok: true`, Sepolia chain
+  `11155111`, and `human_approval` mode.
+- Inspected live bundle `05rzvesq-ug0o.js`: both adapter and AppKit use only
+  Sepolia and Arc testnet; the signing override preserves the original error.
+- All five browser regressions passed against the deployed frontend: valid and
+  invalid signatures, provider failure details, and mobile/desktop QR pickers.
+  These tests used disposable injected wallets and mocked gateway requests;
+  they do not verify a physical mobile wallet or live gateway login.
+- Physical mobile connection/signing remains to be retested by the owner.
 
 ## Payment review funding errors — September 10, 2026
 
