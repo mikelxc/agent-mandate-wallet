@@ -170,6 +170,7 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
   const [creationHash, setCreationHash] = useState<Hex>();
   const [uiReady, setUiReady] = useState(false);
   const [setupGuideCopied, setSetupGuideCopied] = useState(false);
+  const [copiedAction, setCopiedAction] = useState<'setup' | 'key'>();
   const [connectionComposerOpen, setConnectionComposerOpen] = useState(false);
   useEffect(() => {
     setUiReady(true);
@@ -835,6 +836,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
       .then((copied) => {
         if (!copied) throw new Error('Clipboard unavailable');
         setSetupGuideCopied(true);
+        window.setTimeout(() => setSetupGuideCopied(false), 2_000);
         setMessage(
           'Agent setup guide copied. Supply the connection key separately in the client’s private settings.',
         );
@@ -843,6 +845,36 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         setMessage(
           'Clipboard unavailable. Select and copy the agent setup guide.',
         ),
+      );
+  }
+  function copyConfiguration() {
+    setCopiedAction(undefined);
+    void copyText(mcpConfig)
+      .then((copied) => {
+        if (!copied) throw new Error('Clipboard unavailable');
+        setCopiedAction('setup');
+        window.setTimeout(
+          () => setCopiedAction((action) => (action === 'setup' ? undefined : action)),
+          2_000,
+        );
+        setMessage(`${selectedHost.name} setup copied.`);
+      })
+      .catch(() => setMessage('Select and copy the MCP setup.'));
+  }
+  function copyConnectionKey() {
+    setCopiedAction(undefined);
+    void copyText(token)
+      .then((copied) => {
+        if (!copied) throw new Error('Clipboard unavailable');
+        setCopiedAction('key');
+        window.setTimeout(
+          () => setCopiedAction((action) => (action === 'key' ? undefined : action)),
+          2_000,
+        );
+        setMessage('Connection key copied. Store it in the agent process environment.');
+      })
+      .catch(() =>
+        setMessage('Clipboard unavailable. Select and copy the connection key.'),
       );
   }
   const setupGuideLabel = setupGuideCopied
@@ -1266,16 +1298,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               <button
                 className="mobile-primary"
                 disabled={!hasCurrentCredential}
-                onClick={() =>
-                  void navigator.clipboard
-                    .writeText(mcpConfig)
-                    .then(() => setMessage('MCP configuration copied.'))
-                    .catch(() =>
-                      setMessage('Select and copy the MCP configuration.'),
-                    )
-                }
+                onClick={copyConfiguration}
               >
-                <Clipboard size={16} /> Copy {selectedHost.name} setup
+                {copiedAction === 'setup' ? <Check size={16} /> : <Clipboard size={16} />}{' '}
+                {copiedAction === 'setup'
+                  ? `Copied ${selectedHost.name} setup`
+                  : `Copy ${selectedHost.name} setup`}
               </button>
               <button className="secondary" onClick={copySetupGuide}>
                 {setupGuideCopied ? <Check size={16} /> : <Clipboard size={16} />}{' '}
@@ -1512,16 +1540,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     <div className="connection-handoff-actions">
                       <button
                         className="primary"
-                        onClick={() =>
-                          void copyText(mcpConfig)
-                            .then((copied) => {
-                              if (!copied) throw new Error('Clipboard unavailable');
-                              setMessage(`${selectedHost.name} setup copied.`);
-                            })
-                            .catch(() => setMessage('Select and copy the MCP setup.'))
-                        }
+                        onClick={copyConfiguration}
                       >
-                        <Clipboard size={15} /> Copy {selectedHost.name} setup
+                        {copiedAction === 'setup' ? <Check size={15} /> : <Clipboard size={15} />}{' '}
+                        {copiedAction === 'setup'
+                          ? `Copied ${selectedHost.name} setup`
+                          : `Copy ${selectedHost.name} setup`}
                       </button>
                       <button
                         className="secondary"
@@ -1879,22 +1903,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         <button
                           aria-label="Copy MCP configuration"
                           disabled={!hasCurrentCredential}
-                          onClick={() =>
-                            void navigator.clipboard
-                              .writeText(mcpConfig)
-                              .then(() =>
-                                setMessage(
-                                  'MCP configuration copied. Keep the one-time key out of source control.',
-                                ),
-                              )
-                              .catch(() =>
-                                setMessage(
-                                  'Clipboard unavailable. Select and copy the MCP configuration.',
-                                ),
-                              )
-                          }
+                          onClick={copyConfiguration}
                         >
-                          <Clipboard size={14} /> Copy
+                          {copiedAction === 'setup' ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+                          {copiedAction === 'setup' ? 'Copied' : 'Copy'}
                         </button>
                       </div>
                       <button className="secondary" onClick={copySetupGuide}>
@@ -2034,22 +2046,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             <div className="key-actions">
               <button
                 className="primary"
-                onClick={() =>
-                  void navigator.clipboard
-                    .writeText(token)
-                    .then(() =>
-                      setMessage(
-                        'Connection key copied. Store it in the agent process environment.',
-                      ),
-                    )
-                    .catch(() =>
-                      setMessage(
-                        'Clipboard unavailable. Select and copy the connection key.',
-                      ),
-                    )
-                }
+                onClick={copyConnectionKey}
               >
-                <Clipboard size={14} /> Copy key
+                {copiedAction === 'key' ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+                {copiedAction === 'key' ? 'Copied key' : 'Copy key'}
               </button>
               <button
                 className="secondary"

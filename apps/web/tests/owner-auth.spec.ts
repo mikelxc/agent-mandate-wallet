@@ -228,6 +228,9 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
         await expect(page.locator('.connection-roster-row')).toHaveCount(2);
         await expect(page.locator('.connection-roster-row').last()).toContainText('Generic MCP connection');
         await page.getByRole('button', { name: 'Copy Generic MCP setup', exact: true }).click();
+        await expect(
+          page.getByRole('button', { name: 'Copied Generic MCP setup', exact: true }),
+        ).toBeVisible();
         await expect(page.locator('.mobile-status')).toContainText('Generic MCP setup copied.');
         const setup = await page.evaluate(() => navigator.clipboard.readText());
         expect(setup).toContain('WAYLEAVE_AGENT_TOKEN');
