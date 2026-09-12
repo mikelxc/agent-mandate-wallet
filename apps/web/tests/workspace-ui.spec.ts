@@ -17,7 +17,7 @@ for (const width of [320, 390, 1280]) {
       page.getByRole('heading', { name: 'Activity', exact: true }),
     ).toBeHidden();
     const connectBounds = await page
-      .getByRole('button', { name: 'Connect wallet', exact: true })
+      .getByRole('button', { name: 'Get started', exact: true })
       .boundingBox();
     expect(connectBounds).not.toBeNull();
     expect(connectBounds!.y + connectBounds!.height).toBeLessThan(740);
@@ -26,14 +26,16 @@ for (const width of [320, 390, 1280]) {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.goto('/?setup=1');
+    await page.getByRole('button', { name: 'Get started', exact: true }).click();
+    await expect(page).toHaveURL(/setup=1/);
+    await expect(page.locator('w3m-modal').getByText('Connect Wallet', { exact: true })).not.toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Connect your wallet.' }),
     ).toBeVisible();
     const setupCard = page.locator('.mobile-agent-onboarding');
     const cardBounds = await setupCard.boundingBox();
     const progressBounds = await page
-      .getByRole('group', { name: 'Onboarding steps' })
+      .getByRole('navigation', { name: 'Onboarding steps' })
       .boundingBox();
     expect(cardBounds).not.toBeNull();
     expect(progressBounds).not.toBeNull();
@@ -44,13 +46,17 @@ for (const width of [320, 390, 1280]) {
           (cardBounds!.x + cardBounds!.width / 2),
       ),
     ).toBeLessThan(2);
-    await expect(page.locator('.mobile-step-meta')).toHaveCSS(
-      'justify-content',
-      'center',
-    );
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Onboarding steps' })
+        .getByRole('button'),
+    ).toHaveCount(5);
+    await expect(
+      page.getByRole('button', { name: 'Go to step 1: Connect' }),
+    ).toHaveAttribute('aria-current', 'step');
     await expect(page.locator('.mobile-status')).toHaveCSS(
       'text-align',
-      'center',
+      'left',
     );
     await page.getByRole('button', { name: 'View dashboard' }).click();
     await page.reload();
@@ -119,7 +125,7 @@ for (const width of [390, 1280]) {
       return route.abort();
     });
     await page.goto('/');
-    await page.getByRole('button', { name: 'Connect wallet' }).click();
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect.poll(() => page.evaluate(() => localStorage.getItem('@appkit/active_caip_network_id'))).toBe('eip155:11155111');
     const modal = page.locator('w3m-modal');
     await expect(

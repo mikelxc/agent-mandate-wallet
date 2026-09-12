@@ -20,7 +20,7 @@ export function ConnectionGuide() {
           status. You approve the spending here.
         </p>
         <Link href="/?setup=1" className="primary">
-          Connect your agent <ArrowRight size={16} />
+          Get started <ArrowRight size={16} />
         </Link>
       </div>
       <div className="connection-guide-steps">
@@ -48,7 +48,7 @@ export function ConnectionGuide() {
           <li>
             <span>03</span>
             <div>
-              <h3>Ask it to make a payment</h3>
+              <h3>Ask it to request a payment</h3>
               <p>
                 Your agent sends a review link. Check the amount and recipient,
                 then approve in your wallet.

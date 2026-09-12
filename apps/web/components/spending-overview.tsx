@@ -4,7 +4,16 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ConnectionGuide } from './connection-guide';
 import { WayleaveMark } from './wayleave-mark';
-import { ArrowRight, Pause, Play, Check } from 'lucide-react';
+import {
+  ArrowRight,
+  Pause,
+  Play,
+  Check,
+  Wallet,
+  ShieldCheck,
+  Badge,
+} from 'lucide-react';
+import styles from './landing.module.css';
 import type { AgentConnection, Operation } from '@mandate/protocol';
 
 type Payment = Operation & {
@@ -40,7 +49,10 @@ export function SpendingOverview({
   );
   if (!signedIn)
     return (
-      <section className="wallet-entry" aria-labelledby="wallet-entry-title">
+      <section
+        className={`wallet-entry ${styles.landing}`}
+        aria-labelledby="wallet-entry-title"
+      >
         <div className="entry-copy">
           <span className="entry-eyebrow">
             A little freedom. A clear boundary.
@@ -51,38 +63,51 @@ export function SpendingOverview({
             do their thing.
           </h1>
           <p>
-            Each agent gets a real wallet, owned by an NFT you hold in yours.
-            Agents spend from your balance. You approve the payments.
+            Give your agents a wallet you own. Payments come from your existing
+            balance, with your approval.
           </p>
-          <button className="primary" disabled={busy} onClick={onConnect}>
-            {authLabel}
-            <ArrowRight size={17} />
-          </button>
+          <div className={styles.actions}>
+            <button className="primary" onClick={onSetup}>
+              Get started <ArrowRight size={17} />
+            </button>
+            <div className={styles.returning}>
+              <span>Already set up?</span>
+              <button type="button" disabled={busy} onClick={onConnect}>
+                {busy ? authLabel : 'Sign in'}
+              </button>
+            </div>
+          </div>
           <span className="entry-note">
             Your keys stay yours. Your funds stay together.
           </span>
           <Link href="#connect-agent" className="entry-help">
-            Start from your agent <ArrowRight size={14} />
+            Connect your favorite app <ArrowRight size={14} />
           </Link>
         </div>
         <WalletScene />
         <div className="entry-principles">
           <div>
-            <span>01</span>
+            <span className={styles.principleIcon}>
+              <Wallet size={20} strokeWidth={1.5} aria-hidden="true" />
+            </span>
             <h2>One source of funds.</h2>
             <p>Agents spend from your wallet. No juggling separate balances.</p>
           </div>
           <div>
-            <span>02</span>
+            <span className={styles.principleIcon}>
+              <ShieldCheck size={20} strokeWidth={1.5} aria-hidden="true" />
+            </span>
             <h2>A say in every payment.</h2>
             <p>See the amount and recipient before you approve.</p>
           </div>
           <div>
-            <span>03</span>
-            <h2>A wallet inside your wallet.</h2>
+            <span className={styles.principleIcon}>
+              <Badge size={20} strokeWidth={1.5} aria-hidden="true" />
+            </span>
+            <h2>Ownership stays with you.</h2>
             <p>
-              Each NFT in your wallet controls an agent wallet with its own
-              address. You hold the ownership; your agent gets a connection.
+              An NFT in your wallet controls the agent wallet. Your agent gets
+              access; you keep ownership.
             </p>
           </div>
         </div>
@@ -304,9 +329,7 @@ function WalletScene() {
           </button>
         ))}
       </div>
-      <p className="scene-footnote">
-        Demo · See how a payment works.
-      </p>
+      <p className="scene-footnote">Demo · See how a payment works.</p>
     </div>
   );
 }

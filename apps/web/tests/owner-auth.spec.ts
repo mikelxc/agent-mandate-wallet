@@ -177,7 +177,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
     );
     try {
       await page.goto('/');
-      await page.getByRole('button', { name: 'Connect wallet' }).click();
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
       const modal = page.locator('w3m-modal');
       await modal.getByText('Ownership Test Wallet', { exact: true }).click();
       // Injected wallets use Reown's sign-in view; native WalletConnect authentication

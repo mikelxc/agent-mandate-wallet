@@ -65,7 +65,7 @@ Avoid unnecessary technical banners such as “ENSv2 WALLET EXAMPLE,” lengthy 
 
 ## Landing page and demonstration
 
-The landing page is one continuous introduction. Keep the brand visible and hide the workspace navigation links. Include the agent connection guide on the same page; “Start from your agent” scrolls to it.
+The landing page is one continuous introduction. Keep the brand visible and hide the workspace navigation links. “Get started” opens the guided setup without immediately launching wallet connection; a quieter “Sign in” action serves returning users. Include the agent connection guide on the same page; “Connect your favorite app” scrolls to it. Match the onboarding’s rounded buttons and muted icons, and keep the opening copy focused on ownership and owner-approved spending.
 
 The illustration shows the parent wallet and its collection of agent ownership NFTs. Each agent example has an ENS subdomain, an NFT number, and a resolved wallet address. The hierarchy explains that an NFT represents ownership of a real agent wallet. Example identities are illustrative, not evidence of deployed ENS resolution.
 
@@ -91,6 +91,10 @@ Provide play/pause, agent selection, and manual stage controls. Manual interacti
 5. **Continue:** show the created identity and a clear next action.
 
 Keep workspace navigation hidden during initial setup. Show one primary action per step. Some wallet apps may require importing the NFT before displaying it; do not promise automatic visibility everywhere.
+
+The setup is a working product flow with a walkthrough inside it. Keep wallet connection brief. Use a labeled five-step navigation so users can explore before signing in; visiting a step does not complete it. On desktop, pair the current action with a contextual ownership or connection diagram. On mobile, place the interactive explanation before its continue action.
+
+“How it works” explores ownership, scoped access, and an owner-approved payment. Playback is optional, pauses on manual stage selection, and respects reduced motion. Only the illustrative payment uses an example label; the surrounding setup stays actionable. The wallet-name diagram previews the actual input and marks it as a preview until creation succeeds. The final checklist distinguishes verified ownership, a selected wallet, and a created connection; creating a credential is not evidence that an app installed it. Incomplete setup leads back to the missing action rather than claiming readiness.
 
 ### Payments and management
 

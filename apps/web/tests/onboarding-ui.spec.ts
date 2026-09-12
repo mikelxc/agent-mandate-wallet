@@ -10,11 +10,13 @@ test('walkthrough explains real authority and identity without simulating comple
   await expect(
     page.getByRole('heading', { name: 'Connect your wallet.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Go to step 2', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Go to step 2: How it works', exact: true })
+    .click();
   await expect(
     page.getByRole('heading', { name: 'How your agent spends.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Use these permissions' }).click();
+  await page.getByRole('button', { name: 'Name my agent wallet' }).click();
   await expect(
     page.getByRole('heading', { name: 'Name your agent’s wallet' }),
   ).toBeVisible();
@@ -22,7 +24,18 @@ test('walkthrough explains real authority and identity without simulating comple
     page.getByRole('button', { name: 'Create agent wallet' }),
   ).toBeDisabled();
   await expect(page.getByLabel('Agent wallet name')).toHaveValue('');
-  await page.getByRole('button', { name: 'Go to step 4', exact: true }).click();
+  await page.getByLabel('Agent wallet name').fill('research');
+  const explanation = page.getByRole('complementary', {
+    name: 'Your agent wallet explained',
+  });
+  await expect(explanation).toContainText('research.');
+  await expect(explanation).toContainText('Name preview');
+  await expect(
+    page.getByRole('button', { name: 'Create agent wallet', exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole('button', { name: 'Go to step 4: Link agent', exact: true })
+    .click();
   const cursor = page.getByRole('button', { name: 'Cursor Editor · Agent' });
   await cursor.click();
   await expect(cursor).toHaveAttribute('aria-pressed', 'true');
@@ -52,10 +65,17 @@ test('walkthrough explains real authority and identity without simulating comple
   await expect(
     page.getByRole('button', { name: 'Copy Codex setup' }),
   ).toBeDisabled();
-  await page.getByRole('button', { name: 'Continue to account' }).click();
+  await page
+    .getByRole('button', { name: 'View setup checklist' })
+    .click();
   await expect(
-    page.getByRole('heading', { name: 'Your agent wallet is ready.' }),
+    page.getByRole('heading', { name: 'Finish setting up your agent.' }),
   ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Connect my wallet', exact: true }),
+  ).toBeVisible();
+  await expect(explanation.getByText('To do', { exact: true })).toHaveCount(3);
+  await expect(explanation.getByText('Done', { exact: true })).toHaveCount(0);
   await page
     .getByText('Wallet details & verification', { exact: true })
     .click();
@@ -74,4 +94,89 @@ test('walkthrough explains real authority and identity without simulating comple
   await expect(
     page.getByRole('heading', { name: 'Let your agents do their thing.' }),
   ).toBeVisible();
+});
+
+test('payment walkthrough teaches approval without changing real setup state', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const writes: string[] = [];
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      /\/gateway\/(agents|operations|auth\/verify)/.test(request.url())
+    )
+      writes.push(request.url());
+  });
+  await page.goto('/?setup=1');
+  await page
+    .getByRole('button', { name: 'See how it works', exact: true })
+    .click();
+  const explanation = page.getByRole('complementary', {
+    name: 'Your agent wallet explained',
+  });
+  await expect(explanation).toContainText('Ownership NFT');
+  await page.getByRole('button', { name: 'Next: access', exact: true }).click();
+  await expect(explanation).toContainText('Your signature still required');
+  await page
+    .getByRole('button', { name: 'Next: payments', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Play payment walkthrough' }),
+  ).toBeVisible();
+  await expect(explanation).toContainText('Nothing has been paid.');
+  const stages = page.getByRole('group', {
+    name: 'Payment walkthrough stages',
+  });
+  await stages.getByRole('button', { name: 'Approval', exact: true }).click();
+  await expect(explanation).toContainText(
+    'Review the exact amount and recipient',
+  );
+  await stages.getByRole('button', { name: 'Payment', exact: true }).click();
+  await expect(explanation).toContainText('through the agent wallet');
+  await expect(explanation.locator('[data-payment-stage="2"]')).toBeVisible();
+  expect(
+    await explanation.evaluate(
+      (element) => element.getAnimations({ subtree: true }).length,
+    ),
+  ).toBe(0);
+  await stages.getByRole('button', { name: 'Receipt', exact: true }).click();
+  await expect(explanation).toContainText(
+    'Example receipt · No real transaction',
+  );
+  await page
+    .getByRole('button', { name: 'Go to step 5: Next steps' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Finish setting up your agent.' }),
+  ).toBeVisible();
+  expect(writes).toEqual([]);
+});
+
+test('all setup steps fit a narrow screen with a long wallet name', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/?setup=1');
+  for (const step of [
+    'Connect',
+    'How it works',
+    'Agent wallet',
+    'Link agent',
+    'Next steps',
+  ]) {
+    await page
+      .getByRole('navigation', { name: 'Onboarding steps' })
+      .getByRole('button', { name: new RegExp(`: ${step}$`) })
+      .click();
+    if (step === 'Agent wallet')
+      await page
+        .getByLabel('Agent wallet name')
+        .fill('a-very-long-research-wallet-name');
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
 });

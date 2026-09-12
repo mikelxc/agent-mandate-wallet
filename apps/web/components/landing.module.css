@@ -1,0 +1,106 @@
+.landing:global(.wallet-entry) :global(.entry-copy) {
+  min-width: 0;
+}
+.landing:global(.wallet-entry) :global(.entry-copy > p) {
+  max-width: 420px;
+  line-height: 1.7;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.landing:global(.wallet-entry) :global(.primary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  min-height: 50px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.returning {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: #69716b;
+  font-size: 12px;
+}
+.returning button {
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #252a27;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.landing:global(.wallet-entry) :global(.entry-help) {
+  margin-top: 24px;
+  padding-top: 0;
+  min-height: 44px;
+  border: 0;
+  color: #566459;
+}
+.landing:global(.wallet-entry) :global(.entry-principles) {
+  gap: 36px;
+}
+.landing:global(.wallet-entry)
+  :global(.entry-principles > div > span).principleIcon {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #e9ece8;
+  color: #566459;
+  margin: 0 0 16px;
+}
+.landing:global(.wallet-entry)
+  :global(.scene-agents button[aria-pressed='true']) {
+  border-color: #87968a;
+  box-shadow: 0 0 0 2px #87968a14;
+}
+.landing:global(.wallet-entry) :global(.landing-connect) {
+  scroll-margin-top: 32px;
+}
+.landing button:focus-visible,
+.landing a:focus-visible {
+  outline: 2px solid #697b69;
+  outline-offset: 4px;
+}
+@media (max-width: 640px) {
+  .actions {
+    gap: 4px 18px;
+  }
+  .landing:global(.wallet-entry) :global(.entry-principles > div) {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 14px;
+    padding-left: 0;
+  }
+  .landing:global(.wallet-entry)
+    :global(.entry-principles > div > span).principleIcon {
+    grid-row: 1 / span 2;
+    margin: 0;
+  }
+  .landing:global(.wallet-entry) :global(.entry-principles h2),
+  .landing:global(.wallet-entry) :global(.entry-principles p) {
+    grid-column: 2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing button,
+  .landing a {
+    transition: none;
+  }
+}

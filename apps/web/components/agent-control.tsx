@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { SpendingOverview } from './spending-overview';
 import { buildAgentSetupGuide } from '../lib/agent-setup-guide';
 import { PaymentSetup } from './payment-setup';
+import { OnboardingContext } from './onboarding-context';
+import onboarding from './onboarding.module.css';
 import {
   useConnect,
   useConnectors,
@@ -28,6 +30,7 @@ import {
 import { sepolia } from 'viem/chains';
 import {
   ArrowRight,
+  Badge,
   Bot,
   Check,
   CheckCircle2,
@@ -41,6 +44,7 @@ import {
   ShieldCheck,
   TerminalSquare,
   UserRound,
+  Wallet,
   X,
 } from 'lucide-react';
 import {
@@ -190,10 +194,10 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
   const walkthroughOrder = [1, 6, 2, 4, 5];
   const walkthroughLabels = [
     'Connect',
-    'Permissions',
+    'How it works',
     'Agent wallet',
     'Link agent',
-    'Ready',
+    'Next steps',
   ];
   const [agentHost, setAgentHost] = useState<AgentHost>('codex');
   const [authStage, setAuthStage] = useState<
@@ -898,7 +902,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         />
       </Suspense>
       <section
-        className={`mobile-agent-onboarding ${mobilePro || !uiReady ? 'hidden' : ''}`}
+        className={`mobile-agent-onboarding ${onboarding.shell} ${mobilePro || !uiReady ? 'hidden' : ''}`}
         data-step={mobileStep}
       >
         <div className="mobile-onboarding-top">
@@ -908,26 +912,45 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
           </button>
         </div>
 
-        <div className="mobile-stage" key={mobileStep}>
-          <div className="mobile-step-meta">
-            <span>
-              Step {walkthroughOrder.indexOf(mobileStep) + 1} of{' '}
-              {walkthroughOrder.length}
-            </span>
-            <i />
-            <small>
-              {walkthroughLabels[walkthroughOrder.indexOf(mobileStep)]}
-            </small>
-          </div>
+        <nav className={onboarding.stepNav} aria-label="Onboarding steps">
+          {walkthroughOrder.map((step, index) => (
+            <button
+              key={step}
+              type="button"
+              aria-label={`Go to step ${index + 1}: ${walkthroughLabels[index]}`}
+              aria-current={mobileStep === step ? 'step' : undefined}
+              onClick={() => setMobileStep(step)}
+            >
+              <span>
+                {[
+                  signedIn,
+                  policyAccepted,
+                  hasAccount,
+                  hasCurrentCredential,
+                  false,
+                ][index] ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  `0${index + 1}`
+                )}
+              </span>
+              <span>{walkthroughLabels[index]}</span>
+            </button>
+          ))}
+        </nav>
 
+        <div className="mobile-stage" key={mobileStep}>
           {mobileStep === 1 && (
             <div className="mobile-step-content">
+              <span className={onboarding.stepSymbol} aria-hidden="true">
+                <Wallet />
+              </span>
               <div className="mobile-copy">
                 <span className="mobile-kicker">CONNECT WALLET / 01</span>
                 <h2>Connect your wallet.</h2>
                 <p>
-                  Use WalletConnect to scan a QR code, or choose a wallet on
-                  this device.
+                  Use the wallet you already have. Connect on this device or
+                  scan with your wallet app.
                 </p>
               </div>
               {!signedIn ? (
@@ -958,44 +981,86 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
 
           {mobileStep === 6 && (
             <div className="mobile-step-content">
+              <span className={onboarding.stepSymbol} aria-hidden="true">
+                <ShieldCheck />
+              </span>
               <div className="mobile-copy">
                 <span className="mobile-kicker">AGENT ACCESS</span>
                 <h2>How your agent spends.</h2>
                 <p>
-                  Give your agent a separate spending wallet. Payments draw from
-                  your existing balance, with your approval.
+                  A wallet for your agent, owned by you. Explore how ownership,
+                  access and payments fit together.
                 </p>
               </div>
-              <dl className="wallet-ownership-explainer">
-                <div><dt>Your wallet</dt><dd>Holds your funds and the NFT that owns the agent wallet.</dd></div>
-                <div><dt>Agent wallet</dt><dd>Routes payments from your balance. You approve the amount and recipient.</dd></div>
-              </dl>
-              <p className="mobile-trust">
-                The connection lets your agent read the wallet and request payments. Your signing key stays with you.
-              </p>
-              <button
-                className="mobile-primary"
-                onClick={() => {
-                  setPolicyAccepted(true);
-                  setMobileStep(2);
-                }}
-              >
-                Use these permissions <ArrowRight size={17} />
-              </button>
-              <p className="mobile-trust">Disconnect your agent at any time.</p>
+              <div className={onboarding.accessPoints}>
+                <div>
+                  <Badge size={19} />
+                  <div>
+                    <strong>You own the agent wallet.</strong>
+                    <p>The ownership NFT stays in your wallet.</p>
+                  </div>
+                </div>
+                <div>
+                  <KeyRound size={19} />
+                  <div>
+                    <strong>Your agent gets a connection.</strong>
+                    <p>It can read details and request payments.</p>
+                  </div>
+                </div>
+                <div>
+                  <ShieldCheck size={19} />
+                  <div>
+                    <strong>You approve the spending.</strong>
+                    <p>Payments draw from your existing balance.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {mobileStep === 5 && (
             <div className="mobile-step-content">
+              <span className={onboarding.stepSymbol} aria-hidden="true">
+                {hasAccount && hasCurrentCredential ? <PlugZap /> : <Bot />}
+              </span>
               <div className="mobile-copy">
-                <span className="mobile-kicker">CONNECTION READY</span>
-                <h2>Your agent wallet is ready.</h2>
+                <span className="mobile-kicker">NEXT STEPS</span>
+                <h2>{hasAccount && hasCurrentCredential ? 'Bring your agent into the loop.' : 'Finish setting up your agent.'}</h2>
                 <p>
-                  In your agent, ask: “Show my Wayleave wallet.” Then ask it to
-                  request a payment. You’ll review the request here.
+                  {hasAccount && hasCurrentCredential
+                    ? `Install your ${selectedHost.name} configuration, then ask it to show your wallet. Payment requests will appear in Spending for you to review.`
+                    : !signedIn
+                      ? 'Connect and verify your wallet to create an agent wallet and link your app.'
+                      : !hasAccount
+                        ? 'Create your agent wallet, then link the app you want to use.'
+                        : 'Create a connection and install its configuration in your agent app.'}
                 </p>
               </div>
+              {(!signedIn || !hasAccount || !hasCurrentCredential) && (
+                <button
+                  className="mobile-primary"
+                  onClick={() =>
+                    setMobileStep(
+                      !signedIn
+                        ? 1
+                        : !hasAccount
+                          ? policyAccepted
+                            ? 2
+                            : 6
+                          : 4,
+                    )
+                  }
+                >
+                  {!signedIn
+                    ? 'Connect my wallet'
+                    : !hasAccount
+                      ? policyAccepted
+                        ? 'Create my agent wallet'
+                        : 'Understand agent access'
+                      : 'Connect my agent'}
+                  <ArrowRight size={17} />
+                </button>
+              )}
               <details className="connection-details">
                 <summary>Wallet details &amp; verification</summary>
                 <div className="mobile-config-preview">
@@ -1076,7 +1141,11 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 Back to connection settings
               </button>
               <button
-                className="mobile-primary"
+                className={
+                  hasAccount && hasCurrentCredential
+                    ? 'mobile-primary'
+                    : 'mobile-link'
+                }
                 onClick={() => showDashboard(true)}
               >
                 Open my dashboard <ArrowRight size={17} />
@@ -1086,6 +1155,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
 
           {mobileStep === 2 && (
             <div className="mobile-step-content nfat-step">
+              <span className={onboarding.stepSymbol} aria-hidden="true">
+                <Badge />
+              </span>
               <div className="mobile-copy">
                 <span className="mobile-kicker">SPENDING WALLET</span>
                 <h2>
@@ -1094,11 +1166,14 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     : 'Name your agent’s wallet'}
                 </h2>
                 {hasAccount ? (
-                  <p>This is the agent wallet owned by the NFT in your connected wallet.</p>
+                  <p>
+                    This is the agent wallet owned by the NFT in your connected
+                    wallet.
+                  </p>
                 ) : (
                   <p>
-                    We’ll create this agent wallet and mint its ownership NFT to
-                    your connected wallet. Your funds stay with you until a payment is approved.
+                    Give it a name you’ll recognize. Its ownership NFT will be
+                    held in your connected wallet.
                   </p>
                 )}
               </div>
@@ -1136,6 +1211,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           setIdentityLabel(event.target.value)
                         }
                         aria-describedby="ens-preview-note"
+                        placeholder="research"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                       />
                       <b>.{ensV2HackathonDeployment.parentName}</b>
                     </span>
@@ -1177,10 +1256,39 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   Create agent wallet <ArrowRight size={17} />
                 </button>
               )}
+              {!hasAccount && !signedIn && (
+                <p className={onboarding.prerequisite}>
+                  <span>
+                    <button type="button" onClick={() => setMobileStep(1)}>
+                      Connect your wallet
+                    </button>{' '}
+                    to create this agent wallet. You can explore setup first.
+                  </span>
+                </p>
+              )}
+              {!hasAccount && signedIn && !policyAccepted && (
+                <p className={onboarding.prerequisite}>
+                  <span>
+                    <button type="button" onClick={() => setMobileStep(6)}>
+                      Review how access works
+                    </button>{' '}
+                    before creating your agent wallet.
+                  </span>
+                </p>
+              )}
               <details className="wallet-ownership-details">
                 <summary>How the NFT and wallet work together</summary>
-                <p>The NFT records ownership of this wallet on Sepolia. Its ENS name and address identify the same wallet across apps that support them.</p>
-                <p>You can connect different agent apps to this wallet. Each connection can be removed separately. The NFT stays in your wallet; some wallet apps may require you to import it to see it.</p>
+                <p>
+                  The NFT records ownership of this wallet on Sepolia. Its ENS
+                  name and address identify the same wallet across apps that
+                  support them.
+                </p>
+                <p>
+                  You can connect different agent apps to this wallet. Each
+                  connection can be removed separately. The NFT stays in your
+                  wallet; some wallet apps may require you to import it to see
+                  it.
+                </p>
               </details>
               <p className="mobile-trust">
                 <LockKeyhole size={14} /> You’ll review spending access
@@ -1191,14 +1299,34 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
 
           {mobileStep === 4 && (
             <div className="mobile-step-content">
+              <span className={onboarding.stepSymbol} aria-hidden="true">
+                <PlugZap />
+              </span>
               <div className="mobile-copy">
                 <span className="mobile-kicker">LINK YOUR AGENT</span>
                 <h2>Connect {selectedHost.name}.</h2>
                 <p>
-                  Link an app to the agent wallet you just chose. This connection
-                  lets it read the wallet and request payments for 24 hours.
+                  Choose your app and add its connection. It can read your agent
+                  wallet and request payments for 24 hours.
                 </p>
               </div>
+              {(!signedIn || !hasAccount) && (
+                <p className={onboarding.prerequisite}>
+                  <span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setMobileStep(!signedIn ? 1 : policyAccepted ? 2 : 6)
+                      }
+                    >
+                      {!signedIn
+                        ? 'Connect your wallet'
+                        : 'Set up your agent wallet'}
+                    </button>{' '}
+                    before creating an app connection.
+                  </span>
+                </p>
+              )}
               <div className="agent-host-picker" aria-label="Agent host">
                 {agentHosts.map((host) => (
                   <button
@@ -1214,7 +1342,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     <span className="agent-host-logo" aria-hidden="true">
                       {/* Static brand SVGs share a fixed optical frame. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/agent-logos/${host.id}.svg`} alt="" width={28} height={28} />
+                      <img
+                        src={`/agent-logos/${host.id}.svg`}
+                        alt=""
+                        width={28}
+                        height={28}
+                      />
                     </span>
                     <strong>{host.name}</strong>
                     <small>{host.detail}</small>
@@ -1226,19 +1359,31 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 <summary>Add a connection label (optional)</summary>
                 <label className="mobile-field">
                   Connection label
-                  <input value={name} placeholder={`${selectedHost.name} on my laptop`} onChange={(event) => setName(event.target.value)} />
+                  <input
+                    value={name}
+                    placeholder={`${selectedHost.name} on my laptop`}
+                    onChange={(event) => setName(event.target.value)}
+                  />
                 </label>
-                <p>A label to recognize this app in your activity. It doesn’t rename or create another wallet.</p>
+                <p>
+                  A label to recognize this app in your activity. It doesn’t
+                  rename or create another wallet.
+                </p>
               </details>
               <button
-                className="mobile-primary"
+                className={
+                  hasCurrentCredential ? 'mobile-link' : 'mobile-primary'
+                }
                 disabled={busy || !signedIn || !isAddress(selectedAccount)}
                 onClick={() =>
                   void run(async () => {
                     const result = await api<{
                       agent: AgentConnection;
                       token: string;
-                    }>('/agents', { name: name.trim() || `${selectedHost.name} connection`, account: selectedAccount });
+                    }>('/agents', {
+                      name: name.trim() || `${selectedHost.name} connection`,
+                      account: selectedAccount,
+                    });
                     setToken(result.token);
                     setTokenAgentId(result.agent.id);
                     setTokenHost(agentHost);
@@ -1248,40 +1393,18 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   })
                 }
               >
-                <PlugZap size={16} />{' '}
-                {hasCurrentCredential
-                  ? `Create another ${selectedHost.name} key`
-                  : `Create ${selectedHost.name} connection`}
+                <span>
+                  {hasCurrentCredential
+                    ? `Create another ${selectedHost.name} key`
+                    : `Create ${selectedHost.name} connection`}
+                </span>
+                <ArrowRight size={17} />
               </button>
-              {!hasCurrentCredential && (
-                <p className="mobile-trust">
-                  Use a separate connection for each app.
-                </p>
-              )}
               <details
                 className="connection-details"
                 open={hasCurrentCredential}
               >
                 <summary>Connection settings</summary>
-                <div className="mobile-mcp-recipe">
-                  <div>
-                    <small>01</small>
-                    <span>Run the pinned package</span>
-                    <code>bunx {mcpPackage}</code>
-                  </div>
-                  <div>
-                    <small>02</small>
-                    <span>Add configuration</span>
-                    <code>
-                      {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
-                    </code>
-                  </div>
-                  <div>
-                    <small>03</small>
-                    <span>Check the connection</span>
-                    <code>get_account</code>
-                  </div>
-                </div>
                 <div
                   className="mobile-config-preview"
                   aria-label={`${selectedHost.name} MCP configuration`}
@@ -1294,46 +1417,78 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   </div>
                   <pre>{mcpConfig}</pre>
                 </div>
+                <button
+                  className={
+                    hasCurrentCredential ? 'mobile-primary' : 'mobile-link'
+                  }
+                  disabled={!hasCurrentCredential}
+                  onClick={copyConfiguration}
+                >
+                  {copiedAction === 'setup' ? (
+                    <Check size={16} />
+                  ) : (
+                    <Clipboard size={16} />
+                  )}{' '}
+                  {copiedAction === 'setup'
+                    ? `Copied ${selectedHost.name} setup`
+                    : `Copy ${selectedHost.name} setup`}
+                </button>
+                <button className="secondary" onClick={copySetupGuide}>
+                  {setupGuideCopied ? (
+                    <Check size={16} />
+                  ) : (
+                    <Clipboard size={16} />
+                  )}{' '}
+                  {setupGuideLabel}
+                </button>
+                <p className="mobile-trust">
+                  {mcpDestination}.{' '}
+                  {agentGateway.startsWith('http://127.0.0.1')
+                    ? 'Keep bun run gateway running locally.'
+                    : 'This setup uses the hosted Wayleave gateway.'}
+                </p>
               </details>
+              <button className="mobile-link" onClick={() => setMobileStep(5)}>
+                {hasCurrentCredential
+                  ? 'Continue to next steps'
+                  : 'View setup checklist'}{' '}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          )}
+          <OnboardingContext
+            step={mobileStep}
+            owner={signedIn ? address : undefined}
+            account={hasAccount ? selectedAccount : undefined}
+            walletName={
+              identityLabel
+                ? `${identityLabel}.${ensV2HackathonDeployment.parentName}`
+                : 'Your agent wallet'
+            }
+            identityVerified={identityLoaded}
+            nftId={nfatId?.toString()}
+            hostName={selectedHost.name}
+            hasCredential={hasCurrentCredential}
+            onExplore={() => setMobileStep(6)}
+          />
+          {mobileStep === 6 && (
+            <div className={onboarding.accessContinue}>
               <button
                 className="mobile-primary"
-                disabled={!hasCurrentCredential}
-                onClick={copyConfiguration}
+                onClick={() => {
+                  setPolicyAccepted(true);
+                  setMobileStep(2);
+                }}
               >
-                {copiedAction === 'setup' ? <Check size={16} /> : <Clipboard size={16} />}{' '}
-                {copiedAction === 'setup'
-                  ? `Copied ${selectedHost.name} setup`
-                  : `Copy ${selectedHost.name} setup`}
-              </button>
-              <button className="secondary" onClick={copySetupGuide}>
-                {setupGuideCopied ? <Check size={16} /> : <Clipboard size={16} />}{' '}
-                {setupGuideLabel}
+                Name my agent wallet <ArrowRight size={17} />
               </button>
               <p className="mobile-trust">
-                {mcpDestination}.{' '}
-                {agentGateway.startsWith('http://127.0.0.1')
-                  ? 'Keep bun run gateway running locally.'
-                  : 'This setup uses the hosted Wayleave gateway.'}
+                <LockKeyhole size={14} /> Your signing key stays with you.
               </p>
-              <button className="mobile-link" onClick={() => setMobileStep(5)}>
-                Continue to account
-              </button>
             </div>
           )}
         </div>
 
-        <fieldset className="mobile-step-nav" aria-label="Onboarding steps">
-          {walkthroughOrder.map((step, index) => (
-            <button
-              key={step}
-              className={mobileStep === step ? 'active' : ''}
-              aria-label={`Go to step ${index + 1}`}
-              aria-current={mobileStep === step ? 'step' : undefined}
-              title={walkthroughLabels[index]}
-              onClick={() => setMobileStep(step)}
-            />
-          ))}
-        </fieldset>
         <output className="mobile-status" aria-live="polite">
           {message !== 'Sign in to connect an agent and review its requests.'
             ? message
@@ -1381,7 +1536,11 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               if (!requestedOperation) showDashboard(false);
               void run(login);
             }}
-            onSetup={() => showDashboard(false)}
+            onSetup={() => {
+              if (!signedIn) setMobileStep(1);
+              showDashboard(false);
+              window.scrollTo({ top: 0, behavior: 'instant' });
+            }}
           />
         )}
 
