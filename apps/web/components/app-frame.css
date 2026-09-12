@@ -12,6 +12,115 @@
   gap: 8px;
   max-width: 100%;
 }
+.network-picker-label {
+  display: none;
+}
+.account-nav {
+  position: relative;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.2;
+}
+.account-nav > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+}
+.account-nav > summary::-webkit-details-marker {
+  display: none;
+}
+.account-nav-chevron {
+  flex: 0 0 auto;
+  color: #737780;
+  transition: transform 0.15s ease;
+}
+.account-nav[open] .account-nav-chevron {
+  transform: rotate(180deg);
+}
+.account-nav-identity {
+  display: grid;
+  min-width: 0;
+}
+.account-nav-label {
+  display: none;
+  color: #737780;
+  font-size: 11px;
+}
+.account-nav-identity > span:last-child {
+  color: #737780;
+  font-variant-numeric: tabular-nums;
+}
+.account-nav-ens {
+  max-width: 164px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 650;
+}
+.account-nav-menu {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 12px);
+  right: 0;
+  display: grid;
+  min-width: 244px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(37, 42, 39, 0.12);
+}
+.account-nav-menu-title {
+  padding: 6px 8px 4px;
+  color: #737780;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.account-nav-menu-identity {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border-bottom: 1px solid var(--soft-line);
+}
+.account-nav-menu-identity strong {
+  font-size: 13px;
+}
+.account-nav-menu-identity code {
+  color: #737780;
+  font-size: 11px;
+}
+.account-nav-menu button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px;
+  background: transparent;
+  color: #5f6670;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.account-nav-menu button:hover:not(:disabled) {
+  background: var(--soft);
+  color: var(--ink);
+}
+.account-nav-menu button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.account-nav-signout {
+  color: #8d3c38 !important;
+}
 .network-wallet-switch {
   min-height: 32px;
   padding: 6px 10px;
@@ -35,12 +144,88 @@
   font-size: 12px;
 }
 @media (max-width: 720px) {
+  .wayleave-app .app-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px 20px 12px;
+  }
   .app-brand-group {
-    gap: 10px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  .app-brand {
+    margin-bottom: 4px;
   }
   .network-picker {
-    flex: 1;
+    position: relative;
+    display: grid;
+    width: 100%;
+  }
+  .network-picker-label {
+    position: absolute;
+    z-index: 1;
+    top: 8px;
+    left: 12px;
+    display: block;
+    color: #737780;
+    font-size: 11px;
+    pointer-events: none;
+  }
+  .network-picker button.wayleave-select--badge {
+    width: 100%;
+    min-height: 46px;
+    padding: 21px 10px 6px;
+    background: #f8f9f7;
+    font-size: 13px;
+  }
+  .account-nav {
+    width: 100%;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .account-nav > summary {
+    width: 100%;
+    min-height: 46px;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f8f9f7;
+  }
+  .account-nav-label {
+    display: block;
+  }
+  .account-nav-ens + span {
+    display: none;
+  }
+  .account-nav-menu {
+    position: fixed;
+    inset: auto 0 0;
+    min-width: 0;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .account-nav-menu button {
+    min-height: 44px;
+  }
+  .wayleave-app .app-header nav {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 0;
+    scrollbar-width: none;
+  }
+  .wayleave-app .app-header nav::-webkit-scrollbar {
+    display: none;
+  }
+  .wayleave-app .app-header nav a {
+    flex: 0 0 auto;
   }
 }
 @media (max-width: 1440px) {
@@ -54,5 +239,21 @@
   .wayleave-app .app-header nav {
     flex-wrap: wrap;
     gap: 8px 20px;
+  }
+}
+
+/* Keep the optional wallet-network action within the mobile header. */
+.app-brand-group {
+  max-width: 100%;
+  min-width: 0;
+}
+.network-picker {
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .wayleave-app .app-header {
+    min-height: 0;
+    gap: 12px;
+    padding: 18px 20px 12px;
   }
 }

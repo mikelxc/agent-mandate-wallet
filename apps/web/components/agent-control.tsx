@@ -240,6 +240,10 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
       ).detail;
       if (!signedIn) {
         setSession('');
+        setToken('');
+        setTokenHost(undefined);
+        setAgents([]);
+        setOperations([]);
         return;
       }
       if (
@@ -1334,7 +1338,6 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         {!connectionsOnly && (!requestedOperation || !signedIn) && (
           <SpendingOverview
             signedIn={signedIn}
-            address={address}
             agents={agents}
             operations={operations}
             now={renderTime}
@@ -2081,23 +2084,6 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     onClick={() => void run(refresh)}
                   >
                     <RefreshCw size={15} />
-                  </button>
-                  <button
-                    className="text-button"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(async () => {
-                        await api('/auth/logout', {});
-                        setSession('');
-                        setToken('');
-                        setTokenHost(undefined);
-                        setAgents([]);
-                        setOperations([]);
-                        setMessage('Signed out.');
-                      })
-                    }
-                  >
-                    Sign out
                   </button>
                 </div>
               )}

@@ -12,7 +12,6 @@ type Payment = Operation & {
 };
 export function SpendingOverview({
   signedIn,
-  address,
   agents,
   operations,
   now,
@@ -22,7 +21,6 @@ export function SpendingOverview({
   onSetup,
 }: {
   signedIn: boolean;
-  address?: string;
   agents: AgentConnection[];
   operations: Payment[];
   now: number;
@@ -94,9 +92,6 @@ export function SpendingOverview({
   return (
     <section className="payments-heading">
       <div>
-        <span className="owner-caption">
-          {address?.slice(0, 6)}…{address?.slice(-4)}
-        </span>
         <h1>Your spending, together.</h1>
         <p>
           {pending.length

@@ -23,6 +23,7 @@ export function NetworkSelector({
   const selected = networks[network];
   return (
     <div className="network-picker">
+      <span className="network-picker-label">Payment network</span>
       <WayleaveSelect
         label="Payment network"
         badge
