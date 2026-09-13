@@ -38,6 +38,9 @@ export function AgentTokenManager({
   account,
   accounts,
   guided = false,
+  compact = false,
+  beforeIssue,
+  onBusyChange,
   gateway,
   audience,
   onReady,
@@ -46,6 +49,9 @@ export function AgentTokenManager({
   account: string;
   accounts?: string[];
   guided?: boolean;
+  compact?: boolean;
+  beforeIssue?: () => Promise<void>;
+  onBusyChange?: (busy: boolean) => void;
   gateway: string;
   audience?: string;
   onReady: (ready: boolean) => void;
@@ -73,10 +79,20 @@ export function AgentTokenManager({
     mounted.current = true;
     void api<{ connections: Connection[] }>('')
       .then((result) => {
-        if (mounted.current) setConnections(previous => Array.from(new Map([...result.connections, ...previous].map(connection => [connection.id, connection])).values()));
+        if (mounted.current)
+          setConnections((previous) =>
+            Array.from(
+              new Map(
+                [...result.connections, ...previous].map((connection) => [
+                  connection.id,
+                  connection,
+                ]),
+              ).values(),
+            ),
+          );
       })
       .catch((e) => {
-        if (mounted.current) setError(e.message);
+        if (mounted.current && !beforeIssue) setError(e.message);
       });
     const timer = window.setInterval(() => setNow(Date.now() / 1000), 1000);
     return () => {
@@ -104,16 +120,23 @@ export function AgentTokenManager({
   async function issue() {
     if (settingsLocked) return;
     if (!isAddress(selectedAccount)) {
-      setError('Choose or enter the Arc account you linked in the wallet step. Use its full 0x address, not your ENS name or owner wallet.');
+      setError(
+        'Choose or enter the Arc account you linked in the wallet step. Use its full 0x address, not your ENS name or owner wallet.',
+      );
       return;
     }
     if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) {
-      setError('Enter a connection label such as assistant or research-agent: 1–63 lowercase letters, numbers or hyphens, with no spaces or ENS suffix. Start and end with a letter or number.');
+      setError(
+        'Enter a connection label such as assistant or research-agent: 1–63 lowercase letters, numbers or hyphens, with no spaces or ENS suffix. Start and end with a letter or number.',
+      );
       return;
     }
     setBusy(true);
+    onBusyChange?.(true);
     setError('');
     try {
+      await beforeIssue?.();
+      if (!mounted.current) return;
       const scopes: AgentTokenScope[] = propose
         ? ['read', 'propose_payment']
         : ['read'];
@@ -167,6 +190,7 @@ export function AgentTokenManager({
         setError(e instanceof Error ? e.message : 'Could not create token');
     } finally {
       if (mounted.current) setBusy(false);
+      onBusyChange?.(false);
     }
   }
   async function revoke(connection: Connection) {
@@ -188,77 +212,105 @@ export function AgentTokenManager({
     }
   }
   return (
-    <section className="mcp-setup-options" aria-label="Agent bearer tokens">
-      <h3>{settingsLocked ? 'Connection created' : 'Create an agent connection'}</h3>
-      {settingsLocked ? <p>Your signed connection settings are locked. Set up your client below.</p> :
-      <p>
-        Sign with your wallet to issue a bearer token for this agent and
-        account. No agent key or registry transaction is needed. Payments still
-        require your separate approval.
-      </p>}
+    <section
+      className={`mcp-setup-options ${compact ? 'compact-token-settings' : ''}`}
+      aria-label="Agent bearer tokens"
+    >
+      {(!compact || settingsLocked) && (
+        <h3>
+          {settingsLocked ? 'Connection created' : 'Create an agent connection'}
+        </h3>
+      )}
+      {settingsLocked ? (
+        <p>
+          Your signed connection settings are locked. Set up your client below.
+        </p>
+      ) : (
+        !compact && (
+          <p>
+            Sign with your wallet to issue a bearer token for this agent and
+            account. No agent key or registry transaction is needed. Payments
+            still require your separate approval.
+          </p>
+        )
+      )}
       <details open={!settingsLocked} className="flow-disclosure">
-      <summary>{settingsLocked ? 'Signed connection settings' : 'Connection settings'}</summary>
-      <label>
-        Connection label
-        <input
-          value={label}
-          disabled={busy || settingsLocked}
-          onChange={(e) => setLabel(e.target.value.trim())}
-          placeholder="research-assistant"
-        />
-      </label>
-      <label>
-        Associated Arc account
-        {accounts ? <WayleaveSelect
-          label="Associated Arc account"
-          value={selectedAccount}
-          disabled={busy || guided || !accounts.length}
-          onValueChange={setSelectedAccount}
-          options={accounts.map((value) => ({ value, label: value }))}
-        /> : <input
-          value={selectedAccount}
-          disabled={busy || guided}
-          onChange={(e) => setSelectedAccount(e.target.value.trim())}
-          placeholder="0x…"
-        />}
-      </label>
-      <p>
-        {guided ? 'Arc account confirmed in the previous step.' : 'Use an account already linked to this ENS identity in the wallet step.'}
-      </p>
-      <label>
-        Session length
-        <WayleaveSelect
-          label="Session length"
-          value={String(duration)}
-          disabled={busy || settingsLocked}
-          onValueChange={(value) => setDuration(Number(value))}
-          options={agentSessionLengths.map((choice) => ({
-            value: String(choice.value),
-            label: choice.label,
-          }))}
-        />
-      </label>
-      <p>
-        Your token lasts for the selected session length, up to your ENS name’s
-        expiry on {new Date(identity.expiresAt * 1000).toLocaleString()}.
-        You can revoke it below at any time.
-      </p>
-      <label className="agent-token-permissions">
-        <input
-          type="checkbox"
-          checked={propose}
-          disabled={busy || settingsLocked}
-          onChange={(e) => setPropose(e.target.checked)}
-        />
-        Allow payment proposals in addition to reading
-      </label>
-      {!settingsLocked && <button
-        type="button"
-        disabled={busy}
-        onClick={() => void issue()}
-      >
-        {busy ? 'Working…' : 'Sign and grant access'}
-      </button>}
+        <summary hidden={compact && !settingsLocked}>
+          {settingsLocked
+            ? 'Signed connection settings'
+            : 'Connection settings'}
+        </summary>
+        <label>
+          Connection label
+          <input
+            value={label}
+            disabled={busy || settingsLocked}
+            onChange={(e) => setLabel(e.target.value.trim())}
+            placeholder="research-assistant"
+          />
+        </label>
+        <label hidden={compact}>
+          Associated Arc account
+          {accounts ? (
+            <WayleaveSelect
+              label="Associated Arc account"
+              value={selectedAccount}
+              disabled={busy || guided || !accounts.length}
+              onValueChange={setSelectedAccount}
+              options={accounts.map((value) => ({ value, label: value }))}
+            />
+          ) : (
+            <input
+              value={selectedAccount}
+              disabled={busy || guided}
+              onChange={(e) => setSelectedAccount(e.target.value.trim())}
+              placeholder="0x…"
+            />
+          )}
+        </label>
+        <p hidden={compact}>
+          {guided
+            ? 'Arc account confirmed in the previous step.'
+            : 'Use an account already linked to this ENS identity in the wallet step.'}
+        </p>
+        <label>
+          Session length
+          <WayleaveSelect
+            label="Session length"
+            value={String(duration)}
+            disabled={busy || settingsLocked}
+            onValueChange={(value) => setDuration(Number(value))}
+            options={agentSessionLengths.map((choice) => ({
+              value: String(choice.value),
+              label: choice.label,
+            }))}
+          />
+        </label>
+        <p>
+          Your token lasts for the selected session length, up to your ENS
+          name’s expiry on{' '}
+          {new Date(identity.expiresAt * 1000).toLocaleString()}. You can revoke
+          it below at any time.
+        </p>
+        <label className="agent-token-permissions">
+          <input
+            type="checkbox"
+            checked={propose}
+            disabled={busy || settingsLocked}
+            onChange={(e) => setPropose(e.target.checked)}
+          />
+          Allow payment proposals in addition to reading
+        </label>
+        {!settingsLocked && (
+          <button
+            className="primary"
+            type="button"
+            disabled={busy}
+            onClick={() => void issue()}
+          >
+            {busy ? 'Working…' : 'Sign and grant access'}
+          </button>
+        )}
       </details>
       {error && <p role="alert">{error}</p>}
       {activeIssued && (
@@ -268,14 +320,18 @@ export function AgentTokenManager({
           Copy its settings now; the token is only shown once.
         </p>
       )}
-      {(!guided || activeIssued) && <PortableMcpSetup
-        identity={identity.name}
-        agentName={activeIssued?.connection.name ?? `${label}.${identity.name}`}
-        account={activeIssued?.connection.account ?? selectedAccount}
-        gateway={gateway}
-        token={activeIssued?.token}
-        expiresAt={activeIssued?.connection.expiresAt}
-      />}
+      {(!guided || activeIssued) && (
+        <PortableMcpSetup
+          identity={identity.name}
+          agentName={
+            activeIssued?.connection.name ?? `${label}.${identity.name}`
+          }
+          account={activeIssued?.connection.account ?? selectedAccount}
+          gateway={gateway}
+          token={activeIssued?.token}
+          expiresAt={activeIssued?.connection.expiresAt}
+        />
+      )}
       {connections.length > 0 && (
         <details className="flow-disclosure" open={!guided}>
           <summary>Your connections ({connections.length})</summary>

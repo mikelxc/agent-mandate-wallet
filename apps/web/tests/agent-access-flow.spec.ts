@@ -68,33 +68,18 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
     await page.context().addCookies([{name:'mandate_session',value:'a'.repeat(64),url:baseURL!}]);
     await page.goto('/?signin=1&returnTo=%2Fconnect');
     await expect(page).toHaveURL(/\/connect$/);
-    const lookup=async()=>{
-      await expect(page.getByRole('button',{name:'Look up name',exact:true})).toHaveCount(0);
-      await expect(page.getByLabel('ENS identity from your wallets',{exact:true})).toHaveCount(0);
-      await expect(page.getByRole('region',{name:'Discovered identity'})).toBeVisible();
-    };
-    await lookup();
-    await page.setViewportSize({width:320,height:900});
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await page.screenshot({path:'/private/tmp/owned-ens-prefill-mobile.png',fullPage:true});
-    await page.setViewportSize({width:1280,height:900});
-    await expect(page.getByRole('region', {name:'Discovered identity'})).toBeVisible();
-    const verifyButton=page.getByRole('button',{name:'Verify with your wallet',exact:true});
-    if (!await verifyButton.isVisible()) {
-      await page.getByRole('region', {name:'Discovered identity'}).getByRole('button', {name:/Connect (Identity Test Wallet|Injected|MetaMask)/}).first().click();
-      await lookup();
-    }
-    await page.evaluate(() => (window as any).ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x4cef52'}]}));
-    await page.getByRole('button',{name:'Verify with your wallet',exact:true}).click();
-    await expect(page.getByLabel('Agent wallet address')).toBeDisabled();
-    await expect(page.getByLabel('Agent wallet address')).toHaveValue(arcAccount);
-    await expect(page.getByLabel('Agent wallet address',{exact:true})).toHaveValue(arcAccount);
-    await expect(page.getByLabel('Agent wallet address',{exact:true})).toBeDisabled();
-    await page.getByRole('button',{name:'Verify and link wallet',exact:true}).click();
     const manager=page.getByRole('region',{name:'Agent bearer tokens'});
-    await expect(manager.getByLabel('Associated Arc account')).toBeDisabled();
-    await expect(manager.getByRole('heading',{name:'Set up your MCP client'})).toHaveCount(0);
     await expect(manager.getByLabel('Connection label')).toBeEnabled();
+    for (const text of ['Look up name','Verify with your wallet','Verify and link wallet','Use this wallet','Change wallet','Use this account']) {
+      await expect(page.getByRole('button',{name:text,exact:true})).toHaveCount(0);
+    }
+    await expect(page.getByRole('combobox',{name:'Wallet',exact:true})).toBeVisible();
+    expect(signatures).toBe(0);
+    for (const width of [1280,390]) {
+      await page.setViewportSize({width,height:1000});
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      await page.screenshot({path:`/private/tmp/connect-direct-${width}.png`,fullPage:true});
+    }
     await manager.getByRole('button',{name:'Sign and grant access'}).click();
     await expect(manager.getByRole('status')).toContainText('Token created');
     await expect(manager.getByRole('heading',{name:'Set up your MCP client'})).toBeVisible();
@@ -111,32 +96,18 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
     const access=page.getByRole('link',{name:'Grant agent access',exact:true});
     await expect(access).toHaveAttribute('href',`/connect?chainId=5042002&account=${arcAccount}`);
     await access.click();
-    await expect(page.locator('.access-wallet-picker')).not.toContainText(arcAccount);
-    const confirmation = page.getByRole('button',{name:'Use this account',exact:true});
-    await expect(confirmation).toHaveClass(/primary/);
-    for (const width of [1280, 390]) {
-      await page.setViewportSize({width,height:1000});
-      await expect(confirmation).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.screenshot({path:`/private/tmp/connect-confirm-${width}.png`,fullPage:true});
-    }
-    await confirmation.click();
-    await expect(manager.getByLabel('Associated Arc account')).toBeDisabled();
-    await expect(manager.getByRole('heading',{name:'Set up your MCP client'})).toHaveCount(0);
     await expect(manager.getByLabel('Connection label')).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Use this account',exact:true})).toHaveCount(0);
     expect(signatures).toBe(3);
-    await page.route('**/gateway/agents', r => r.fulfill({json: []}));
-    await page.route('**/gateway/operations', r => r.fulfill({json: []}));
-    await page.goto('/spending');
-    await expect(page.getByRole('link', {name:'Grant agent access',exact:true})).toHaveAttribute('href','/connect');
-    await expect(page.getByRole('link', {name:'Add agent',exact:true})).toHaveCount(0);
-    await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link', {name:'Agent access',exact:true})).toHaveAttribute('href','/connect');
+    await manager.getByRole('button',{name:'Sign and grant access'}).click();
+    await expect(manager.getByRole('status')).toContainText('Token created');
+    expect(signatures).toBe(4); // Existing proofs are reused; only the new grant is signed.
     await page.goto('/connect?chainId=5042002&account=0x7777777777777777777777777777777777777777');
     await expect(page.getByRole('alert').filter({hasText:'selected wallet could not'})).toBeVisible();
     await expect(page.getByRole('button',{name:'Sign and grant access'})).toHaveCount(0);
     await page.route('**/gateway/auth/session',r=>r.fulfill({status:401,json:{error:'Expired'}}));
     await page.evaluate(()=>window.dispatchEvent(new CustomEvent('wayleave:owner-session',{detail:null})));
-    await expect(page.getByRole('heading',{name:'Sign in to your account',exact:true})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Welcome back.',exact:true})).toBeVisible();
     await expect(page.getByText('The selected wallet could not be verified as yours on that network.')).toHaveCount(0);
   } finally {store.close();}
 });

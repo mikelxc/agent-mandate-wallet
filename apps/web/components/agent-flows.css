@@ -473,3 +473,8 @@
 @media (max-width: 600px) {
   .agent-access-flow .account-confirm-action { width: 100%; }
 }
+
+.agent-access-flow .compact-token-settings { margin: 0; }
+.agent-access-flow .compact-token-settings > .flow-disclosure { border: 0; padding: 0; margin: 0; }
+.agent-access-flow .compact-token-settings > .flow-disclosure > label:first-of-type { margin-top: 0; }
+.access-wallet-picker > label { display: grid; gap: 10px; font-size: 13px; }

@@ -41,6 +41,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return gatewayResponse<T>(response);
 }
 type IdentityPanelProps = {
+  onBusyChange?: (busy: boolean) => void;
   connectionOnly?: boolean;
   initialName?: string;
   initialAccount?: string;
@@ -60,6 +61,7 @@ export function PortableIdentityPanel(props: IdentityPanelProps) {
 }
 function IdentityPanel({
   connectionOnly = false,
+  onBusyChange,
   gatewayAudience,
   hideIdentityHeading = false,
   stage,
@@ -114,27 +116,49 @@ function IdentityPanel({
     setRestoring(true);
     void api<{ kind: string; identity: PortableIdentity }>('session')
       .then((session) => {
-        if (cancelled || !address || session.kind !== 'owner' ||
-            (initialName && session.identity.name !== initialName) ||
-            session.identity.controller.toLowerCase() !== address.toLowerCase()) return;
+        if (
+          cancelled ||
+          !address ||
+          session.kind !== 'owner' ||
+          (initialName && session.identity.name !== initialName) ||
+          session.identity.controller.toLowerCase() !== address.toLowerCase()
+        )
+          return;
         setIdentity(session.identity);
         setName(session.identity.name);
         setVerified(true);
       })
       .catch(() => {})
-      .finally(() => { if (!cancelled) setRestoring(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setRestoring(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [address, connectionOnly]);
   useEffect(() => {
     if (!automaticDiscovery || restoring || verified) return;
     let cancelled = false;
     setDiscovering(true);
     setError('');
-    void api<PortableIdentity>(`discover?deployment=${portableIdentityDeployment}&name=${encodeURIComponent(initialName)}`)
-      .then(result => { if (!cancelled) setIdentity(result); })
-      .catch(e => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load wallet identity.'); })
-      .finally(() => { if (!cancelled) setDiscovering(false); });
-    return () => { cancelled = true; };
+    void api<PortableIdentity>(
+      `discover?deployment=${portableIdentityDeployment}&name=${encodeURIComponent(initialName)}`,
+    )
+      .then((result) => {
+        if (!cancelled) setIdentity(result);
+      })
+      .catch((e) => {
+        if (!cancelled)
+          setError(
+            e instanceof Error ? e.message : 'Could not load wallet identity.',
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setDiscovering(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [automaticDiscovery, initialName, restoring, verified, discoveryRevision]);
   useEffect(() => {
     if (!connectionOnly || !verified) return;
@@ -143,13 +167,25 @@ function IdentityPanel({
     void api<{ accounts: { chainId: number; account: string }[] }>('accounts')
       .then(({ accounts }) => {
         if (cancelled) return;
-        const linked = accounts.filter((item) => item.chainId === paymentChain).map((item) => item.account);
+        const linked = accounts
+          .filter((item) => item.chainId === paymentChain)
+          .map((item) => item.account);
         setLinkedAccounts(linked);
-        setPaymentAccount((previous) => initialAccount || (linked.includes(previous) ? previous : (linked[0] ?? '')));
+        setPaymentAccount(
+          (previous) =>
+            initialAccount ||
+            (linked.includes(previous) ? previous : (linked[0] ?? '')),
+        );
       })
-      .catch((e) => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setAccountsLoading(false); });
-    return () => { cancelled = true; };
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setAccountsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [connectionOnly, verified, association]);
   useEffect(() => {
     if (mounted.current)
@@ -170,6 +206,196 @@ function IdentityPanel({
       setBusy(false);
     }
   }
+  async function verifyOwner() {
+    if (!identity || !address)
+      throw new Error('Connect your owner wallet to continue.');
+    if (address.toLowerCase() !== identity.controller.toLowerCase())
+      throw new Error(
+        `Connect the ${identity.authority ? 'current NFT owner' : 'ENS controlling wallet'} (${identity.controller}) to verify this name.`,
+      );
+    if (chainId !== identity.chainId)
+      await switchChain.mutateAsync({ chainId: identity.chainId });
+    if (
+      !mounted.current ||
+      currentAddress.current?.toLowerCase() !== address.toLowerCase()
+    )
+      throw new Error('Wallet changed; look up your name and verify again.');
+    const challenge = await api<{
+      proof: IdentityProof;
+      message: string;
+    }>('challenge', {
+      deployment: portableIdentityDeployment,
+      kind: 'owner',
+      name: identity.name,
+    });
+    if (
+      challenge.proof.deployment !== portableIdentityDeployment ||
+      challenge.proof.kind !== 'owner' ||
+      challenge.proof.name !== identity.name ||
+      challenge.proof.identity !== identity.name ||
+      challenge.proof.registration !== identity.registration ||
+      challenge.proof.key.toLowerCase() !== address.toLowerCase() ||
+      challenge.proof.expiresAt <= Date.now() / 1000 ||
+      challenge.proof.expiresAt > Date.now() / 1000 + 300 ||
+      challenge.proof.audience !==
+        (gatewayAudience ?? window.location.origin) ||
+      challenge.message !== identityProofMessage(challenge.proof)
+    )
+      throw new Error('Gateway challenge does not match this site');
+    if (
+      !mounted.current ||
+      currentAddress.current?.toLowerCase() !== address.toLowerCase()
+    )
+      throw new Error('Wallet changed; look up your name and verify again.');
+    const signature = await sign.mutateAsync({
+      account: address,
+      message: challenge.message,
+    });
+    if (
+      !mounted.current ||
+      currentAddress.current?.toLowerCase() !== address.toLowerCase()
+    )
+      throw new Error('Wallet changed; look up your name and verify again.');
+    await api('verify', {
+      nonce: challenge.proof.nonce,
+      signature,
+    });
+    setVerified(true);
+  }
+  async function linkAccount(force = false) {
+    if (!identity || !address)
+      throw new Error('Connect your owner wallet to continue.');
+    if (!force && connectionOnly && linkedAccounts.includes(paymentAccount)) {
+      setAssociation(`Using linked Arc account ${paymentAccount}.`);
+      return;
+    }
+    if (!isAddress(paymentAccount))
+      throw new Error('Enter the payment smart-account address');
+    const challenge = await api<{
+      binding: {
+        nonce: string;
+        audience: string;
+        identity: string;
+        account: string;
+        chainId: number;
+        controller: string;
+        version: number;
+        deployment: string;
+        registration: string;
+        identityController: string;
+        expiresAt: number;
+      };
+      message: string;
+    }>('accounts/challenge', {
+      chainId: paymentChain,
+      account: paymentAccount,
+    });
+    if (
+      challenge.binding.audience !==
+        (gatewayAudience ?? window.location.origin) ||
+      challenge.binding.identity !== identity.name ||
+      challenge.binding.account.toLowerCase() !==
+        paymentAccount.toLowerCase() ||
+      challenge.binding.chainId !== paymentChain
+    )
+      throw new Error('Unexpected account association challenge');
+    if (address?.toLowerCase() !== challenge.binding.controller.toLowerCase())
+      throw new Error(
+        `Connect the payment account’s controller (${challenge.binding.controller}) to approve this association.`,
+      );
+    if (
+      challenge.binding.version !== 1 ||
+      challenge.binding.deployment !== portableIdentityDeployment ||
+      challenge.binding.registration !== identity.registration ||
+      challenge.binding.identityController.toLowerCase() !==
+        identity.controller.toLowerCase() ||
+      challenge.binding.expiresAt <= Date.now() / 1000 ||
+      challenge.message !==
+        `Wayleave account association v1\nAssociate this payment account with the named identity. This grants no spending authority.\n${JSON.stringify(challenge.binding)}`
+    )
+      throw new Error('Unexpected account association message');
+    if (chainId !== paymentChain)
+      await switchChain.mutateAsync({
+        chainId: paymentChain,
+      });
+    const signature = await sign.mutateAsync({
+      message: challenge.message,
+    });
+    if (
+      !mounted.current ||
+      currentAddress.current?.toLowerCase() !== address.toLowerCase()
+    )
+      throw new Error('Wallet changed. Please retry.');
+    await api('accounts/attach', {
+      nonce: challenge.binding.nonce,
+      signature,
+    });
+    setAssociation(
+      `Associated ${paymentAccount} on ${paymentChain === 5042002 ? 'Arc Testnet' : 'Sepolia'}.`,
+    );
+  }
+  if (connectionOnly && initialName && initialAccount)
+    return (
+      <section className="wl-agent-settings identity-flow">
+        <div className="flow-surface">
+          {identity ? (
+            <AgentTokenManager
+              identity={identity}
+              account={initialAccount}
+              guided
+              compact
+              gateway={gatewayAudience ?? 'https://www.wayleave.xyz/gateway'}
+              audience={gatewayAudience}
+              onReady={setTokenReady}
+              onBusyChange={onBusyChange}
+              beforeIssue={async () => {
+                const session = await api<{
+                  kind: string;
+                  identity: PortableIdentity;
+                }>('session').catch(() => null);
+                if (
+                  !session ||
+                  session.kind !== 'owner' ||
+                  session.identity.name !== initialName ||
+                  session.identity.controller.toLowerCase() !==
+                    address?.toLowerCase()
+                )
+                  await verifyOwner();
+                if (!mounted.current)
+                  throw new Error('Wallet selection changed. Please retry.');
+                const result = await api<{
+                  accounts: { chainId: number; account: string }[];
+                }>('accounts');
+                if (
+                  !result.accounts.some(
+                    (item) =>
+                      item.chainId === paymentChain &&
+                      item.account.toLowerCase() ===
+                        initialAccount.toLowerCase(),
+                  )
+                ) {
+                  await linkAccount(true);
+                }
+              }}
+            />
+          ) : (
+            <>
+              <p role="status">Loading wallet…</p>
+              {error && (
+                <>
+                  <p role="alert">{error}</p>
+                  <button
+                    onClick={() => setDiscoveryRevision((value) => value + 1)}
+                  >
+                    Retry
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+    );
   return (
     <section
       className="wl-agent-settings identity-flow"
@@ -192,8 +418,16 @@ function IdentityPanel({
       <div className="flow-layout">
         <div className="flow-main">
           <div className="flow-surface">
-            {restoring && <p role="status">Loading your existing connection workspace…</p>}
-            <div hidden={restoring || (connectionOnly && verified) || (!!stage && stage !== 'identity')}>
+            {restoring && (
+              <p role="status">Loading your existing connection workspace…</p>
+            )}
+            <div
+              hidden={
+                restoring ||
+                (connectionOnly && verified) ||
+                (!!stage && stage !== 'identity')
+              }
+            >
               <div
                 className="flow-section-heading"
                 hidden={hideIdentityHeading}
@@ -206,53 +440,65 @@ function IdentityPanel({
                   <p>Look it up first. Verify it with your wallet next.</p>
                 </div>
               </div>
-              {automaticDiscovery ? <>
-                {discovering && <p role="status">Loading your wallet identity…</p>}
-                {!discovering && !identity && <button onClick={() => setDiscoveryRevision(value => value + 1)}>Retry identity lookup</button>}
-              </> : <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void run(async () => {
-                    setVerified(false);
-                    setIdentity(undefined);
-                    setAssociation('');
-                    setTokenReady(false);
-                    setIdentity(
-                      await api<PortableIdentity>(
-                        `discover?deployment=${portableIdentityDeployment}&name=${encodeURIComponent(name)}`,
-                      ),
-                    );
-                  });
-                }}
-              >
-                <label htmlFor="identity-name">ENS name</label>
-                <input
-                  id="identity-name"
-                  value={name}
-                  disabled={busy || (!!stage && !!initialName)}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setAssociation('');
-                    setTokenReady(false);
-                    setIdentity(undefined);
-                    setVerified(false);
+              {automaticDiscovery ? (
+                <>
+                  {discovering && (
+                    <p role="status">Loading your wallet identity…</p>
+                  )}
+                  {!discovering && !identity && (
+                    <button
+                      onClick={() => setDiscoveryRevision((value) => value + 1)}
+                    >
+                      Retry identity lookup
+                    </button>
+                  )}
+                </>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void run(async () => {
+                      setVerified(false);
+                      setIdentity(undefined);
+                      setAssociation('');
+                      setTokenReady(false);
+                      setIdentity(
+                        await api<PortableIdentity>(
+                          `discover?deployment=${portableIdentityDeployment}&name=${encodeURIComponent(name)}`,
+                        ),
+                      );
+                    });
                   }}
-                  placeholder="research-desk.wayleave.eth"
-                  required
-                />
-                <p className="flow-note">
-                  Testnet · Uses the ENSv2 Sepolia registry. Mainnet ENS names
-                  aren’t supported here yet.
-                </p>
-                <button
-                  className="primary"
-                  disabled={busy || !name.trim()}
-                  type="submit"
                 >
-                  {busy ? 'Looking up name…' : 'Look up name'}{' '}
-                  <ArrowRight size={16} />
-                </button>
-              </form>}
+                  <label htmlFor="identity-name">ENS name</label>
+                  <input
+                    id="identity-name"
+                    value={name}
+                    disabled={busy || (!!stage && !!initialName)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setAssociation('');
+                      setTokenReady(false);
+                      setIdentity(undefined);
+                      setVerified(false);
+                    }}
+                    placeholder="research-desk.wayleave.eth"
+                    required
+                  />
+                  <p className="flow-note">
+                    Testnet · Uses the ENSv2 Sepolia registry. Mainnet ENS names
+                    aren’t supported here yet.
+                  </p>
+                  <button
+                    className="primary"
+                    disabled={busy || !name.trim()}
+                    type="submit"
+                  >
+                    {busy ? 'Looking up name…' : 'Look up name'}{' '}
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
               {!initialName && (
                 <p className="flow-note">
                   Need a name?{' '}
@@ -290,7 +536,12 @@ function IdentityPanel({
                 aria-label="Discovered identity"
                 className="identity-result"
               >
-                <div hidden={(connectionOnly && verified) || (!!stage && stage !== 'identity')}>
+                <div
+                  hidden={
+                    (connectionOnly && verified) ||
+                    (!!stage && stage !== 'identity')
+                  }
+                >
                   <span className="flow-eyebrow">
                     {verified ? 'Control verified' : 'Name found'}
                   </span>
@@ -298,7 +549,11 @@ function IdentityPanel({
                   <details className="flow-disclosure">
                     <summary>Name details</summary>
                     <dl>
-                      <dt>{identity.authority ? 'Current NFT owner' : 'Controlling wallet'}</dt>
+                      <dt>
+                        {identity.authority
+                          ? 'Current NFT owner'
+                          : 'Controlling wallet'}
+                      </dt>
                       <dd style={{ overflowWrap: 'anywhere' }}>
                         {identity.controller}
                       </dd>
@@ -333,52 +588,7 @@ function IdentityPanel({
                           disabled={busy}
                           onClick={() =>
                             void run(async () => {
-                              if (address.toLowerCase() !== identity.controller.toLowerCase())
-                                throw new Error(
-                                  `Connect the ${identity.authority ? 'current NFT owner' : 'ENS controlling wallet'} (${identity.controller}) to verify this name.`,
-                                );
-                              if (chainId !== identity.chainId)
-                                await switchChain.mutateAsync({ chainId: identity.chainId });
-                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
-                                throw new Error('Wallet changed; look up your name and verify again.');
-                              const challenge = await api<{
-                                proof: IdentityProof;
-                                message: string;
-                              }>('challenge', {
-                                deployment: portableIdentityDeployment,
-                                kind: 'owner',
-                                name: identity.name,
-                              });
-                              if (
-                                challenge.proof.deployment !== portableIdentityDeployment ||
-                                challenge.proof.kind !== 'owner' ||
-                                challenge.proof.name !== identity.name ||
-                                challenge.proof.identity !== identity.name ||
-                                challenge.proof.registration !== identity.registration ||
-                                challenge.proof.key.toLowerCase() !== address.toLowerCase() ||
-                                challenge.proof.expiresAt <= Date.now() / 1000 ||
-                                challenge.proof.expiresAt > Date.now() / 1000 + 300 ||
-                                challenge.proof.audience !==
-                                  (gatewayAudience ?? window.location.origin) ||
-                                challenge.message !==
-                                  identityProofMessage(challenge.proof)
-                              )
-                                throw new Error(
-                                  'Gateway challenge does not match this site',
-                                );
-                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
-                                throw new Error('Wallet changed; look up your name and verify again.');
-                              const signature = await sign.mutateAsync({
-                                account: address,
-                                message: challenge.message,
-                              });
-                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
-                                throw new Error('Wallet changed; look up your name and verify again.');
-                              await api('verify', {
-                                nonce: challenge.proof.nonce,
-                                signature,
-                              });
-                              setVerified(true);
+                              await verifyOwner();
                             })
                           }
                         >
@@ -391,16 +601,18 @@ function IdentityPanel({
                           : ''}
                         Identity verification uses Sepolia. Your wallet will
                         switch networks before signing. Use the controlling
-                        wallet shown above; smart-account owners need a compatible
-                        contract-signature wallet on Sepolia. You’ll link your
-                        Arc payment wallet separately.
+                        wallet shown above; smart-account owners need a
+                        compatible contract-signature wallet on Sepolia. You’ll
+                        link your Arc payment wallet separately.
                       </p>
                     </>
                   ) : (
                     <>
                       <p className="flow-message" role="status">
-                        {identity.authority ? 'NFT ownership verified for this named workspace.' : 'You control this name.'} Choose what to connect below, or
-                        come back later.
+                        {identity.authority
+                          ? 'NFT ownership verified for this named workspace.'
+                          : 'You control this name.'}{' '}
+                        Choose what to connect below, or come back later.
                       </p>
                       <button
                         onClick={() =>
@@ -421,9 +633,19 @@ function IdentityPanel({
                     className={`flow-disclosure ${stage ? 'guided-account-confirmation' : ''}`}
                   >
                     <summary hidden={!!stage}>Confirm your Arc account</summary>
-                    {!stage && <h3>{linkedAccounts.length ? 'Use a linked account' : 'Link your Arc account'}</h3>}
+                    {!stage && (
+                      <h3>
+                        {linkedAccounts.length
+                          ? 'Use a linked account'
+                          : 'Link your Arc account'}
+                      </h3>
+                    )}
                     <p>
-                      {initialAccount && linkedAccounts.includes(paymentAccount) ? 'This wallet is already linked to your identity. Continue to choose access permissions.' : linkedAccounts.length ? 'Choose an account already linked to this identity. Its address stays fixed when you grant access.' : 'Link a wallet you own to this name. You’ll sign a separate ownership proof; payments still need your approval.'}
+                      {initialAccount && linkedAccounts.includes(paymentAccount)
+                        ? 'This wallet is already linked to your identity. Continue to choose access permissions.'
+                        : linkedAccounts.length
+                          ? 'Choose an account already linked to this identity. Its address stays fixed when you grant access.'
+                          : 'Link a wallet you own to this name. You’ll sign a separate ownership proof; payments still need your approval.'}
                     </p>
                     {!hideWalletCreation && (
                       <ChainWalletSetup
@@ -439,105 +661,49 @@ function IdentityPanel({
                     </p>
                     <label>
                       Agent wallet address
-                      {connectionOnly && !initialAccount && linkedAccounts.length ? <WayleaveSelect
-                        label="Agent wallet address"
-                        value={paymentAccount}
-                        disabled={busy || accountsLoading}
-                        onValueChange={setPaymentAccount}
-                        options={linkedAccounts.map(account => ({ value: account, label: account }))}
-                      /> : <input
-                        value={paymentAccount}
-                        disabled={busy || accountsLoading || (!!stage && !!initialAccount)}
-                        onChange={(e) => {
-                          setPaymentAccount(e.target.value);
-                          setAssociation('');
-                        }}
-                        placeholder="0x…"
-                      />}
+                      {connectionOnly &&
+                      !initialAccount &&
+                      linkedAccounts.length ? (
+                        <WayleaveSelect
+                          label="Agent wallet address"
+                          value={paymentAccount}
+                          disabled={busy || accountsLoading}
+                          onValueChange={setPaymentAccount}
+                          options={linkedAccounts.map((account) => ({
+                            value: account,
+                            label: account,
+                          }))}
+                        />
+                      ) : (
+                        <input
+                          value={paymentAccount}
+                          disabled={
+                            busy ||
+                            accountsLoading ||
+                            (!!stage && !!initialAccount)
+                          }
+                          onChange={(e) => {
+                            setPaymentAccount(e.target.value);
+                            setAssociation('');
+                          }}
+                          placeholder="0x…"
+                        />
+                      )}
                     </label>
                     <button
                       className="primary account-confirm-action"
                       disabled={busy || accountsLoading}
                       onClick={() =>
                         void run(async () => {
-                          if (connectionOnly && linkedAccounts.includes(paymentAccount)) {
-                            setAssociation(`Using linked Arc account ${paymentAccount}.`);
-                            return;
-                          }
-                          if (!isAddress(paymentAccount))
-                            throw new Error(
-                              'Enter the payment smart-account address',
-                            );
-                          const challenge = await api<{
-                            binding: {
-                              nonce: string;
-                              audience: string;
-                              identity: string;
-                              account: string;
-                              chainId: number;
-                              controller: string;
-                              version: number;
-                              deployment: string;
-                              registration: string;
-                              identityController: string;
-                              expiresAt: number;
-                            };
-                            message: string;
-                          }>('accounts/challenge', {
-                            chainId: paymentChain,
-                            account: paymentAccount,
-                          });
-                          if (
-                            challenge.binding.audience !==
-                              (gatewayAudience ?? window.location.origin) ||
-                            challenge.binding.identity !== identity.name ||
-                            challenge.binding.account.toLowerCase() !==
-                              paymentAccount.toLowerCase() ||
-                            challenge.binding.chainId !== paymentChain
-                          )
-                            throw new Error(
-                              'Unexpected account association challenge',
-                            );
-                          if (
-                            address?.toLowerCase() !==
-                            challenge.binding.controller.toLowerCase()
-                          )
-                            throw new Error(
-                              `Connect the payment account’s controller (${challenge.binding.controller}) to approve this association.`,
-                            );
-                          if (
-                            challenge.binding.version !== 1 ||
-                            challenge.binding.deployment !==
-                              portableIdentityDeployment ||
-                            challenge.binding.registration !==
-                              identity.registration ||
-                            challenge.binding.identityController.toLowerCase() !==
-                              identity.controller.toLowerCase() ||
-                            challenge.binding.expiresAt <= Date.now() / 1000 ||
-                            challenge.message !==
-                              `Wayleave account association v1\nAssociate this payment account with the named identity. This grants no spending authority.\n${JSON.stringify(challenge.binding)}`
-                          )
-                            throw new Error(
-                              'Unexpected account association message',
-                            );
-                          if (chainId !== paymentChain)
-                            await switchChain.mutateAsync({
-                              chainId: paymentChain,
-                            });
-                          const signature = await sign.mutateAsync({
-                            message: challenge.message,
-                          });
-                          await api('accounts/attach', {
-                            nonce: challenge.binding.nonce,
-                            signature,
-                          });
-                          setAssociation(
-                            `Associated ${paymentAccount} on ${paymentChain === 5042002 ? 'Arc Testnet' : 'Sepolia'}.`,
-                          );
+                          await linkAccount();
                         })
                       }
                     >
-                      {accountsLoading ? 'Loading linked accounts…' : linkedAccounts.includes(paymentAccount) ? 'Use this account' : 'Verify and link wallet'}
+                      {accountsLoading
+                        ? 'Loading linked accounts…'
+                        : linkedAccounts.includes(paymentAccount)
+                          ? 'Use this account'
+                          : 'Verify and link wallet'}
                     </button>
                     {association && <p role="status">{association}</p>}
                   </details>
@@ -550,7 +716,9 @@ function IdentityPanel({
                       identity={identity}
                       account={paymentAccount}
                       guided={!!stage}
-                      accounts={connectionOnly && !stage ? linkedAccounts : undefined}
+                      accounts={
+                        connectionOnly && !stage ? linkedAccounts : undefined
+                      }
                       gateway={
                         gatewayAudience ?? 'https://www.wayleave.xyz/gateway'
                       }
