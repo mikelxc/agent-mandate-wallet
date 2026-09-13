@@ -15,7 +15,7 @@
   "canonicalRegistrationReceiptVerified": "0x0d329bacfdaf212e19e262380dc1687819505bfc4f4da445886318a3d5b1b326",
   "registrationVerified": true,
   "canonicalTransferEventsVerified": [],
-  "hostedGatewayConfigured": false,
+  "hostedGatewayConfigured": true,
   "mcpToolsVerified": [
     "list_payments",
     "get_payment_context",
@@ -26,5 +26,15 @@
   "mcpAuthentication": "ephemeral_local_fixture",
   "mcpData": "live_graph_and_chain_rpc",
   "mcpSampleTransferCount": 0,
-  "mcpIndexedBlock": 61635919
+  "mcpIndexedBlock": 61635919,
+  "hostedGatewayRelease": {
+    "commit": "eb030bb415ba2aa26ca8da195256c0a0dde97362",
+    "deployment": "dpl_4wGh5NRrGZeYcZMLUDfs73kcqrqe",
+    "url": "https://www.wayleave.xyz",
+    "status": "READY",
+    "verifiedAt": "2026-09-13T06:43:58.629Z",
+    "healthStatus": 200,
+    "unauthenticatedHistoryStatus": 401,
+    "authenticatedProductionMcpVerified": false
+  }
 }
