@@ -2501,3 +2501,7 @@ footer {
     font-size: 0.67rem;
   }
 @media (min-width: 721px) { .mobile-agent-onboarding { display: none; } }
+.account-route-gate { box-sizing: border-box; max-width: 640px; margin: 8vh auto; padding: 32px 24px; }
+.account-route-gate h1 { font-size: clamp(28px, 5vw, 42px); line-height: 1.15; }
+.account-route-gate p { line-height: 1.7; }
+.account-route-gate button { min-height: 44px; padding: 12px 20px; }

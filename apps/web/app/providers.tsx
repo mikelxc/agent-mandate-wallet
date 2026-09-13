@@ -1,7 +1,8 @@
 'use client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, type Config } from 'wagmi';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { AccountAccessGate } from '../components/account-access-gate';
 import { usePathname } from 'next/navigation';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -41,7 +42,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     );
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}><Suspense fallback={<p>Checking account access…</p>}><AccountAccessGate>{children}</AccountAccessGate></Suspense></QueryClientProvider>
     </WagmiProvider>
   );
 }
