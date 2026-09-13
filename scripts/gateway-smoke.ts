@@ -6,6 +6,7 @@ import { verifyMessage, verifyTypedData, toHex } from "viem";
 import { Client } from "../packages/agent-tools/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
 import { StdioClientTransport } from "../packages/agent-tools/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js";
 import { createApp } from "../apps/gateway/src/app.ts";
+import { createCompatibleAgentAuth } from "../apps/gateway/src/agent-auth.ts";
 import { Store } from "../apps/gateway/src/store.ts";
 import { ownerAuthorization, sepoliaDeployment } from "../packages/sdk/src/index.ts";
 import type { Chain, Prepared } from "../apps/gateway/src/chain.ts";
@@ -93,7 +94,10 @@ try {
   let handler: (request: Request) => Response | Promise<Response> = () => new Response("starting");
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (request) => handler(request) });
   const gatewayOrigin = server.url.origin;
-  handler = createApp(store, chain, { gatewayOrigin, dashboardOrigin: "http://localhost:3000" });
+  const authenticate = createCompatibleAgentAuth(store, chain, async () => null);
+  handler = createApp(store, chain, { gatewayOrigin, dashboardOrigin: "http://localhost:3000",
+    authenticateScopedAgent: request => authenticate(request, 11155111),
+  });
   const origin = server.url.origin;
   const dashboard = "http://localhost:3000";
   const request = async (path: string, init: RequestInit = {}, cookie?: string) =>
@@ -131,7 +135,7 @@ try {
 
   transport = new StdioClientTransport({
     command: "node",
-    args: ["packages/agent-tools/dist/cli.js"],
+    args: [process.env.WAYLEAVE_MCP_TEST_CLI ?? "packages/agent-tools/dist/cli.js"],
     env: {
       ...process.env,
       WAYLEAVE_AGENT_TOKEN: agent.token,

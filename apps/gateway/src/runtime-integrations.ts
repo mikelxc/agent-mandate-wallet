@@ -1,4 +1,5 @@
 import { createAgentTokens } from './agent-tokens';
+import { createCompatibleAgentAuth } from './agent-auth';
 import { createPublicClient, http, type Address } from 'viem';
 import { arcTestnet } from 'viem/chains';
 import type { Store } from './store';
@@ -34,7 +35,7 @@ export function runtimeIntegrations(store: Store, chain: Chain, audience: string
         },
     });
     const tokens = createAgentTokens(store, auth, associations, audience);
-    const authenticate = tokens.authenticate;
+    const authenticate = createCompatibleAgentAuth(store, chain, tokens.authenticate);
     return {
         history: historyFromEnv(),
         authenticateScopedAgent: (request: Request) => authenticate(request, 11155111),
