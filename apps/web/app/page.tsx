@@ -1,10 +1,13 @@
-import { AgentControl } from '../components/agent-control';
+import { Suspense } from 'react';
+import { ArcOnboarding } from '../components/arc-onboarding';
 import { AppFrame } from '../components/app-frame';
 
 export default function Home() {
   return (
     <AppFrame>
-      <AgentControl />
+      <Suspense fallback={<p>Loading setup…</p>}>
+        <ArcOnboarding />
+      </Suspense>
     </AppFrame>
   );
 }

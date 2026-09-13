@@ -77,7 +77,7 @@ function hex(value: unknown, bytes?: number): Hex {
   return value as Hex;
 }
 /** Mount through createApp.routes so its host/origin checks precede cookie authentication. */
-export function createCctpRoute(options: { store: Store; audience: string; authenticateAgent?: (request: Request) => Promise<{ id: string; account: Address; owner: Address } | null>; chain?: ArcChain; circle?: CircleAttestations; now?: () => number; deployment?: { entryPoint: Address } }) {
+export function createCctpRoute(options: { store: Store; audience: string; authenticateAgent?: (request: Request) => Promise<{ id: string; account: Address; owner: Address } | null>; chain?: ArcChain; circle?: CircleAttestations; now?: () => number; deployment?: { entryPoint: Address; registry?: Address; validator?: Address } }) {
   const { store, chain } = options, operations = new CctpStore(store), circle = options.circle ?? new CircleAttestations(), now = options.now ?? (() => Math.floor(Date.now() / 1000));
   return async (request: Request): Promise<Response | null> => {
     const path = new URL(request.url).pathname;
@@ -109,7 +109,7 @@ export function createCctpRoute(options: { store: Store; audience: string; authe
       } catch { return json({ error: 'Cross-chain agent request could not be completed' }, 409); }
     }
     if (path !== '/crosschain' && !path.startsWith('/crosschain/')) return null;
-    if (path === '/crosschain/config' && request.method === 'GET') return json({ configured: !!chain, chainId: 5042002, destinationChainId: 11155111, entryPoint: options.deployment?.entryPoint, nativeDecimals: 18, tokenDecimals: 6 });
+    if (path === '/crosschain/config' && request.method === 'GET') return json({ configured: !!chain, chainId: 5042002, destinationChainId: 11155111, entryPoint: options.deployment?.entryPoint, registry: options.deployment?.registry, validator: options.deployment?.validator, nativeDecimals: 18, tokenDecimals: 6 });
     if (request.method !== 'GET' && request.headers.get('origin') !== new URL(options.audience).origin) return json({ error: 'Dashboard origin required' }, 403);
     const cookie = request.headers.get('cookie')?.match(/(?:^|;\s*)mandate_session=([a-f0-9]{64})(?:;|$)/)?.[1];
     const owner = cookie && await store.session(digest(cookie), now());

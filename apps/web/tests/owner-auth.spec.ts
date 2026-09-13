@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { decodeFunctionData, encodeFunctionResult, multicall3Abi, verifyMessage, type Address, type Hex } from 'viem';
+import {
+  decodeFunctionData,
+  encodeFunctionResult,
+  multicall3Abi,
+  verifyMessage,
+  type Address,
+  type Hex,
+} from 'viem';
 import { sepolia } from 'viem/chains';
 import { sepoliaDeployment } from '@mandate/sdk';
 import { Store } from '../../gateway/src/store';
@@ -17,7 +24,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
   }) => {
     const validSignature = outcome === 'valid';
     const signingErrors: string[] = [];
-    page.on('console', message => {
+    page.on('console', (message) => {
       if (message.type() === 'error') signingErrors.push(message.text());
     });
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -27,58 +34,117 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       : privateKeyToAccount(generatePrivateKey());
     const store = new Store(':memory:');
     const chain: Chain = {
-      ownership: async () => ({ owner: owner.address.toLowerCase(), tokenId: '1', epoch: '0' }),
+      ownership: async () => ({
+        owner: owner.address.toLowerCase(),
+        tokenId: '1',
+        epoch: '0',
+      }),
       verifyLogin: (address, message, signature) =>
         verifyMessage({ address: address as Address, message, signature }),
-      balances: async () => { throw new Error('Not used by connection tests'); },
-      prepare: async () => { throw new Error('Not used by connection tests'); },
-      verifyApproval: async () => { throw new Error('Not used by connection tests'); },
-      receipt: async () => { throw new Error('Not used by connection tests'); },
+      balances: async () => {
+        throw new Error('Not used by connection tests');
+      },
+      prepare: async () => {
+        throw new Error('Not used by connection tests');
+      },
+      verifyApproval: async () => {
+        throw new Error('Not used by connection tests');
+      },
+      receipt: async () => {
+        throw new Error('Not used by connection tests');
+      },
     };
     const gateway = createHostedGateway(store, chain, [
       new URL(baseURL!).origin,
     ]);
-    const seededAgent = await store.createAgent({ owner: owner.address.toLowerCase(), name: 'Existing agent', account: '0x1111111111111111111111111111111111111111', tokenHash: 'test-existing-token-hash', expiresAt: Math.floor(Date.now() / 1000) + 86400 }, Math.floor(Date.now() / 1000));
-    await store.propose(seededAgent, {
-      chainId: 11155111,
-      account: seededAgent.account,
-      fundingOwner: owner.address.toLowerCase(),
-      token: '0x2222222222222222222222222222222222222222',
-      recipient: '0x3333333333333333333333333333333333333333',
-      amount: '1000000',
-      businessReference: 'Old payment request',
-      idempotencyKey: 'expired-ui-test',
-      expiresAt: Math.floor(Date.now() / 1000) - 60,
-    }, 'expired-ui-test-hash', Math.floor(Date.now() / 1000) - 3600);
+    const seededAgent = await store.createAgent(
+      {
+        owner: owner.address.toLowerCase(),
+        name: 'Existing agent',
+        account: '0x1111111111111111111111111111111111111111',
+        tokenHash: 'test-existing-token-hash',
+        expiresAt: Math.floor(Date.now() / 1000) + 86400,
+      },
+      Math.floor(Date.now() / 1000),
+    );
+    await store.propose(
+      seededAgent,
+      {
+        chainId: 11155111,
+        account: seededAgent.account,
+        fundingOwner: owner.address.toLowerCase(),
+        token: '0x2222222222222222222222222222222222222222',
+        recipient: '0x3333333333333333333333333333333333333333',
+        amount: '1000000',
+        businessReference: 'Old payment request',
+        idempotencyKey: 'expired-ui-test',
+        expiresAt: Math.floor(Date.now() / 1000) - 60,
+      },
+      'expired-ui-test-hash',
+      Math.floor(Date.now() / 1000) - 3600,
+    );
     let nfatBalance = 0;
     let balanceReads = 0;
-    await page.route((url) => url.hostname === new URL(sepolia.rpcUrls.default.http[0]).hostname || url.hostname === 'rpc.walletconnect.org', async (route) => {
-      const body = route.request().postDataJSON();
-      const contractReply = (target: string, data: Hex): { success: boolean; returnData: Hex } => {
-        if (data.startsWith('0x70a08231') && target.toLowerCase() === sepoliaDeployment.registry.toLowerCase()) {
-          expect(data.slice(-40).toLowerCase()).toBe(owner.address.slice(2).toLowerCase());
-          balanceReads++;
-          return { success: true, returnData: `0x${nfatBalance.toString(16).padStart(64, '0')}` };
-        }
-        return { success: false, returnData: '0x' };
-      };
-      const reply = (call: any) => {
-        if (call.method === 'eth_call') {
-          const { to, data } = call.params[0];
-          if (data.startsWith('0x82ad56cb')) {
-            const decoded = decodeFunctionData({ abi: multicall3Abi, data });
-            if (decoded.functionName === 'aggregate3') {
-              const result = decoded.args[0].map((entry) => contractReply(entry.target, entry.callData));
-              return { jsonrpc: '2.0', id: call.id, result: encodeFunctionResult({ abi: multicall3Abi, functionName: 'aggregate3', result }) };
-            }
+    await page.route(
+      (url) =>
+        url.hostname === new URL(sepolia.rpcUrls.default.http[0]).hostname ||
+        url.hostname === 'rpc.walletconnect.org',
+      async (route) => {
+        const body = route.request().postDataJSON();
+        const contractReply = (
+          target: string,
+          data: Hex,
+        ): { success: boolean; returnData: Hex } => {
+          if (
+            data.startsWith('0x70a08231') &&
+            target.toLowerCase() === sepoliaDeployment.registry.toLowerCase()
+          ) {
+            expect(data.slice(-40).toLowerCase()).toBe(
+              owner.address.slice(2).toLowerCase(),
+            );
+            balanceReads++;
+            return {
+              success: true,
+              returnData: `0x${nfatBalance.toString(16).padStart(64, '0')}`,
+            };
           }
-          const result = contractReply(to, data);
-          if (result.success) return { jsonrpc: '2.0', id: call.id, result: result.returnData };
-        }
-        return { jsonrpc: '2.0', id: call.id, error: { code: -32000, message: 'Not available in this UI test' } };
-      };
-      await route.fulfill({ json: Array.isArray(body) ? body.map(reply) : reply(body) });
-    });
+          return { success: false, returnData: '0x' };
+        };
+        const reply = (call: any) => {
+          if (call.method === 'eth_call') {
+            const { to, data } = call.params[0];
+            if (data.startsWith('0x82ad56cb')) {
+              const decoded = decodeFunctionData({ abi: multicall3Abi, data });
+              if (decoded.functionName === 'aggregate3') {
+                const result = decoded.args[0].map((entry) =>
+                  contractReply(entry.target, entry.callData),
+                );
+                return {
+                  jsonrpc: '2.0',
+                  id: call.id,
+                  result: encodeFunctionResult({
+                    abi: multicall3Abi,
+                    functionName: 'aggregate3',
+                    result,
+                  }),
+                };
+              }
+            }
+            const result = contractReply(to, data);
+            if (result.success)
+              return { jsonrpc: '2.0', id: call.id, result: result.returnData };
+          }
+          return {
+            jsonrpc: '2.0',
+            id: call.id,
+            error: { code: -32000, message: 'Not available in this UI test' },
+          };
+        };
+        await route.fulfill({
+          json: Array.isArray(body) ? body.map(reply) : reply(body),
+        });
+      },
+    );
     let signatures = 0;
     let verified = false;
     let verificationStatus = 0;
@@ -111,7 +177,8 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
     await page.exposeFunction('signOwnershipTestMessage', async (raw: Hex) => {
       signatures++;
       expect(verified).toBe(false);
-      if (outcome === 'provider-error') throw new Error('Wallet session expired; reconnect the wallet');
+      if (outcome === 'provider-error')
+        throw new Error('Wallet session expired; reconnect the wallet');
       return signer.signMessage({ message: { raw } });
     });
     await page.addInitScript(
@@ -189,14 +256,22 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(nonceRequests).toBe(1);
       await modal.getByRole('button', { name: 'Sign', exact: true }).click();
       if (outcome === 'provider-error') {
-        await expect.poll(() => signingErrors.join('\n')).toContain('Wallet session expired; reconnect the wallet');
-        expect(signingErrors.join('\n')).not.toContain('WagmiAdapter:signMessage - Sign message failed');
+        await expect
+          .poll(() => signingErrors.join('\n'))
+          .toContain('Wallet session expired; reconnect the wallet');
+        expect(signingErrors.join('\n')).not.toContain(
+          'WagmiAdapter:signMessage - Sign message failed',
+        );
         expect(verificationStatus).toBe(0);
         expect(signatures).toBe(1);
         expect(verified).toBe(false);
         expect(cookie).not.toContain('mandate_session=');
-        await expect(page.locator('.mobile-status')).toContainText('Sign-in failed: Wallet session expired; reconnect the wallet');
-        await expect(modal.getByRole('button', { name: 'Sign', exact: true })).toBeVisible();
+        await expect(page.locator('.arc-onboarding-status')).toContainText(
+          'Sign-in failed: Wallet session expired; reconnect the wallet',
+        );
+        await expect(
+          modal.getByRole('button', { name: 'Sign', exact: true }),
+        ).toBeVisible();
         return;
       }
       await expect
@@ -205,77 +280,96 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(signatures).toBe(1);
       expect(nonceRequests).toBe(1);
       if (validSignature) {
-        await expect(page.locator('.mobile-status')).toContainText(
+        await expect(page.locator('.arc-onboarding-status')).toContainText(
           'Owner verified.',
         );
-        // A connected wallet and old MCP connection alone must not skip setup.
-        await page.evaluate(() => window.history.pushState(null, '', '/?setup=1&from=test'));
-        await expect.poll(() => balanceReads).toBeGreaterThan(0);
-        await expect(page).toHaveURL(/setup=1/);
-        await expect(page.locator('.mobile-agent-onboarding')).toBeVisible();
-        nfatBalance = 1;
-        await page.evaluate(() => window.history.pushState(null, '', '/?setup=1&from=test-owned#activity'));
-        await expect(page).toHaveURL(/\/\?from=test-owned#activity$/);
-        await expect(page.locator('.mobile-agent-onboarding')).toBeHidden();
-
-        await page.getByRole('link', { name: 'Connect an agent', exact: true }).click();
-        await expect(page.getByRole('heading', { name: 'Connections', exact: true })).toBeVisible({ timeout: 20_000 });
-        expect(signatures).toBe(1);
-        await expect(page.locator('.connection-roster-row')).toContainText('Existing agent');
-        await page.getByRole('button', { name: 'Add connection', exact: true }).click();
-        await page.locator('.desktop-host-picker').getByRole('button', { name: 'Generic MCP' }).click();
-        await page.getByRole('button', { name: 'Create Generic MCP connection', exact: true }).click();
-        await expect(page.locator('.connection-roster-row')).toHaveCount(2);
-        await expect(page.locator('.connection-roster-row').last()).toContainText('Generic MCP connection');
-        await page.getByRole('button', { name: 'Copy Generic MCP setup', exact: true }).click();
+        await expect(page.locator('.arc-onboarding')).toBeVisible();
+        await page
+          .getByRole('button', { name: 'Go to step 2: ENS identity' })
+          .click();
         await expect(
-          page.getByRole('button', { name: 'Copied Generic MCP setup', exact: true }),
+          page.getByRole('heading', {
+            name: 'Use a name you own',
+            exact: true,
+          }),
         ).toBeVisible();
-        await expect(page.locator('.mobile-status')).toContainText('Generic MCP setup copied.');
-        const setup = await page.evaluate(() => navigator.clipboard.readText());
-        expect(setup).toContain('WAYLEAVE_AGENT_TOKEN');
-        expect(setup).not.toContain('<create-a-generic-connection>');
-        await page.getByRole('button', { name: 'Done', exact: true }).click();
-        await page.locator('.connection-roster-row').last().getByRole('button', { name: 'Revoke' }).click();
-        await expect(page.locator('.connection-roster-row')).toHaveCount(1);
-        const agentArchive = page.locator('.archived-records').filter({ hasText: 'Past connections' });
-        await expect(agentArchive).not.toHaveAttribute('open', '');
-        await agentArchive.locator('summary').click();
-        await expect(agentArchive.locator('.archive-row')).toContainText('Revoked');
-        await agentArchive.getByRole('button', { name: 'Hide Generic MCP connection', exact: true }).click();
-        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
-
-        await expect(page.getByText('Finish in Generic MCP', { exact: true })).toHaveCount(0);
-        for (const width of [390, 1280]) {
-          await page.setViewportSize({ width, height: 900 });
-          await page.screenshot({ path: `/tmp/wayleave-connect-${width}.png`, fullPage: true });
-          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        }
-
-        await page.getByRole('link', { name: 'Spending', exact: true }).click();
-        const activityArchive = page.locator('.archived-records').filter({ hasText: 'Expired activity' });
-        await expect(activityArchive).not.toHaveAttribute('open', '');
-        await activityArchive.locator('summary').click();
-        await expect(activityArchive.locator('.archive-row')).toContainText('Old payment request');
-        await expect(page.locator('.operation-card')).toHaveCount(0);
-        await activityArchive.getByRole('link', { name: 'View', exact: true }).click();
-        await expect(page.locator('.operation-card')).toContainText('Old payment request');
-        await page.getByRole('button', { name: 'View all payments', exact: true }).click();
-        await activityArchive.locator('summary').click();
-        await activityArchive.getByRole('button', { name: 'Hide all', exact: true }).click();
-        await expect(activityArchive.locator('.archive-row')).toHaveCount(0);
-        await page.getByRole('link', { name: 'Connect an agent', exact: true }).click();
-        await agentArchive.locator('summary').click();
-        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
-        await agentArchive.getByRole('button', { name: 'Restore hidden (1)', exact: true }).click();
-        await expect(agentArchive.locator('.archive-row')).toHaveCount(1);
-        await agentArchive.getByRole('button', { name: 'Hide all', exact: true }).click();
-        await expect(agentArchive.locator('.archive-row')).toHaveCount(0);
-
+        // Stored merchant evidence drives the timeline; the UI cannot advance it itself.
+        const purchase = {
+          id: '11111111-1111-4111-8111-111111111111',
+          operationId: '22222222-2222-4222-8222-222222222222',
+          paymentStatus: 'approval_required',
+          delivery: 'locked',
+          sourceTransactionHash: undefined as string | undefined,
+          destinationTransactionHash: undefined as string | undefined,
+          bundleSha256: undefined as string | undefined,
+          quote: {
+            createdAt: Math.floor(Date.now() / 1000),
+            fundingOwner: owner.address,
+            sourceDebit: '101000',
+            offering: {
+              id: 'wayleave-developer-pack',
+              title: 'Wayleave Developer Pack',
+              price: '100000',
+              maxTransferFee: '1000',
+              contentSha256: 'test-digest',
+            },
+          },
+        };
+        let reads = 0;
+        await page.route('**/gateway/merchant/purchases', (route) => {
+          reads++;
+          return route.fulfill({ json: { purchases: [purchase] } });
+        });
+        await page
+          .getByRole('button', { name: 'Go to step 5: First purchase' })
+          .click();
+        const tracker = page.getByRole('region', {
+          name: 'Developer Pack purchase tracker',
+        });
+        await expect(
+          tracker.getByText('Ready for your approval', { exact: true }),
+        ).toBeVisible();
+        await expect(tracker.locator('[data-complete=true]')).toHaveCount(1);
+        const firstReads = reads;
+        await expect
+          .poll(() => reads, { timeout: 15000 })
+          .toBeGreaterThan(firstReads);
+        purchase.paymentStatus = 'settled';
+        purchase.sourceTransactionHash = '0x' + '1'.repeat(64);
+        purchase.destinationTransactionHash = '0x' + '2'.repeat(64);
+        await tracker
+          .getByRole('button', { name: 'Check purchase', exact: true })
+          .click();
+        await expect(tracker.locator('[data-complete=true]')).toHaveCount(4);
+        await expect(
+          tracker.getByRole('button', { name: 'Download purchased pack' }),
+        ).toBeVisible();
+        purchase.delivery = 'available';
+        purchase.bundleSha256 = 'test-digest';
+        await tracker
+          .getByRole('button', { name: 'Check purchase', exact: true })
+          .click();
+        await expect(
+          tracker.getByText('Purchase complete', { exact: true }),
+        ).toBeVisible();
+        await expect(tracker.locator('[data-complete=true]')).toHaveCount(5);
+        await page.screenshot({
+          path: '/tmp/wayleave-real-purchase-tracker-fixture.png',
+          fullPage: true,
+        });
+        await page.evaluate(() =>
+          window.dispatchEvent(
+            new CustomEvent('wayleave:owner-session', { detail: null }),
+          ),
+        );
+        await expect(
+          tracker.getByText('Purchase complete', { exact: true }),
+        ).toHaveCount(0);
+        expect(signatures).toBe(1);
       } else {
         expect(verified).toBe(false);
         expect(cookie).not.toContain('mandate_session=');
-        await expect(page.locator('.mobile-status')).not.toContainText(
+        await expect(page.locator('.arc-onboarding-status')).not.toContainText(
           'Owner verified.',
         );
       }

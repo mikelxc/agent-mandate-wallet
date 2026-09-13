@@ -345,6 +345,7 @@ export function OnboardingContext({
   nftId,
   hostName,
   hasCredential,
+  purchaseComplete = false,
   onExplore,
 }: {
   step: number;
@@ -355,6 +356,7 @@ export function OnboardingContext({
   nftId?: string;
   hostName: string;
   hasCredential: boolean;
+  purchaseComplete?: boolean;
   onExplore: () => void;
 }) {
   return (
@@ -426,7 +428,7 @@ export function OnboardingContext({
             <Symbol icon={Bot} />
             <div>
               <strong>{hostName}</strong>
-              <small>Your local agent app</small>
+              <small>Your chosen agent client</small>
             </div>
           </div>
           <Relationship
@@ -450,8 +452,8 @@ export function OnboardingContext({
           <div className={styles.topicCopy}>
             <h3>Requests come here. You decide.</h3>
             <p>
-              Read wallet details and request payments for 24 hours. Remove the
-              connection at any time.
+              Read wallet details and request payments for the session length
+              you choose. Revoke the connection at any time.
             </p>
           </div>
           <div className={styles.installNote}>
@@ -468,6 +470,7 @@ export function OnboardingContext({
               { done: !!owner, label: 'Wallet ownership verified' },
               { done: !!account, label: 'Agent wallet selected' },
               { done: hasCredential, label: `${hostName} connection created` },
+              { done: purchaseComplete, label: 'Developer Pack retrieved' },
             ].map((item) => (
               <li key={item.label}>
                 {item.done ? <Check size={17} /> : <Circle size={17} />}
@@ -478,11 +481,14 @@ export function OnboardingContext({
           </ul>
           <div className={styles.promptCard}>
             <Symbol icon={Bot} />
-            <strong>Start with a simple question.</strong>
-            <p>“Show my Wayleave wallet.”</p>
+            <strong>Finish with a real purchase.</strong>
+            <p>
+              “Buy the Wayleave Developer Pack, then explain its architecture.”
+            </p>
             <small>
-              After installing the configuration, ask in {hostName}. Match the
-              returned address to your agent wallet.
+              Use a named connection linked to your Arc account in {hostName}.
+              Your agent returns a payment approval link; files unlock after
+              destination settlement.
             </small>
           </div>
           <p className={styles.contextNote}>

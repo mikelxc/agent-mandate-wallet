@@ -117,3 +117,39 @@ Today, local MCP clients can read wallet information, propose payments, and foll
 The longer-term goal is to begin in a conversation and complete the flow within ChatGPT or Claude where supported, with a terminal experience when no UI is available. Embedded approvals and terminal QR pairing remain future work. WalletConnect is the current connection surface; this design does not require a custom communication protocol.
 
 Never imply that visual examples establish live integrations, that approvals happen automatically outside the demo, or that an agent has unrestricted signing authority.
+
+## Name and network flows
+
+Identity and cross-chain settlement support the same everyday job: connect an identifiable agent and understand what it spends. They should not become separate integration dashboards.
+
+- **Payments follows the Arc network.** Arc uses the Payments navigation at `/payments` and opens its request queue. A manual request is a secondary action. Review foregrounds the amount, recipient, owner funding source and agent wallet; network preparation is disclosed within that request. Signing approval, submitting on Arc and completing on Sepolia remain distinct actions. Pending hashes are not confirmed receipts.
+- **Name & access starts with a name.** Public lookup comes before proof of control. A verified user can optionally link an agent wallet or manage named connections. Linking is an ownership association, not a payment authorization. Standard MCP setup stays under Connect an agent; public-key enrollment is an advanced path.
+- Use the shared mist background, rounded white surfaces, approachable headings and muted relationship diagrams. Place registry, network and protocol details where they explain a decision. Keep testnet limitations visible without making sponsor names the information hierarchy.
+
+The current Arc Payments queue remains separate from Sepolia Spending history. This presentation does not imply unified cross-chain indexing or automatic settlement. Wallet linking and named connection management still require their existing ownership checks and explicit signatures.
+
+
+## Arc Payments redesign · September 12
+
+Payments has two views: **Your payments** for real owner-scoped requests and **Accept payments** for the merchant acceptance flow and current integration scope. Keep manual request creation secondary. Collapse each request’s detailed review and setup behind its summary; preserve every existing signature, receipt check and recovery action. Filters distinguish in-progress payments from destination-confirmed payments.
+
+The optional **See a purchase** walkthrough illustrates checkout by ENS identity, owner approval or decline, Circle settlement and merchant delivery. It uses isolated component state, no wallet calls or gateway writes, and explicit demo labels. Its merchant and ENS identity are examples. Simulated settlement and delivery never enter the real request queue.
+
+Merchant acceptance currently explains the one supported Arc Testnet → Ethereum Sepolia route. Public checkout integration, exact invoice pricing, automatic destination relaying and delivery callbacks remain unfinished. Do not add selectable unsupported destinations or present the walkthrough as live evidence. The broader network vision belongs in the merchant view’s planned-direction note and the hackathon presentation.
+
+
+## First merchant and final onboarding purchase
+
+The final step is **First purchase**: the agent requests the Wayleave Developer Pack, the owner completes its payment in Payments, and verified destination settlement unlocks a versioned bundle. The step completes only after retrieval or a persisted fulfillment record is checked. Quotes display a bounded source debit, minimum merchant receipt, fee budget and additional gas; unused fee budget reaches the merchant. Public source remains free.
+
+Wayleave is the first merchant; its storefront uses the same gateway quote and purchase records exposed by the merchant client and MCP. The presentation-only walkthrough now illustrates the same Developer Pack but never creates a real request. Configuration, portable Arc access and the local MCP build must be available for a real purchase. The existing Sepolia creation flow is not silently treated as Arc onboarding.
+
+## Arc-first onboarding — September 12
+
+Payment-wallet deployment is Arc Testnet only in the product flow; the selector retains a disabled “Arc Mainnet — coming soon” option. ENSv2 remains on the hackathon Sepolia deployment. Connect → verify ENS identity → create/verify Arc wallet and sign association → enroll named MCP agent → purchase Developer Pack. A name that is not already registered is obtained through the linked ENS hackathon app. The wallet label never claims to register an ENS name on Arc.
+
+Creation uses the configured Arc Kernel factory with a checked token-id prediction, then verifies registry/validator binding and NFT ownership. Submitted creation hashes can be reconciled before another creation. ENS membership only permits read/propose access; payment signatures remain separate. Signing into the existing owner session still uses the Sepolia SIWE domain; this is distinct from Arc wallet deployment. No public deployments or live purchases were performed for this UI migration.
+
+## Production style and separate store — September 12
+
+Compared directly with the production setup page and `main`'s shared onboarding CSS. Reuse its five-step underlined navigation, left-hand action area and rounded green context panel. The final context panel tracks the real Developer Pack purchase through request, approval, Arc receipt, merchant receipt and verified delivery; there are no controls that advance a simulated checkout. Move product contents, pricing and machine-readable purchasing instructions to `/store/developer-pack`, a public Store section. The agent-facing instruction points to that public page; publication of the local route remains a separate deployment step.

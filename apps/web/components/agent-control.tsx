@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { SpendingOverview } from './spending-overview';
 import { buildAgentSetupGuide } from '../lib/agent-setup-guide';
 import { PaymentSetup } from './payment-setup';
+import { PurchaseTracker } from './purchase-tracker';
 import { OnboardingContext } from './onboarding-context';
 import onboarding from './onboarding.module.css';
 import {
@@ -63,6 +64,14 @@ import {
 import type { AgentConnection, Operation } from '@mandate/protocol';
 import type { Prepared } from '../../gateway/src/chain';
 
+import {
+  buildMcpConfig,
+  mcpPackage,
+  runners,
+  type PackageManager,
+  type McpTransport,
+} from '../lib/mcp-setup';
+
 type Row = Operation & {
   execution?: {
     transactionHash: string;
@@ -81,9 +90,9 @@ const agentHosts: Array<{
   { id: 'codex', name: 'Codex', detail: 'Desktop · CLI · IDE' },
   { id: 'claude', name: 'Claude', detail: 'Desktop · Code' },
   { id: 'cursor', name: 'Cursor', detail: 'Editor · Agent' },
-  { id: 'generic', name: 'Generic MCP', detail: 'Any local stdio client' },
+  { id: 'generic', name: 'Generic MCP', detail: 'Local or remote MCP client' },
 ];
-const mcpPackage = 'wayleave-mcp@0.1.2';
+
 async function api<T>(path: string, data?: unknown): Promise<T> {
   const response = await fetch(`/gateway${path}`, {
     method: data === undefined ? 'GET' : 'POST',
@@ -126,7 +135,11 @@ function nowSeconds() {
   return Date.now() / 1000;
 }
 
-export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: boolean }) {
+export function AgentControl({
+  connectionsOnly = false,
+}: {
+  connectionsOnly?: boolean;
+}) {
   const { address, chainId, connector: currentConnector } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
@@ -191,15 +204,18 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
       /* Storage is optional. */
     }
   }
+  const [purchasedOwner, setPurchasedOwner] = useState('');
   const walkthroughOrder = [1, 6, 2, 4, 5];
   const walkthroughLabels = [
     'Connect',
     'How it works',
     'Agent wallet',
     'Link agent',
-    'Next steps',
+    'First purchase',
   ];
   const [agentHost, setAgentHost] = useState<AgentHost>('codex');
+  const [packageManager, setPackageManager] = useState<PackageManager>('npm');
+  const [mcpTransport, setMcpTransport] = useState<McpTransport>('local');
   const [authStage, setAuthStage] = useState<
     'idle' | 'connecting' | 'network' | 'signing' | 'verifying'
   >('idle');
@@ -678,6 +694,11 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
     );
   }
   const signedIn = !!session && session === address?.toLowerCase();
+  const firstPurchaseComplete =
+    !!address &&
+    signedIn &&
+    purchasedOwner.toLowerCase() === address.toLowerCase();
+
   const activeAgents = agents.filter(
     (item) => !item.revokedAt && item.expiresAt * 1000 > renderTime,
   );
@@ -685,10 +706,20 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
     (item) => !!item.revokedAt || item.expiresAt * 1000 <= renderTime,
   );
   const filteredOperations = operations.filter((op) =>
-    requestedOperation ? op.id === requestedOperation : activityAgent === 'all' || op.agentId === activityAgent,
+    requestedOperation
+      ? op.id === requestedOperation
+      : activityAgent === 'all' || op.agentId === activityAgent,
   );
-  const archivedOperations = requestedOperation ? [] : filteredOperations.filter((op) => op.intent.expiresAt * 1000 <= renderTime);
-  const currentOperations = requestedOperation ? filteredOperations : filteredOperations.filter((op) => op.intent.expiresAt * 1000 > renderTime);
+  const archivedOperations = requestedOperation
+    ? []
+    : filteredOperations.filter(
+        (op) => op.intent.expiresAt * 1000 <= renderTime,
+      );
+  const currentOperations = requestedOperation
+    ? filteredOperations
+    : filteredOperations.filter(
+        (op) => op.intent.expiresAt * 1000 > renderTime,
+      );
   const archiveKey = `wayleave.hidden.${address?.toLowerCase() ?? 'disconnected'}`;
   const selectedAccount =
     account || activeAgents[0]?.account || agents[0]?.account || '';
@@ -792,42 +823,116 @@ export function AgentControl({ connectionsOnly = false }: { connectionsOnly?: bo
     uiReady && !['localhost', '127.0.0.1'].includes(window.location.hostname)
       ? 'https://www.wayleave.xyz/gateway'
       : 'http://127.0.0.1:3001';
-  const jsonServer = JSON.stringify(
-    {
-      mcpServers: {
-        wayleave: {
-          command: 'bunx',
-          args: [mcpPackage],
-          env: {
-            WAYLEAVE_AGENT_TOKEN: credential,
-            WAYLEAVE_GATEWAY_URL: agentGateway,
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
-  const mcpConfig =
-    agentHost === 'codex'
-      ? `[mcp_servers.wayleave]
-command = "bunx"
-args = ["${mcpPackage}"]
-
-[mcp_servers.wayleave.env]
-WAYLEAVE_AGENT_TOKEN = "${credential}"
-WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
-      : jsonServer;
+  const hostedEndpoint = uiReady
+    ? `${window.location.origin}/mcp`
+    : 'https://www.wayleave.xyz/mcp';
+  const mcpConfig = buildMcpConfig({
+    host: agentHost,
+    transport: mcpTransport,
+    manager: packageManager,
+    credential,
+    gateway: agentGateway,
+    endpoint: hostedEndpoint,
+  });
   const mcpDestination =
-    agentHost === 'codex'
-      ? 'Add to .codex/config.toml or Settings → MCP servers'
-      : agentHost === 'cursor'
-        ? 'Save as .cursor/mcp.json in your project'
-        : agentHost === 'generic'
-          ? 'Add the server to your client’s local stdio MCP settings; adapt the JSON wrapper to its format'
-          : 'Add to claude_desktop_config.json';
+    mcpTransport === 'hosted'
+      ? agentHost === 'codex'
+        ? 'Add to your private ~/.codex/config.toml'
+        : 'Open your client’s MCP or connector settings, add a Streamable HTTP server with the URL below, and set the Authorization header privately; adapt this JSON example to your client'
+      : agentHost === 'codex'
+        ? 'Add to your private ~/.codex/config.toml or Settings → MCP servers'
+        : agentHost === 'cursor'
+          ? 'Add to your private Cursor MCP settings'
+          : agentHost === 'generic'
+            ? 'Add the server to your client’s local stdio MCP settings; adapt the JSON wrapper to its format'
+            : 'Add to claude_desktop_config.json (Claude Desktop) or your private Claude Code MCP settings';
+  const setupOptions = (
+    <div className="mcp-setup-options">
+      <label>
+        Connection method
+        <WayleaveSelect
+          label="Connection method"
+          value={mcpTransport}
+          onValueChange={(value) => {
+            setMcpTransport(value as McpTransport);
+            setSetupGuideCopied(false);
+          }}
+          options={[
+            { value: 'local', label: 'Local package' },
+            { value: 'hosted', label: 'Hosted HTTP — no install' },
+          ]}
+        />
+      </label>
+      {mcpTransport === 'local' ? (
+        <>
+          <label>
+            Package manager
+            <WayleaveSelect
+              label="Package manager"
+              value={packageManager}
+              onValueChange={(value) => {
+                setPackageManager(value as PackageManager);
+                setSetupGuideCopied(false);
+              }}
+              options={[
+                { value: 'npm', label: 'npm / npx' },
+                { value: 'bun', label: 'Bun / bunx' },
+              ]}
+            />
+          </label>
+          <p>
+            Your client must run local commands. Use Node.js 20+ with npx,
+            or install Bun for bunx.
+          </p>
+        </>
+      ) : (
+        <>
+          <p>
+            For clients that accept a remote MCP URL and a custom bearer token.
+            No package manager needed. OAuth-only connectors are not supported.
+          </p>
+          <p>
+            Server URL: <code>{hostedEndpoint}</code>
+          </p>
+          <p>
+            Authentication: Authorization header, value{' '}
+            <code>Bearer &lt;your connection key&gt;</code>. Keep the key in
+            private client settings.
+          </p>
+        </>
+      )}
+      <details>
+        <summary>Ask an agent to help you set up</summary>
+        <ol>
+          <li>Choose your client and connection method above.</li>
+          <li>
+            Copy the setup prompt below and paste it into a conversation with
+            the agent you want to connect.
+          </li>
+          <li>
+            Ask it to configure Wayleave, then follow any manual steps it gives
+            you. A chat without settings access cannot install the connection
+            itself.
+          </li>
+          <li>
+            Create a connection here and enter its key in the client’s private
+            settings, never in chat.
+          </li>
+          <li>
+            Reload the client and ask it to call get_account to verify the
+            expected wallet.
+          </li>
+        </ol>
+        <button type="button" className="secondary" onClick={copySetupGuide}>
+          {setupGuideCopied ? 'Copied setup prompt' : 'Copy setup prompt'}
+        </button>
+      </details>
+    </div>
+  );
   function copySetupGuide() {
     const guide = buildAgentSetupGuide({
+      transport: mcpTransport,
+      manager: packageManager,
       host: selectedHost.name,
       destination: mcpDestination,
       config: mcpConfig.replaceAll(credential, '<WAYLEAVE_AGENT_TOKEN>'),
@@ -858,7 +963,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         if (!copied) throw new Error('Clipboard unavailable');
         setCopiedAction('setup');
         window.setTimeout(
-          () => setCopiedAction((action) => (action === 'setup' ? undefined : action)),
+          () =>
+            setCopiedAction((action) =>
+              action === 'setup' ? undefined : action,
+            ),
           2_000,
         );
         setMessage(`${selectedHost.name} setup copied.`);
@@ -872,13 +980,20 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
         if (!copied) throw new Error('Clipboard unavailable');
         setCopiedAction('key');
         window.setTimeout(
-          () => setCopiedAction((action) => (action === 'key' ? undefined : action)),
+          () =>
+            setCopiedAction((action) =>
+              action === 'key' ? undefined : action,
+            ),
           2_000,
         );
-        setMessage('Connection key copied. Store it in the agent process environment.');
+        setMessage(
+          'Connection key copied. Store it in the agent process environment.',
+        );
       })
       .catch(() =>
-        setMessage('Clipboard unavailable. Select and copy the connection key.'),
+        setMessage(
+          'Clipboard unavailable. Select and copy the connection key.',
+        ),
       );
   }
   const setupGuideLabel = setupGuideCopied
@@ -927,7 +1042,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   policyAccepted,
                   hasAccount,
                   hasCurrentCredential,
-                  false,
+                  firstPurchaseComplete,
                 ][index] ? (
                   <Check size={13} aria-hidden="true" />
                 ) : (
@@ -1024,18 +1139,14 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 {hasAccount && hasCurrentCredential ? <PlugZap /> : <Bot />}
               </span>
               <div className="mobile-copy">
-                <span className="mobile-kicker">NEXT STEPS</span>
-                <h2>{hasAccount && hasCurrentCredential ? 'Bring your agent into the loop.' : 'Finish setting up your agent.'}</h2>
+                <span className="mobile-kicker">FIRST PURCHASE / 05</span>
+                <h2>Let your agent buy something.</h2>
                 <p>
-                  {hasAccount && hasCurrentCredential
-                    ? `Install your ${selectedHost.name} configuration, then ask it to show your wallet. Payment requests will appear in Spending for you to review.`
-                    : !signedIn
-                      ? 'Connect and verify your wallet to create an agent wallet and link your app.'
-                      : !hasAccount
-                        ? 'Create your agent wallet, then link the app you want to use.'
-                        : 'Create a connection and install its configuration in your agent app.'}
+                  Purchase the Wayleave Developer Pack with test USDC, approve
+                  it in Payments, then ask your agent to read the files.
                 </p>
               </div>
+              <PurchaseTracker onPurchased={setPurchasedOwner} />
               {(!signedIn || !hasAccount || !hasCurrentCredential) && (
                 <button
                   className="mobile-primary"
@@ -1355,6 +1466,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                   </button>
                 ))}
               </div>
+              {setupOptions}
               <details className="wallet-ownership-details connection-label-settings">
                 <summary>Add a connection label (optional)</summary>
                 <label className="mobile-field">
@@ -1413,7 +1525,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     <span>
                       {agentHost === 'codex' ? 'config.toml' : 'mcp.json'}
                     </span>
-                    <small>WAYLEAVE / STDIO</small>
+                    <small>
+                      WAYLEAVE / {mcpTransport === 'hosted' ? 'HTTP' : 'STDIO'}
+                    </small>
                   </div>
                   <pre>{mcpConfig}</pre>
                 </div>
@@ -1450,8 +1564,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </details>
               <button className="mobile-link" onClick={() => setMobileStep(5)}>
                 {hasCurrentCredential
-                  ? 'Continue to next steps'
-                  : 'View setup checklist'}{' '}
+                  ? 'Continue to first purchase'
+                  : 'Explore the first purchase'}{' '}
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -1469,6 +1583,7 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             nftId={nfatId?.toString()}
             hostName={selectedHost.name}
             hasCredential={hasCurrentCredential}
+            purchaseComplete={firstPurchaseComplete}
             onExplore={() => setMobileStep(6)}
           />
           {mobileStep === 6 && (
@@ -1507,11 +1622,13 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             <div>
               <span className="eyebrow">CONNECT AN AGENT</span>
               <h1>{signedIn ? 'Connections' : 'Connect your wallet'}</h1>
-              <p>{address
-                ? signedIn
-                  ? 'Give each agent app its own connection. You can revoke access at any time.'
-                  : `Verify ${address.slice(0, 6)}…${address.slice(-4)} to manage its agent connections.`
-                : 'Verify ownership before creating a connection. Signing in does not move money.'}</p>
+              <p>
+                {address
+                  ? signedIn
+                    ? 'Give each agent app its own connection. You can revoke access at any time.'
+                    : `Verify ${address.slice(0, 6)}…${address.slice(-4)} to manage its agent connections.`
+                  : 'Verify ownership before creating a connection. Signing in does not move money.'}
+              </p>
             </div>
             {!signedIn && (
               <button
@@ -1519,7 +1636,8 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                 disabled={!uiReady || busy || authStage !== 'idle'}
                 onClick={() => void run(login)}
               >
-                {uiReady ? authLabel : 'Checking wallet…'} <ArrowRight size={16} />
+                {uiReady ? authLabel : 'Checking wallet…'}{' '}
+                <ArrowRight size={16} />
               </button>
             )}
           </section>
@@ -1565,8 +1683,14 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     aria-expanded={connectionComposerOpen || !!token}
                     aria-controls="new-connection"
                   >
-                    {connectionComposerOpen || token ? <X size={15} /> : <PlugZap size={15} />}
-                    {connectionComposerOpen || token ? 'Close' : 'Add connection'}
+                    {connectionComposerOpen || token ? (
+                      <X size={15} />
+                    ) : (
+                      <PlugZap size={15} />
+                    )}
+                    {connectionComposerOpen || token
+                      ? 'Close'
+                      : 'Add connection'}
                   </button>
                 </div>
                 <div className="connection-roster-list">
@@ -1579,10 +1703,13 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         <strong>{agent.name}</strong>
                         <p>
                           Active until{' '}
-                          {new Date(agent.expiresAt * 1000).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {new Date(agent.expiresAt * 1000).toLocaleTimeString(
+                            [],
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            },
+                          )}
                         </p>
                       </div>
                       <span className="connection-status">Active</span>
@@ -1621,11 +1748,18 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             )}
 
             {(!activeAgents.length || connectionComposerOpen || !!token) && (
-              <section className="panel connection-composer" id="new-connection">
+              <section
+                className="panel connection-composer"
+                id="new-connection"
+              >
                 <div className="connection-composer-head">
                   <div>
                     <span className="eyebrow">
-                      {token ? 'READY TO INSTALL' : hasAccount ? 'NEW CONNECTION' : 'AGENT WALLET'}
+                      {token
+                        ? 'READY TO INSTALL'
+                        : hasAccount
+                          ? 'NEW CONNECTION'
+                          : 'AGENT WALLET'}
                     </span>
                     <h2>
                       {token
@@ -1656,7 +1790,9 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                       <span>
                         <input
                           value={identityLabel}
-                          onChange={(event) => setIdentityLabel(event.target.value)}
+                          onChange={(event) =>
+                            setIdentityLabel(event.target.value)
+                          }
                         />
                         <b>.{ensV2HackathonDeployment.parentName}</b>
                       </span>
@@ -1686,22 +1822,29 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                     <div className="connection-handoff-destination">
                       <span className="agent-host-logo" aria-hidden="true">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/agent-logos/${selectedHost.id}.svg`} alt="" width={28} height={28} />
+                        <img
+                          src={`/agent-logos/${selectedHost.id}.svg`}
+                          alt=""
+                          width={28}
+                          height={28}
+                        />
                       </span>
                       <div>
                         <strong>{selectedHost.name}</strong>
                         <p>{mcpDestination}</p>
                       </div>
                     </div>
+                    {setupOptions}
                     <div className="code-block connection-setup-code">
                       <pre>{mcpConfig}</pre>
                     </div>
                     <div className="connection-handoff-actions">
-                      <button
-                        className="primary"
-                        onClick={copyConfiguration}
-                      >
-                        {copiedAction === 'setup' ? <Check size={15} /> : <Clipboard size={15} />}{' '}
+                      <button className="primary" onClick={copyConfiguration}>
+                        {copiedAction === 'setup' ? (
+                          <Check size={15} />
+                        ) : (
+                          <Clipboard size={15} />
+                        )}{' '}
                         {copiedAction === 'setup'
                           ? `Copied ${selectedHost.name} setup`
                           : `Copy ${selectedHost.name} setup`}
@@ -1718,12 +1861,16 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                       </button>
                     </div>
                     <p className="connection-secret-note">
-                      The setup includes a one-time key. Keep it in private client settings and out of chat or source control.
+                      The setup includes a one-time key. Keep it in private
+                      client settings and out of chat or source control.
                     </p>
                   </div>
                 ) : (
                   <div className="connection-current-action">
-                    <div className="desktop-host-picker connection-host-grid" aria-label="Agent host">
+                    <div
+                      className="desktop-host-picker connection-host-grid"
+                      aria-label="Agent host"
+                    >
                       {agentHosts.map((host) => (
                         <button
                           key={host.id}
@@ -1737,12 +1884,18 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         >
                           <span className="agent-host-logo" aria-hidden="true">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/agent-logos/${host.id}.svg`} alt="" width={28} height={28} />
+                            <img
+                              src={`/agent-logos/${host.id}.svg`}
+                              alt=""
+                              width={28}
+                              height={28}
+                            />
                           </span>
                           {host.name}
                         </button>
                       ))}
                     </div>
+                    {setupOptions}
                     <label className="connection-label-field">
                       Connection label <span>Optional</span>
                       <input
@@ -1756,7 +1909,10 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                         <span>Agent wallet</span>
                         <strong>{identityDisplay}</strong>
                       </div>
-                      <code>{selectedAccount.slice(0, 6)}…{selectedAccount.slice(-4)}</code>
+                      <code>
+                        {selectedAccount.slice(0, 6)}…
+                        {selectedAccount.slice(-4)}
+                      </code>
                     </div>
                     <button
                       className="primary"
@@ -1767,18 +1923,22 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             agent: AgentConnection;
                             token: string;
                           }>('/agents', {
-                            name: name.trim() || `${selectedHost.name} connection`,
+                            name:
+                              name.trim() || `${selectedHost.name} connection`,
                             account: selectedAccount,
                           });
                           setToken(result.token);
                           setTokenAgentId(result.agent.id);
                           setTokenHost(agentHost);
                           setConnectionComposerOpen(true);
-                          setMessage(`${selectedHost.name} connection created.`);
+                          setMessage(
+                            `${selectedHost.name} connection created.`,
+                          );
                         })
                       }
                     >
-                      Create {selectedHost.name} connection <ArrowRight size={15} />
+                      Create {selectedHost.name} connection{' '}
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 )}
@@ -1786,12 +1946,22 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             )}
 
             <details className="connection-access-summary">
-              <summary>What a connection can do <ChevronDown size={15} /></summary>
+              <summary>
+                What a connection can do <ChevronDown size={15} />
+              </summary>
               <div>
-                <p><CheckCircle2 size={15} /> Read the connected agent wallet</p>
-                <p><CheckCircle2 size={15} /> Propose a payment for your review</p>
-                <p><X size={15} /> Sign or submit a payment</p>
-                <p><X size={15} /> Change ownership or token allowances</p>
+                <p>
+                  <CheckCircle2 size={15} /> Read the connected agent wallet
+                </p>
+                <p>
+                  <CheckCircle2 size={15} /> Propose a payment for your review
+                </p>
+                <p>
+                  <X size={15} /> Sign or submit a payment
+                </p>
+                <p>
+                  <X size={15} /> Change ownership or token allowances
+                </p>
               </div>
             </details>
           </div>
@@ -1799,14 +1969,21 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
 
         {signedIn && !requestedOperation && !connectionsOnly && (
           <div className="agent-grid">
-            <details className="panel setup-panel" open={connectionsOnly ? true : undefined}>
+            <details
+              className="panel setup-panel"
+              open={connectionsOnly ? true : undefined}
+            >
               <summary className="setup-disclosure">
                 Create an MCP connection <ChevronDown size={16} />
               </summary>
               <div className="setup-head">
                 <div>
                   <div className="eyebrow">GET STARTED</div>
-                  <h2>{agents.length ? 'Connect another agent' : 'Connect your first agent'}</h2>
+                  <h2>
+                    {agents.length
+                      ? 'Connect another agent'
+                      : 'Connect your first agent'}
+                  </h2>
                 </div>
                 <strong>{setupCount} / 5</strong>
               </div>
@@ -1966,11 +2143,19 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                               setSetupGuideCopied(false);
                             }}
                           >
-                            <span className="agent-host-logo" aria-hidden="true">
-                      {/* Static brand SVGs share a fixed optical frame. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/agent-logos/${host.id}.svg`} alt="" width={28} height={28} />
-                    </span>
+                            <span
+                              className="agent-host-logo"
+                              aria-hidden="true"
+                            >
+                              {/* Static brand SVGs share a fixed optical frame. */}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`/agent-logos/${host.id}.svg`}
+                                alt=""
+                                width={28}
+                                height={28}
+                              />
+                            </span>
                             {host.name}
                           </button>
                         ))}
@@ -2005,9 +2190,14 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             const result = await api<{
                               agent: AgentConnection;
                               token: string;
-                            }>('/agents', { name: name.trim() || `${selectedHost.name} connection`, account: selectedAccount });
+                            }>('/agents', {
+                              name:
+                                name.trim() ||
+                                `${selectedHost.name} connection`,
+                              account: selectedAccount,
+                            });
                             setToken(result.token);
-                    setTokenAgentId(result.agent.id);
+                            setTokenAgentId(result.agent.id);
                             setTokenHost(agentHost);
                             setMessage(
                               `${selectedHost.name} connection created for 24 hours. Copy its setup now; create another connection for each additional client.`,
@@ -2046,10 +2236,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                       <ChevronDown size={14} />
                     </summary>
                     <div className="setup-details-body">
+                      {setupOptions}
                       <ol>
                         <li>
-                          {selectedHost.name} runs the pinned {mcpPackage}{' '}
-                          package from npm. No Wayleave checkout is required.
+                          {mcpTransport === 'hosted'
+                            ? 'Add the remote MCP URL and bearer key in your client settings.'
+                            : `${selectedHost.name} runs ${mcpPackage} with ${runners[packageManager].command}. No Wayleave checkout is required.`}
                         </li>
                         <li>{mcpDestination}.</li>
                         <li>
@@ -2064,15 +2256,26 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                           disabled={!hasCurrentCredential}
                           onClick={copyConfiguration}
                         >
-                          {copiedAction === 'setup' ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+                          {copiedAction === 'setup' ? (
+                            <Check size={14} />
+                          ) : (
+                            <Clipboard size={14} />
+                          )}{' '}
                           {copiedAction === 'setup' ? 'Copied' : 'Copy'}
                         </button>
                       </div>
                       <button className="secondary" onClick={copySetupGuide}>
-                        {setupGuideCopied ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+                        {setupGuideCopied ? (
+                          <Check size={14} />
+                        ) : (
+                          <Clipboard size={14} />
+                        )}{' '}
                         {setupGuideLabel}
                       </button>
-                      <p>The guide omits your key. Supply it separately in private client settings.</p>
+                      <p>
+                        The guide omits your key. Supply it separately in
+                        private client settings.
+                      </p>
                       <div className="tool-chips">
                         <span>
                           get_account <small>read</small>
@@ -2203,11 +2406,12 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               />
             </div>
             <div className="key-actions">
-              <button
-                className="primary"
-                onClick={copyConnectionKey}
-              >
-                {copiedAction === 'key' ? <Check size={14} /> : <Clipboard size={14} />}{' '}
+              <button className="primary" onClick={copyConnectionKey}>
+                {copiedAction === 'key' ? (
+                  <Check size={14} />
+                ) : (
+                  <Clipboard size={14} />
+                )}{' '}
                 {copiedAction === 'key' ? 'Copied key' : 'Copy key'}
               </button>
               <button
@@ -2256,8 +2460,19 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
             {!requestedOperation && signedIn && agents.length > 1 && (
               <label className="activity-filter" htmlFor="activity-agent">
                 Show activity for
-                <WayleaveSelect id="activity-agent" label="Show activity for" value={activityAgent} onValueChange={setActivityAgent}
-                  options={[{ value: 'all', label: 'All agents' }, ...agents.map(agent => ({ value: agent.id, label: agent.name }))]} />
+                <WayleaveSelect
+                  id="activity-agent"
+                  label="Show activity for"
+                  value={activityAgent}
+                  onValueChange={setActivityAgent}
+                  options={[
+                    { value: 'all', label: 'All agents' },
+                    ...agents.map((agent) => ({
+                      value: agent.id,
+                      label: agent.name,
+                    })),
+                  ]}
+                />
               </label>
             )}
             {!currentOperations.length && !archivedOperations.length ? (
@@ -2286,139 +2501,140 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
               </div>
             ) : (
               <div className="operation-list">
-                {currentOperations
-                  .map((op) => {
-                    const amount = formatUnits(BigInt(op.intent.amount), 6);
-                    const agentName =
-                      agents.find((a) => a.id === op.agentId)?.name ?? 'Agent';
-                    const expired = op.intent.expiresAt * 1000 <= renderTime;
-                    return (
-                      <article
-                        className={`operation-card ${selected === op.id ? 'selected' : ''}`}
-                        key={op.id}
-                        id={`operation-${op.id}`}
-                      >
-                        <div className="operation-top">
-                          <span className="agent-avatar">
-                            <Bot size={16} />
-                          </span>
-                          <div>
-                            <strong>{op.intent.businessReference}</strong>
-                            <p>
-                              {agentName} ·{' '}
-                              {new Date(op.createdAt * 1000).toLocaleString()}
-                            </p>
-                          </div>
-                          <span
-                            className={`status ${op.status === 'rejected' ? 'blocked' : ''}`}
-                          >
-                            {op.execution
-                              ? op.execution.success
-                                ? 'Paid'
-                                : 'Failed'
-                              : op.status === 'approval_required'
-                                ? expired
-                                  ? 'Expired'
-                                  : 'Needs approval'
-                                : op.status === 'approved'
-                                  ? 'Signed'
-                                  : 'Rejected'}
-                          </span>
+                {currentOperations.map((op) => {
+                  const amount = formatUnits(BigInt(op.intent.amount), 6);
+                  const agentName =
+                    agents.find((a) => a.id === op.agentId)?.name ?? 'Agent';
+                  const expired = op.intent.expiresAt * 1000 <= renderTime;
+                  return (
+                    <article
+                      className={`operation-card ${selected === op.id ? 'selected' : ''}`}
+                      key={op.id}
+                      id={`operation-${op.id}`}
+                    >
+                      <div className="operation-top">
+                        <span className="agent-avatar">
+                          <Bot size={16} />
+                        </span>
+                        <div>
+                          <strong>{op.intent.businessReference}</strong>
+                          <p>
+                            {agentName} ·{' '}
+                            {new Date(op.createdAt * 1000).toLocaleString()}
+                          </p>
                         </div>
-                        <div className="payment-summary">
-                          <div>
-                            <small>AMOUNT</small>
-                            <strong>
-                              {amount} <span>demo USDC</span>
-                            </strong>
-                          </div>
-                          <div>
-                            <small>RECIPIENT</small>
-                            <code>
-                              {op.intent.recipient}
-                            </code>
-                          </div>
-                          <div>
-                            <small>{requestedOperation ? 'AGENT WALLET' : 'ACCOUNT'}</small>
-                            <code title={op.intent.account}>
-                              {op.intent.account.slice(0, 8)}…
-                              {op.intent.account.slice(-6)}
-                            </code>
-                          </div>
-                          {requestedOperation && (
-                            <div>
-                              <small>PAYING FROM</small>
-                              <code>{op.intent.fundingOwner}</code>
-                            </div>
-                          )}
+                        <span
+                          className={`status ${op.status === 'rejected' ? 'blocked' : ''}`}
+                        >
+                          {op.execution
+                            ? op.execution.success
+                              ? 'Paid'
+                              : 'Failed'
+                            : op.status === 'approval_required'
+                              ? expired
+                                ? 'Expired'
+                                : 'Needs approval'
+                              : op.status === 'approved'
+                                ? 'Signed'
+                                : 'Rejected'}
+                        </span>
+                      </div>
+                      <div className="payment-summary">
+                        <div>
+                          <small>AMOUNT</small>
+                          <strong>
+                            {amount} <span>demo USDC</span>
+                          </strong>
                         </div>
-                        {requestedOperation && op.status === 'approval_required' && !expired && (
+                        <div>
+                          <small>RECIPIENT</small>
+                          <code>{op.intent.recipient}</code>
+                        </div>
+                        <div>
+                          <small>
+                            {requestedOperation ? 'AGENT WALLET' : 'ACCOUNT'}
+                          </small>
+                          <code title={op.intent.account}>
+                            {op.intent.account.slice(0, 8)}…
+                            {op.intent.account.slice(-6)}
+                          </code>
+                        </div>
+                        {requestedOperation && (
+                          <div>
+                            <small>PAYING FROM</small>
+                            <code>{op.intent.fundingOwner}</code>
+                          </div>
+                        )}
+                      </div>
+                      {requestedOperation &&
+                        op.status === 'approval_required' &&
+                        !expired && (
                           <p className="request-approval-note">
                             <ShieldCheck size={16} aria-hidden="true" />
                             Review the details before approving in your wallet.
                           </p>
                         )}
-                        {op.decisionReason && (
-                          <p className="decision-note">{op.decisionReason}</p>
-                        )}
-                        {op.execution ? (
-                          <p className="evidence-note">
-                            <CheckCircle2 size={14} />
-                            <span>
-                              <a
-                                href={`https://sepolia.etherscan.io/tx/${op.execution.transactionHash}`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Payment{' '}
-                                {op.execution.success ? 'included' : 'failed'}{' '}
-                                in block {op.execution.blockNumber} ↗
-                              </a>
-                              <small>
-                                Onchain inclusion only. Finality and service
-                                delivery are separate.
-                              </small>
-                            </span>
+                      {op.decisionReason && (
+                        <p className="decision-note">{op.decisionReason}</p>
+                      )}
+                      {op.execution ? (
+                        <p className="evidence-note">
+                          <CheckCircle2 size={14} />
+                          <span>
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${op.execution.transactionHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Payment{' '}
+                              {op.execution.success ? 'included' : 'failed'} in
+                              block {op.execution.blockNumber} ↗
+                            </a>
+                            <small>
+                              Onchain inclusion only. Finality and service
+                              delivery are separate.
+                            </small>
+                          </span>
+                        </p>
+                      ) : op.status === 'approved' ? (
+                        <div className="recovery-box">
+                          <p>
+                            Signed, but submission is not recorded. Resume this
+                            exact request—do not create a duplicate.
                           </p>
-                        ) : op.status === 'approved' ? (
-                          <div className="recovery-box">
-                            <p>
-                              Signed, but submission is not recorded. Resume
-                              this exact request—do not create a duplicate.
-                            </p>
-                            <button
-                              className="secondary"
-                              disabled={busy}
-                              onClick={() => void run(() => resume(op))}
-                            >
-                              Resume submission
-                            </button>
-                            <label>
-                              Already submitted? Paste transaction hash
-                              <input
-                                value={recoveryHash}
-                                onChange={(e) =>
-                                  setRecoveryHash(e.target.value)
-                                }
-                              />
-                            </label>
-                            <button
-                              className="secondary"
-                              disabled={busy}
-                              onClick={() =>
-                                void run(async () => {
-                                  await api(`/operations/${op.id}/receipt`, {
-                                    transactionHash: recoveryHash,
-                                  });
-                                  setMessage('Transaction evidence verified.');
-                                })
-                              }
-                            >
-                              Verify transaction
-                            </button>
-                          </div>
-                        ) : null}
-                        {op.status === 'approval_required' && selected !== op.id && setupPayment !== op.id && (
+                          <button
+                            className="secondary"
+                            disabled={busy}
+                            onClick={() => void run(() => resume(op))}
+                          >
+                            Resume submission
+                          </button>
+                          <label>
+                            Already submitted? Paste transaction hash
+                            <input
+                              value={recoveryHash}
+                              onChange={(e) => setRecoveryHash(e.target.value)}
+                            />
+                          </label>
+                          <button
+                            className="secondary"
+                            disabled={busy}
+                            onClick={() =>
+                              void run(async () => {
+                                await api(`/operations/${op.id}/receipt`, {
+                                  transactionHash: recoveryHash,
+                                });
+                                setMessage('Transaction evidence verified.');
+                              })
+                            }
+                          >
+                            Verify transaction
+                          </button>
+                        </div>
+                      ) : null}
+                      {op.status === 'approval_required' &&
+                        selected !== op.id &&
+                        setupPayment !== op.id && (
                           <div className="operation-actions">
                             <button
                               className="primary"
@@ -2450,77 +2666,112 @@ WAYLEAVE_GATEWAY_URL = "${agentGateway}"`
                             </button>
                           </div>
                         )}
-                        {setupPayment === op.id &&
-                          op.status === 'approval_required' && (
-                            <PaymentSetup
-                              key={op.id}
-                              intent={op.intent}
-                              onReady={() => prepareReview(op)}
-                              onBusyChange={setBusy}
-                            />
-                          )}
-                        {reviewError?.id === op.id && (
-                          <div className="recovery-box" role="alert">
-                            <p>{reviewError.message}</p>
-                            <a
-                              href={`/accounts?account=${encodeURIComponent(op.intent.account)}`}
-                            >
-                              Open Account funding settings →
-                            </a>
-                            <p>
-                              Account to load: <code>{op.intent.account}</code>
-                            </p>
-                          </div>
+                      {setupPayment === op.id &&
+                        op.status === 'approval_required' && (
+                          <PaymentSetup
+                            key={op.id}
+                            intent={op.intent}
+                            onReady={() => prepareReview(op)}
+                            onBusyChange={setBusy}
+                          />
                         )}
-                        {selected === op.id &&
-                          prepared &&
-                          op.status === 'approval_required' && (
-                            <div className="review-sheet">
-                              <div className="payment-progress-heading">
-                                <strong>Confirm payment</strong>
-                                <span>Final step</span>
+                      {reviewError?.id === op.id && (
+                        <div className="recovery-box" role="alert">
+                          <p>{reviewError.message}</p>
+                          <a
+                            href={`/accounts?account=${encodeURIComponent(op.intent.account)}`}
+                          >
+                            Open Account funding settings →
+                          </a>
+                          <p>
+                            Account to load: <code>{op.intent.account}</code>
+                          </p>
+                        </div>
+                      )}
+                      {selected === op.id &&
+                        prepared &&
+                        op.status === 'approval_required' && (
+                          <div className="review-sheet">
+                            <div className="payment-progress-heading">
+                              <strong>Confirm payment</strong>
+                              <span>Final step</span>
+                            </div>
+                            <dl>
+                              <div>
+                                <dt>Payment gas limit</dt>
+                                <dd>
+                                  {formatUnits(
+                                    (BigInt(prepared.op.gasFees) &
+                                      ((1n << 128n) - 1n)) *
+                                      660000n,
+                                    18,
+                                  )}{' '}
+                                  Sepolia ETH
+                                </dd>
                               </div>
+                            </dl>
+                            <p className="footnote">
+                              Sign this payment, then confirm submission in your
+                              wallet. Your wallet also submits the transaction;
+                              its transaction fee is shown there.
+                            </p>
+                            <details className="payment-extra-details">
+                              <summary>Wallet and signature details</summary>
                               <dl>
                                 <div>
-                                  <dt>Payment gas limit</dt>
-                                  <dd>{formatUnits((BigInt(prepared.op.gasFees) & ((1n << 128n) - 1n)) * 660000n, 18)} Sepolia ETH</dd>
+                                  <dt>From your wallet</dt>
+                                  <dd>
+                                    <code>{op.intent.fundingOwner}</code>
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Through spending wallet</dt>
+                                  <dd>
+                                    <code>{op.intent.account}</code>
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Review valid until</dt>
+                                  <dd>
+                                    {new Date(
+                                      prepared.preparedUntil * 1000,
+                                    ).toLocaleTimeString()}
+                                  </dd>
                                 </div>
                               </dl>
-                              <p className="footnote">Sign this payment, then confirm submission in your wallet. Your wallet also submits the transaction; its transaction fee is shown there.</p>
-                              <details className="payment-extra-details">
-                                <summary>Wallet and signature details</summary>
-                                <dl>
-                                  <div><dt>From your wallet</dt><dd><code>{op.intent.fundingOwner}</code></dd></div>
-                                  <div><dt>Through spending wallet</dt><dd><code>{op.intent.account}</code></dd></div>
-                                  <div><dt>Review valid until</dt><dd>{new Date(prepared.preparedUntil * 1000).toLocaleTimeString()}</dd></div>
-                                </dl>
-                                <p className="footnote">A signed payment remains usable after this review expires. The deployed validator does not enforce a signature deadline.</p>
-                              </details>
-                              <button
-                                className="primary full-button"
-                                disabled={busy}
-                                onClick={() => void run(() => signAndSend(op))}
-                              >
-                                Approve &amp; pay <ArrowRight size={14} />
-                              </button>
-                            </div>
-                          )}
-                      </article>
-                    );
-                  })}
+                              <p className="footnote">
+                                A signed payment remains usable after this
+                                review expires. The deployed validator does not
+                                enforce a signature deadline.
+                              </p>
+                            </details>
+                            <button
+                              className="primary full-button"
+                              disabled={busy}
+                              onClick={() => void run(() => signAndSend(op))}
+                            >
+                              Approve &amp; pay <ArrowRight size={14} />
+                            </button>
+                          </div>
+                        )}
+                    </article>
+                  );
+                })}
               </div>
             )}
-            {!requestedOperation && <ArchivedRecords
-              key={`${archiveKey}.activity`}
-              title="Expired activity"
-              storageKey={`${archiveKey}.activity`}
-              records={archivedOperations.map((op) => ({
-                id: op.id,
-                title: op.intent.businessReference,
-                detail: `${formatUnits(BigInt(op.intent.amount), 6)} demo USDC · ${op.execution ? (op.execution.success ? 'Paid' : 'Failed') : op.status === 'rejected' ? 'Rejected' : op.status === 'approved' ? 'Signed · expired' : 'Expired'} · ${new Date(op.createdAt * 1000).toLocaleDateString()}`,
-                href: `/?operation=${encodeURIComponent(op.id)}`,
-              }))}
-            />}
+            {!requestedOperation && (
+              <ArchivedRecords
+                key={`${archiveKey}.activity`}
+                title="Expired activity"
+                storageKey={`${archiveKey}.activity`}
+                records={archivedOperations.map((op) => ({
+                  id: op.id,
+                  title: op.intent.businessReference,
+                  detail: `${formatUnits(BigInt(op.intent.amount), 6)} demo USDC · ${op.execution ? (op.execution.success ? 'Paid' : 'Failed') : op.status === 'rejected' ? 'Rejected' : op.status === 'approved' ? 'Signed · expired' : 'Expired'} · ${new Date(op.createdAt * 1000).toLocaleDateString()}`,
+                  href: `/?operation=${encodeURIComponent(op.id)}`,
+                }))}
+              />
+            )}
           </section>
         )}
 

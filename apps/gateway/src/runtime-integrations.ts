@@ -1,6 +1,7 @@
-import { createPublicClient, http, isAddress, type Address } from 'viem';
+import { createAgentTokens } from './agent-tokens';
+import { createPublicClient, http, type Address } from 'viem';
 import { arcTestnet } from 'viem/chains';
-import type { Store, Agent } from './store';
+import type { Store } from './store';
 import type { Chain } from './chain';
 import { historyFromEnv } from './history';
 import { createIdentityResolver } from './identity-resolver';
@@ -8,6 +9,7 @@ import { createIdentityAuth, createIdentityRoutes } from './identity-auth';
 import { createIdentityAssociations } from './identity-associations';
 import { arcDeploymentFromEnv, liveArcChain } from './arc-chain';
 import { createCctpRoute } from './cctp';
+import { createMerchantRoute } from './merchant';
 /** Identity discovery works before an account or payment integration is attached. */
 export function runtimeIntegrations(store: Store, chain: Chain, audience: string, dashboardOrigin = audience) {
     const deployment = arcDeploymentFromEnv();
@@ -31,12 +33,23 @@ export function runtimeIntegrations(store: Store, chain: Chain, audience: string
             return false;
         },
     });
-    const authenticate = createPortableAgentAuthentication(store, associations);
+    const tokens = createAgentTokens(store, auth, associations, audience);
+    const authenticate = tokens.authenticate;
     return {
         history: historyFromEnv(),
-        authenticatePortableAgent: (request: Request) => authenticate(request, 11155111),
+        authenticateScopedAgent: (request: Request) => authenticate(request, 11155111),
         routes: [
-            createIdentityRoutes(auth, dashboardOrigin, associations),
+            async (request: Request) => {
+                if (new URL(request.url).pathname !== '/agent/account' || request.method !== 'GET') return null;
+                const agent = await authenticate(request);
+                if (!agent) return Response.json({ error: 'Invalid, expired or revoked bearer token' }, { status: 401 });
+                return Response.json({ agent, chainId: agent.chainId, permissions: agent.scopes,
+                    ...(agent.chainId === 11155111 ? { balances: await chain.balances(agent.account, agent.owner) } : {}),
+                    mode: 'owner_approval_required',
+                }, { headers: { 'Cache-Control': 'no-store' } });
+            },
+            createMerchantRoute({ store, audience: dashboardOrigin, chain: arc, authenticateAgent: request => authenticate(request, 5042002) as Promise<{ id: string; account: Address; owner: Address } | null> }),
+            createIdentityRoutes(auth, dashboardOrigin, associations, tokens),
             createCctpRoute({ store, audience: dashboardOrigin, chain: arc, deployment,
                 authenticateAgent: async (request) => {
                     const agent = await authenticate(request, 5042002);
@@ -44,40 +57,5 @@ export function runtimeIntegrations(store: Store, chain: Chain, audience: string
                 },
             }),
         ],
-    };
-}
-export function createPortableAgentAuthentication(store: Store, associations: ReturnType<typeof createIdentityAssociations>) {
-    return async function authenticate(request: Request, chainId: number) {
-        const token = request.headers.get('authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-        const selected = request.headers.get('x-wayleave-account');
-        if (!token || (selected && !isAddress(selected)))
-            return null;
-        try {
-            if (!(await store.takeRateLimit('portable-auth', Math.floor(Date.now() / 1000), 600)))
-                return null;
-            const resolved = await associations.resolveAgent(token, chainId, selected ? selected as Address : undefined);
-            const scope = request.method === 'GET' ? 'read' : 'propose_payment';
-            if (!resolved.scopes.includes(scope))
-                return null;
-            const now = Math.floor(Date.now() / 1000);
-            // An unguessable bearer is never persisted as a legacy connection. Keep a
-            // non-token reference for the operations/audit foreign keys and local revocation.
-            await store.db.query('INSERT OR IGNORE INTO agents (id,name,owner,account,tokenHash,expiresAt,revokedAt,createdAt) VALUES (?,?,?,?,?,?,NULL,?)')
-                .run(resolved.id, resolved.name, resolved.owner.toLowerCase(), resolved.account.toLowerCase(), `identity:${resolved.id}`, resolved.expiresAt, now);
-            await store.db.query('UPDATE agents SET expiresAt=? WHERE id=? AND revokedAt IS NULL').run(resolved.expiresAt, resolved.id);
-            const row = await store.db.query('SELECT revokedAt,createdAt FROM agents WHERE id=?').get(resolved.id) as {
-                revokedAt: number | null;
-                createdAt: number;
-            };
-            if (row.revokedAt !== null)
-                return null;
-            const agent: Agent & {
-                scopes: string[];
-            } = { ...resolved, owner: resolved.owner.toLowerCase(), account: resolved.account.toLowerCase(), revokedAt: null, createdAt: row.createdAt };
-            return agent;
-        }
-        catch {
-            return null;
-        }
     };
 }

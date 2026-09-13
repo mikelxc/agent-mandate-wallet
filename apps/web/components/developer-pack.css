@@ -1,0 +1,187 @@
+.developer-pack {
+  color: #252a27;
+  background: white;
+  border: 1px solid #e4e8e2;
+  border-radius: 20px;
+  padding: 26px;
+  margin: 20px 0;
+  min-width: 0;
+  text-align: left;
+}
+.developer-pack-heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.developer-pack-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: #eef2eb;
+}
+.developer-pack .developer-pack-kicker {
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  color: #616d63;
+}
+.developer-pack h3 {
+  font-size: 20px;
+  margin: 5px 0;
+  font-weight: 550;
+  letter-spacing: -0.5px;
+}
+.developer-pack p,
+.developer-pack li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #58655d;
+}
+.developer-pack .developer-pack-note {
+  font-size: 11px;
+}
+.developer-pack-price {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  padding: 15px 0 0;
+}
+.developer-pack-price strong {
+  font-size: 25px;
+  letter-spacing: -0.7px;
+}
+.developer-pack-price small {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.developer-pack-price > span {
+  font-size: 11px;
+  color: #627064;
+}
+.developer-pack ol {
+  padding-left: 18px;
+  margin: 22px 0;
+}
+.developer-pack li {
+  margin: 10px 0;
+  padding-left: 5px;
+}
+.developer-pack li strong {
+  color: #35473a;
+}
+.developer-pack details {
+  border-top: 1px solid #e6ebe3;
+  padding-top: 15px;
+}
+.developer-pack summary {
+  cursor: pointer;
+  font-size: 12px;
+}
+.developer-pack .developer-pack-prompt {
+  font-size: 12px;
+  padding: 15px;
+  background: #f3f6f1;
+  border-radius: 10px;
+}
+.developer-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  margin: 20px 0 12px;
+}
+.developer-pack button,
+.developer-pack a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.developer-pack button {
+  color: #253a2b;
+  background: #eef3e9;
+  border: 1px solid #dce5d5;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+.developer-pack button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.developer-pack a {
+  color: #3d5244;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.developer-pack button:focus-visible,
+.developer-pack a:focus-visible,
+.developer-pack summary:focus-visible {
+  outline: 2px solid #687d70;
+  outline-offset: 3px;
+}
+.developer-pack output {
+  display: block;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f0f3eb;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.developer-pack [role='alert'] {
+  font-size: 12px;
+  color: #873b2f;
+}
+.developer-pack-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #e6ebe3;
+}
+.developer-pack-progress h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.developer-pack-progress p {
+  font-size: 11px;
+  margin: 6px 0;
+}
+.developer-pack-progress button {
+  flex-shrink: 0;
+}
+.developer-pack-receipt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 0;
+  border-top: 1px solid #e6ebe3;
+  font-size: 12px;
+}
+.developer-pack-receipt small {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.merchant-layout > .developer-pack {
+  grid-column: 1/-1;
+}
+@media (max-width: 500px) {
+  .developer-pack {
+    padding: 19px;
+  }
+  .developer-pack-progress {
+    flex-wrap: wrap;
+  }
+  .developer-pack h3 {
+    font-size: 18px;
+  }
+}

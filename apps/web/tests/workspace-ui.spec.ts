@@ -6,7 +6,7 @@ for (const width of [320, 390, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 740 });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByRole('heading', { name: 'Let your agents do their thing.' }),
     ).toBeVisible();
@@ -26,44 +26,18 @@ for (const width of [320, 390, 1280]) {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.getByRole('button', { name: 'Get started', exact: true }).click();
-    await expect(page).toHaveURL(/setup=1/);
-    await expect(page.locator('w3m-modal').getByText('Connect Wallet', { exact: true })).not.toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Connect your wallet.' }),
-    ).toBeVisible();
-    const setupCard = page.locator('.mobile-agent-onboarding');
-    const cardBounds = await setupCard.boundingBox();
-    const progressBounds = await page
-      .getByRole('navigation', { name: 'Onboarding steps' })
-      .boundingBox();
-    expect(cardBounds).not.toBeNull();
-    expect(progressBounds).not.toBeNull();
-    expect(
-      Math.abs(
-        progressBounds!.x +
-          progressBounds!.width / 2 -
-          (cardBounds!.x + cardBounds!.width / 2),
-      ),
-    ).toBeLessThan(2);
-    await expect(
-      page
-        .getByRole('navigation', { name: 'Onboarding steps' })
-        .getByRole('button'),
-    ).toHaveCount(5);
-    await expect(
-      page.getByRole('button', { name: 'Go to step 1: Connect' }),
-    ).toHaveAttribute('aria-current', 'step');
-    await expect(page.locator('.mobile-status')).toHaveCSS(
-      'text-align',
-      'left',
-    );
-    await page.getByRole('button', { name: 'View dashboard' }).click();
-    await page.reload();
+    await page
+      .getByRole('button', { name: 'Get started', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/wallets\/setup$/);
+    await expect(page.getByRole('heading', { name: 'Your agent, on two networks.' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Wallet minting steps' }).getByRole('button')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Create wallet on Sepolia', exact: true })).toBeDisabled();
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByRole('heading', { name: 'Let your agents do their thing.' }),
     ).toBeVisible();
-    await page.goto('/?setup=1');
+    await page.goto('/?setup=1', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByRole('heading', { name: 'Connect your wallet.' }),
     ).toBeVisible();
@@ -124,9 +98,15 @@ for (const width of [390, 1280]) {
       authRequests++;
       return route.abort();
     });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('@appkit/active_caip_network_id'))).toBe('eip155:11155111');
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          localStorage.getItem('@appkit/active_caip_network_id'),
+        ),
+      )
+      .toBe('eip155:11155111');
     const modal = page.locator('w3m-modal');
     await expect(
       modal.getByText('Connect Wallet', { exact: true }),

@@ -1,3 +1,4 @@
+import type { AgentTokens } from './agent-tokens';
 import type { createIdentityAssociations } from './identity-associations';
 import { IdentityError } from './identity-error';
 import { randomBytes, createHash } from 'node:crypto';
@@ -50,6 +51,16 @@ export function createIdentityAuth(options: {
         return next;
     }
     return {
+        async revalidateIdentity(identity: PortableIdentity) {
+            return (await current({ identity })).identity;
+        },
+        async verifyOwnerMessage(token: string, message: string, signature: Hex) {
+            const session = await this.authenticate(token);
+            if (session.kind !== 'owner' || !/^0x[0-9a-fA-F]{2,16384}$/.test(signature) ||
+                !await resolver.verify(session.identity.controller, message, signature))
+                throw new IdentityError('Identity owner signature required');
+            return session;
+        },
         async takeRateLimit() {
             await ready;
             const bucket = `${audience}:${Math.floor(now() / 60)}`;
@@ -125,7 +136,7 @@ export function createIdentityAuth(options: {
 }
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
 /** Can be mounted in createApp({ routes: [handler] }). Owner sessions use HttpOnly cookies. */
-export function createIdentityRoutes(auth: IdentityAuth, audience: string, associations?: ReturnType<typeof createIdentityAssociations>) {
+export function createIdentityRoutes(auth: IdentityAuth, audience: string, associations?: ReturnType<typeof createIdentityAssociations>, tokens?: AgentTokens) {
     const origin = new URL(audience).origin;
     const cookieToken = (request: Request) => request.headers.get('cookie')?.split(';').map(x => x.trim()).find(x => x.startsWith('wayleave_identity='))?.slice('wayleave_identity='.length) ?? '';
     const cookie = (token: string, age: number) => `wayleave_identity=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${origin.startsWith('https:') ? '; Secure' : ''}`;
@@ -142,6 +153,8 @@ export function createIdentityRoutes(auth: IdentityAuth, audience: string, assoc
                 return json(await auth.discover(url.searchParams.get('name') ?? '', url.searchParams.get('deployment') ?? ''));
             if (url.pathname === '/identity/session' && request.method === 'GET')
                 return json(await auth.authenticate(cookieToken(request)));
+            if (url.pathname === '/identity/tokens' && request.method === 'GET' && tokens)
+                return json({ connections: await tokens.list(cookieToken(request)) });
             if (request.method !== 'POST')
                 return json({ error: 'Not found' }, 404);
             if (Number(request.headers.get('content-length') ?? 0) > 20000)
@@ -165,6 +178,15 @@ export function createIdentityRoutes(auth: IdentityAuth, audience: string, assoc
                 }
             raw += decoder.decode();
             const body = JSON.parse(raw || '{}');
+            if (url.pathname.startsWith('/identity/tokens')) {
+                if (request.headers.get('origin') !== origin) return json({ error: 'Origin required' }, 403);
+                if (!tokens) return json({ error: 'Agent token service unavailable' }, 503);
+                if (url.pathname === '/identity/tokens/challenge') return json(await tokens.challenge(cookieToken(request), body));
+                if (url.pathname === '/identity/tokens/issue') return json(await tokens.issue(cookieToken(request), body.nonce, body.signature));
+                const id = url.pathname.match(/^\/identity\/tokens\/(token_[a-f0-9-]{36})\/revoke$/)?.[1];
+                if (id) { await tokens.revoke(cookieToken(request), id); return json({ ok: true }); }
+                return json({ error: 'Not found' }, 404);
+            }
             if (url.pathname === '/identity/challenge') {
                 if (body.kind === 'owner' && request.headers.get('origin') !== origin)
                     return json({ error: 'Owner authentication requires the site origin' }, 403);

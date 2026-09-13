@@ -1,13 +1,20 @@
+import { runners, type PackageManager, type McpTransport } from './mcp-setup';
 /** A shareable handoff: callers must supply a configuration with no credential. */
 export function buildAgentSetupGuide(input: {
   host: string;
+  transport?: McpTransport;
+  manager?: PackageManager;
   destination: string;
   config: string;
   format: 'toml' | 'json';
   gateway: string;
   account: string;
 }) {
+  const hosted = input.transport === 'hosted';
+  const runner = runners[input.manager ?? 'npm'];
   return `# Wayleave agent setup — ${input.host}
+
+Please help me configure Wayleave in ${input.host}. Use the settings below. If you cannot access my client settings, give me exact manual steps and stop short of claiming it is connected. Never ask me to paste the connection key into chat.
 
 ## Purpose and authority
 
@@ -17,11 +24,11 @@ It cannot sign payments, change ownership, or grant token allowances. Never ask 
 
 ## Setup
 
-1. Install Bun if it is unavailable, and ensure \`bunx\` is on the MCP host's PATH. If needed, configure the absolute path to bunx.
-2. The owner opens Wayleave’s Connect an agent screen, connects and verifies their wallet, chooses or creates an agent wallet, and creates a separate connection for this client. Keys last 24 hours and can be revoked independently.
-3. Obtain that connection key through private client settings. This document deliberately omits it. Do not overwrite an existing valid key with the placeholder, or put keys in chat, logs, source control, or shared documents.
-4. ${input.destination}. Merge the server entry with existing configuration; preserve other servers. Generic MCP clients must support local stdio processes; this is not a remote HTTP MCP endpoint.
-5. Replace <WAYLEAVE_AGENT_TOKEN> privately with the new key. The host launches the pinned package wayleave-mcp@0.1.2 using bunx; no repository checkout is required.
+1. ${hosted ? 'Use a Streamable HTTP MCP connection. No package install or terminal is required. Confirm the client supports a custom Authorization bearer header; OAuth-only connectors are not supported.' : `Confirm the client can launch local stdio commands. Use ${runner.command} (${input.manager ?? 'npm'}); Node.js 20+ is required for npx, or Bun for bunx. If commands are unavailable, ask the owner to select Hosted HTTP in Wayleave and copy a new prompt.`}
+2. The owner opens Wayleave’s Connect agent screen, verifies their ENS identity with their wallet, and links the payment account. Choose a connection label, read-only or read-and-propose permissions, and a session length from 15 minutes to 30 days, then select Sign and create bearer token. Review the exact account, permissions and expiry in the wallet message. Tokens cannot outlast the ENS name and can be revoked independently.
+3. Copy the newly issued bearer token into private client settings. This document deliberately omits it. Do not overwrite an existing valid key with the placeholder, or put keys in chat, logs, source control, or shared documents.
+4. ${input.destination}. Merge the server entry with existing configuration; preserve other servers. ${hosted ? 'Enter the server URL and Authorization header in private connector settings.' : 'The client must support local stdio processes.'}
+5. Replace <WAYLEAVE_AGENT_TOKEN> privately with the new key. ${hosted ? 'Use the remote URL as provided; never put the key in the URL.' : `The host launches the pinned package wayleave-mcp@0.1.3 using ${runner.command}; no repository checkout is required.`}
 
 \`\`\`${input.format}
 ${input.config}
@@ -29,7 +36,7 @@ ${input.config}
 
 Gateway: ${input.gateway}
 ${input.account ? `Expected agent wallet: ${input.account}` : 'Confirm the intended agent wallet with the owner before proposing payments.'}
-${input.gateway.startsWith('http://127.0.0.1') ? '\nFor local development, keep `bun run gateway` running from the Wayleave repository on the same machine.' : ''}
+${!hosted && input.gateway.startsWith('http://127.0.0.1') ? '\nFor local development, keep `bun run gateway` running from the Wayleave repository on the same machine.' : ''}
 
 ## Verify before use
 

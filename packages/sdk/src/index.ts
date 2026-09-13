@@ -35,4 +35,5 @@ export * from './cctp';
 
 export * from "./portable-identity";
 
-export { wayleaveAgentRegistryAbi } from "./generated/WayleaveAgentRegistry";
+export { wayleaveAgentRegistryAbi, wayleaveAgentRegistryBytecode } from "./generated/WayleaveAgentRegistry";
+export * from './agent-token';

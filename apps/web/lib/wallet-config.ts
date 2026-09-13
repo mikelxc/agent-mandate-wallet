@@ -46,7 +46,7 @@ const appKit = createAppKit({
   adapters: [adapter],
   projectId,
   networks,
-  defaultNetwork: hackathonSepolia,
+  defaultNetwork: arcTestnet,
   siweConfig: devWalletEnabled ? undefined : ownerAuth,
   universalProviderConfigOverride: walletConnectSessionConfig,
   experimental_preferUniversalLinks: true,

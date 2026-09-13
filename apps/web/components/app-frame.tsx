@@ -9,7 +9,7 @@ import { NetworkSelector } from './network-selector';
 export function AppFrame({
   children,
   active = 'agents',
-  network = 'Sepolia',
+  network = 'Arc',
 }: {
   children: ReactNode;
   active?:
@@ -18,7 +18,9 @@ export function AppFrame({
     | 'tools'
     | 'connect'
     | 'identity'
-    | 'crosschain';
+    | 'crosschain'
+    | 'payments'
+    | 'store';
   network?: 'Sepolia' | 'Arc';
 }) {
   return (
@@ -39,13 +41,19 @@ export function AppFrame({
         </div>
         <nav aria-label="Main navigation">
           <Link
-            href="/"
-            aria-current={active === 'agents' ? 'page' : undefined}
+            href={network === 'Arc' ? '/payments' : '/sepolia'}
+            aria-current={
+              active === 'agents' ||
+              active === 'crosschain' ||
+              active === 'payments'
+                ? 'page'
+                : undefined
+            }
           >
-            Spending
+            {network === 'Arc' ? 'Payments' : 'Spending'}
           </Link>
           <Link
-            href="/accounts"
+            href={network === 'Arc' ? '/accounts' : '/accounts?network=sepolia'}
             aria-current={active === 'account' ? 'page' : undefined}
           >
             Wallets
@@ -60,13 +68,7 @@ export function AppFrame({
             href="/identity"
             aria-current={active === 'identity' ? 'page' : undefined}
           >
-            Identity
-          </Link>
-          <Link
-            href="/crosschain"
-            aria-current={active === 'crosschain' ? 'page' : undefined}
-          >
-            Cross-chain payments
+            Name & access
           </Link>
         </nav>
       </header>

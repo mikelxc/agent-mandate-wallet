@@ -1,8 +1,15 @@
 import { AppFrame } from '../../components/app-frame';
+import Link from 'next/link';
 import { KernelWorkspace } from '../../components/kernel-workspace';
-export default function Accounts() {
+import { ArcWalletPage } from '../../components/arc-wallet-page';
+export default async function Accounts({
+  searchParams,
+}: {
+  searchParams: Promise<{ network?: string }>;
+}) {
+  const isSepolia = (await searchParams).network === 'sepolia';
   return (
-    <AppFrame active="account">
+    <AppFrame active="account" network={isSepolia ? 'Sepolia' : 'Arc'}>
       <section className="account-page">
         <div className="account-page-heading">
           <h1>Wallet access</h1>
@@ -10,7 +17,11 @@ export default function Accounts() {
             See what your agents’ spending wallets can draw from your balance.
           </p>
         </div>
-        <KernelWorkspace compact />
+        <p>
+          Each ownership NFT controls a wallet on its own chain.{' '}
+          <Link href="/wallets/setup">Mint on Sepolia and Arc →</Link>
+        </p>
+        {isSepolia ? <KernelWorkspace compact /> : <ArcWalletPage />}
       </section>
     </AppFrame>
   );

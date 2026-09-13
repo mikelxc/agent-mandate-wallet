@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useConnection, useSwitchChain } from 'wagmi';
 
 const networks = {
-  Sepolia: { id: 11155111, name: 'Sepolia', href: '/' },
-  Arc: { id: 5042002, name: 'Arc Testnet', href: '/crosschain' },
+  Sepolia: { id: 11155111, name: 'Sepolia', href: '/sepolia' },
+  Arc: { id: 5042002, name: 'Arc Testnet', href: '/payments' },
 } as const;
 
 export function NetworkSelector({
@@ -23,9 +23,9 @@ export function NetworkSelector({
   const selected = networks[network];
   return (
     <div className="network-picker">
-      <span className="network-picker-label">Payment network</span>
+      <span className="network-picker-label">Wallet network</span>
       <WayleaveSelect
-        label="Payment network"
+        label="Wallet network"
         badge
         value={network}
         disabled={navigating || switchChain.isPending}
@@ -33,12 +33,12 @@ export function NetworkSelector({
           {
             value: 'Sepolia',
             label: 'Sepolia',
-            description: 'Agent spending · Test funds',
+            description: 'Sepolia wallet · ENSv2 naming',
           },
           {
             value: 'Arc',
             label: 'Arc testnet',
-            description: 'Cross-chain payments · Test funds',
+            description: 'Arc wallet · CCTP payments',
           },
           {
             value: 'Mainnet',

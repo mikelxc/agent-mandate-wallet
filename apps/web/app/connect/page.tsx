@@ -1,10 +1,13 @@
 import { AppFrame } from '../../components/app-frame';
-import { AgentControl } from '../../components/agent-control';
+import { Suspense } from 'react';
+import { ArcOnboarding } from '../../components/arc-onboarding';
 
 export default function Connect() {
   return (
     <AppFrame active="connect">
-      <AgentControl connectionsOnly />
+      <Suspense fallback={<p>Loading connections…</p>}>
+        <ArcOnboarding alwaysSetup initialStep={4} />
+      </Suspense>
     </AppFrame>
   );
 }

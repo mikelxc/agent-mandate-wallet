@@ -104,7 +104,7 @@ export function createApp(
     now?: () => number;
     routes?: GatewayRoute[];
     history?: HistoryService;
-    authenticatePortableAgent?: (request: Request) => Promise<(Agent & { scopes: string[] }) | null>;
+    authenticateScopedAgent?: (request: Request) => Promise<(Agent & { scopes: string[] }) | null>;
   } = {},
 ) {
   const dashboardOrigin = options.dashboardOrigin ?? "http://localhost:3000";
@@ -219,8 +219,8 @@ export function createApp(
         return json({ ok: true, chainId: 11155111, mode: "human_approval" });
       if (path.startsWith("/agent/")) {
         const bearer = request.headers.get("authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-        const legacy = bearer && (await store.authenticateAgent(hashToken(bearer), now()));
-        const portable = !legacy && options.authenticatePortableAgent ? await options.authenticatePortableAgent(request) : null;
+        const legacy = !options.authenticateScopedAgent && bearer && (await store.authenticateAgent(hashToken(bearer), now()));
+        const portable = !legacy && options.authenticateScopedAgent ? await options.authenticateScopedAgent(request) : null;
         const agent = legacy || portable;
         if (!agent) deny(401, "Invalid or revoked agent connection");
         const requiredScope = request.method === "GET" ? "read" : "propose_payment";

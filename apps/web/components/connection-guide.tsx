@@ -19,7 +19,7 @@ export function ConnectionGuide() {
           Your agent can check its wallet, request a payment, and follow its
           status. You approve the spending here.
         </p>
-        <Link href="/?setup=1" className="primary">
+        <Link href="/wallets/setup" className="primary">
           Get started <ArrowRight size={16} />
         </Link>
       </div>
@@ -40,8 +40,10 @@ export function ConnectionGuide() {
             <div>
               <h3>Link your agent app</h3>
               <p>
-                Choose Codex, Claude Desktop, or Cursor. Copy the connection
-                settings into that app.
+                Choose your client, then Hosted HTTP or a local package with
+                npm, Bun, pnpm, or Yarn. Copy the settings into that app. For
+                guided help, copy the setup prompt into a conversation with your
+                agent and enter the connection key privately.
               </p>
             </div>
           </li>
@@ -59,9 +61,10 @@ export function ConnectionGuide() {
         <details>
           <summary>Can I do everything inside ChatGPT or Claude?</summary>
           <p>
-            Not yet. The current connection works with local MCP clients. Wallet
-            setup and payment approval happen here. Embedded chat approvals and
-            terminal QR pairing are still being built.
+            Wallet setup and payment approval happen here. Hosted MCP works with
+            clients that accept a remote URL and custom bearer token; OAuth-only
+            chat connectors are not supported. You can also connect through a
+            local MCP client.
           </p>
         </details>
       </div>
