@@ -337,3 +337,23 @@ Turso configuration is present.
   user-wallet setup transaction or payment was submitted during verification.
 - An initial release was started from the workspace instead of the isolated source;
   deployment `dpl_8HMG7i8iXMuHXYzxSV38rnGDLm9K` was cancelled before alias assignment.
+
+## Legacy MCP compatibility — September 13, 2026
+
+- Scoped authentication disabled legacy `agents.tokenHash` lookup, rejecting
+  still-valid pre-ENS keys. Commit `1986f6d` restores UUID legacy connections
+  on Sepolia, retaining expiry, revocation and live account-owner verification.
+  Scoped `token_` audit rows cannot fall back; their restrictions remain mandatory.
+- Released [dpl_8bPtZEhJqAdyDwkNNu4uLdJrvXfy](https://vercel.com/lxc-xyz/wayleave/8bPtZEhJqAdyDwkNNu4uLdJrvXfy)
+  to production from current main plus this fix. Full build/type checks, 173 Bun
+  tests and 61 Foundry tests passed. Published `wayleave-mcp@0.1.2` passed the
+  local gateway smoke with scoped auth enabled and a simulated chain.
+- A temporary legacy connection reproduced live 401 before release; the same
+  key succeeded afterward. The first published-client call during rollout failed;
+  a subsequent complete live run passed npm 0.1.2 `get_account` and returned 200
+  for payment history. Test keys were revoked and then returned 401; owner sessions
+  were logged out. Only offchain test-wallet login signatures were used. No payment
+  or public-chain transaction was submitted; no npm release is required.
+- The production fix remains on `codex/mcp-legacy-compat`. Automatic approval
+  review rejected a direct push to main without explicit user authorization.
+  A subsequent deployment from unchanged main would omit this fix.
