@@ -131,13 +131,7 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
       const identities = found.filter(
         (wallet) => wallet.chainId === sepolia.id,
       );
-      setSelected(
-        (requested?.chainId === sepolia.id
-          ? requested
-          : (identities.find((wallet) => wallet.name === requested?.name) ??
-            identities[0])
-        )?.key ?? '',
-      );
+      setSelected((requested ?? identities[0] ?? found[0])?.key ?? '');
       setLoading(false);
     });
     return () => controller.abort();
@@ -171,7 +165,12 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
         </button>
       </div>
     );
-  const identity = identities.find((wallet) => wallet.key === selected);
+  const selectedWallet = wallets.find((wallet) => wallet.key === selected);
+  const identity =
+    selectedWallet?.chainId === sepolia.id
+      ? selectedWallet
+      : (identities.find((wallet) => wallet.name === selectedWallet?.name) ??
+        identities[0]);
   const matchingArc = wallets.filter(
     (wallet) =>
       wallet.chainId === arcTestnet.id && wallet.name === identity?.name,
@@ -180,14 +179,16 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
     (wallet) => wallet.chainId === arcTestnet.id,
   );
   const arc =
-    arcWallets.find((wallet) => wallet.account === selectedArc) ??
-    (requested?.chainId === arcTestnet.id
-      ? requested
-      : matchingArc.length === 1
-        ? matchingArc[0]
-        : arcWallets.length === 1
-          ? arcWallets[0]
-          : undefined);
+    selectedWallet?.chainId === arcTestnet.id
+      ? selectedWallet
+      : (arcWallets.find((wallet) => wallet.account === selectedArc) ??
+        (requested?.chainId === arcTestnet.id
+          ? requested
+          : matchingArc.length === 1
+            ? matchingArc[0]
+            : arcWallets.length === 1
+              ? arcWallets[0]
+              : undefined));
   return (
     <>
       {errors.map((error) => (
@@ -200,7 +201,7 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
           Retry wallet lookup
         </button>
       )}
-      {!!identities.length && (
+      {!!wallets.length && (
         <div className="flow-surface access-wallet-picker">
           <label>
             Wallet
@@ -211,35 +212,46 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
               onValueChange={(value) => {
                 setSelected(value);
                 setSelectedArc('');
-                const wallet = identities.find((item) => item.key === value);
+                const wallet = wallets.find((item) => item.key === value);
                 if (requestedAccount && wallet)
                   router.replace(
                     `/connect?chainId=${wallet.chainId}&account=${wallet.account}`,
                   );
               }}
-              options={identities.map((wallet) => ({
+              options={wallets.map((wallet) => ({
                 value: wallet.key,
-                label: agentEnsName(wallet.name),
+                label: `${wallet.chainId === sepolia.id ? agentEnsName(wallet.name) : wallet.name} · ${wallet.chainId === sepolia.id ? 'Sepolia' : 'Arc'}`,
                 description: wallet.account,
               }))}
             />
           </label>
-          {arcWallets.length > 1 && (
-            <label>
-              Arc wallet
-              <WayleaveSelect
-                label="Arc wallet"
-                value={arc?.account ?? selectedArc}
-                disabled={signing}
-                onValueChange={setSelectedArc}
-                options={arcWallets.map((wallet) => ({
-                  value: wallet.account,
-                  label: wallet.name,
-                  description: wallet.account,
-                }))}
-              />
-            </label>
+          {selectedWallet && (
+            <small className="selected-wallet-address">
+              {selectedWallet.account}
+            </small>
           )}
+          {arc && arc.account !== selectedWallet?.account && (
+            <small className="selected-wallet-address">
+              Connection account on Arc: {arc.account}
+            </small>
+          )}
+          {selectedWallet?.chainId !== arcTestnet.id &&
+            arcWallets.length > 1 && (
+              <label>
+                Arc wallet
+                <WayleaveSelect
+                  label="Arc wallet"
+                  value={arc?.account ?? selectedArc}
+                  disabled={signing}
+                  onValueChange={setSelectedArc}
+                  options={arcWallets.map((wallet) => ({
+                    value: wallet.account,
+                    label: wallet.name,
+                    description: wallet.account,
+                  }))}
+                />
+              </label>
+            )}
         </div>
       )}
       {!identities.length && (

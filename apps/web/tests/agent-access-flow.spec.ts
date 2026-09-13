@@ -74,6 +74,14 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
       await expect(page.getByRole('button',{name:text,exact:true})).toHaveCount(0);
     }
     await expect(page.getByRole('combobox',{name:'Wallet',exact:true})).toBeVisible();
+    await page.getByRole('combobox',{name:'Wallet',exact:true}).click();
+    await expect(page.getByRole('option',{name:/desk.wayleave.eth · Sepolia/})).toBeVisible();
+    await page.getByRole('option',{name:/payments · Arc/}).click();
+    await expect(page.getByRole('combobox',{name:'Wallet',exact:true})).toContainText('payments · Arc');
+    await expect(page.locator('.selected-wallet-address').first()).toHaveText(arcAccount);
+    await expect(manager.getByLabel('Connection label')).toBeEnabled();
+    await expect(page.locator('.grant-signing-guide li')).toHaveCount(3);
+    await expect(page.locator('.grant-signing-guide')).toContainText('No gas fees or funds moved');
     expect(signatures).toBe(0);
     for (const width of [1280,390]) {
       await page.setViewportSize({width,height:1000});

@@ -348,7 +348,7 @@ function IdentityPanel({
               audience={gatewayAudience}
               onReady={setTokenReady}
               onBusyChange={onBusyChange}
-              beforeIssue={async () => {
+              beforeIssue={async (report) => {
                 const session = await api<{
                   kind: string;
                   identity: PortableIdentity;
@@ -359,8 +359,11 @@ function IdentityPanel({
                   session.identity.name !== initialName ||
                   session.identity.controller.toLowerCase() !==
                     address?.toLowerCase()
-                )
+                ) {
+                  report(0, 'Confirm in your wallet');
                   await verifyOwner();
+                  report(0, 'Complete');
+                } else report(0, 'Already verified');
                 if (!mounted.current)
                   throw new Error('Wallet selection changed. Please retry.');
                 const result = await api<{
@@ -374,8 +377,10 @@ function IdentityPanel({
                         initialAccount.toLowerCase(),
                   )
                 ) {
+                  report(1, 'Confirm in your wallet');
                   await linkAccount(true);
-                }
+                  report(1, 'Complete');
+                } else report(1, 'Already linked');
               }}
             />
           ) : (

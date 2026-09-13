@@ -50,7 +50,9 @@ export function AgentTokenManager({
   accounts?: string[];
   guided?: boolean;
   compact?: boolean;
-  beforeIssue?: () => Promise<void>;
+  beforeIssue?: (
+    report: (step: number, status: string) => void,
+  ) => Promise<void>;
   onBusyChange?: (busy: boolean) => void;
   gateway: string;
   audience?: string;
@@ -66,6 +68,15 @@ export function AgentTokenManager({
     connection: Connection;
   }>();
   const [busy, setBusy] = useState(false);
+  const [signingSteps, setSigningSteps] = useState([
+    'If needed',
+    'If needed',
+    'Required',
+  ]);
+  const reportStep = (step: number, status: string) =>
+    setSigningSteps((previous) =>
+      previous.map((value, index) => (index === step ? status : value)),
+    );
   const [error, setError] = useState('');
   const [now, setNow] = useState(() => Date.now() / 1000);
   const sign = useSignMessage();
@@ -135,7 +146,8 @@ export function AgentTokenManager({
     onBusyChange?.(true);
     setError('');
     try {
-      await beforeIssue?.();
+      setSigningSteps(['Checking', 'Checking', 'Waiting']);
+      await beforeIssue?.(reportStep);
       if (!mounted.current) return;
       const scopes: AgentTokenScope[] = propose
         ? ['read', 'propose_payment']
@@ -176,6 +188,7 @@ export function AgentTokenManager({
           'Token authorization does not match your selected account, permissions or session length.',
         );
       if (!mounted.current) return;
+      reportStep(2, 'Confirm in your wallet');
       const signature = await sign.mutateAsync({ message });
       if (!mounted.current) return;
       const result = await api<{ token: string; connection: Connection }>(
@@ -183,11 +196,20 @@ export function AgentTokenManager({
         { nonce: grant.nonce, signature },
       );
       if (!mounted.current) return;
+      reportStep(2, 'Complete');
       setIssued(result);
       setConnections((previous) => [result.connection, ...previous]);
     } catch (e) {
-      if (mounted.current)
+      if (mounted.current) {
         setError(e instanceof Error ? e.message : 'Could not create token');
+        setSigningSteps((previous) =>
+          previous.map((value) =>
+            ['Confirm in your wallet', 'Checking', 'Waiting'].includes(value)
+              ? 'Not completed'
+              : value,
+          ),
+        );
+      }
     } finally {
       if (mounted.current) setBusy(false);
       onBusyChange?.(false);
@@ -301,6 +323,34 @@ export function AgentTokenManager({
           />
           Allow payment proposals in addition to reading
         </label>
+        {compact && !settingsLocked && (
+          <div className="grant-signing-guide" aria-label="Signing steps">
+            <p>Up to three signatures. No gas fees or funds moved.</p>
+            <ol aria-live="polite">
+              <li>
+                <strong>Verify identity · {signingSteps[0]}</strong>
+                <small>
+                  Prove you own the ENS identity on Sepolia. Skipped if already
+                  verified.
+                </small>
+              </li>
+              <li>
+                <strong>Link Arc wallet · {signingSteps[1]}</strong>
+                <small>
+                  Confirm this Arc account belongs to you and link it to your
+                  identity. Skipped if already linked.
+                </small>
+              </li>
+              <li>
+                <strong>Grant agent access · {signingSteps[2]}</strong>
+                <small>
+                  Sign the selected permissions and expiry to create this
+                  connection. Payments still need your approval.
+                </small>
+              </li>
+            </ol>
+          </div>
+        )}
         {!settingsLocked && (
           <button
             className="primary"
