@@ -2,7 +2,7 @@
 
 import { WayleaveSelect } from './wayleave-select';
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useConnection, useSwitchChain } from 'wagmi';
 
 const networks = {
@@ -16,6 +16,7 @@ export function NetworkSelector({
   network: keyof typeof networks;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [navigating, startTransition] = useTransition();
   const { address, chainId } = useConnection();
   const switchChain = useSwitchChain();
@@ -50,7 +51,7 @@ export function NetworkSelector({
         onValueChange={(next) => {
           if (next !== 'Sepolia' && next !== 'Arc') return;
           setError('');
-          startTransition(() => router.push(networks[next].href));
+          startTransition(() => router.push(pathname === '/accounts' ? `/accounts?network=${next.toLowerCase()}` : networks[next].href));
         }}
       />
       {address && chainId !== selected.id && (

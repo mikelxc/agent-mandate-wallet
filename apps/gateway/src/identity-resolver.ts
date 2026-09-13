@@ -2,6 +2,12 @@ import { IdentityError } from './identity-error';
 import { createPublicClient, http, keccak256, parseAbi, toHex, zeroAddress, type Address, type Hex, type Transport } from 'viem';
 import { namehash } from 'viem/ens';
 import { ensV2HackathonDeployment, hackathonSepolia, normalizeIdentityName, portableIdentityDeployment, identityFingerprint, type PortableIdentity, type PortableMembership } from '@mandate/sdk';
+import { wayleaveSepoliaDeployment, sepoliaDeployment, kernelAccountFactoryAbi, nFTOwnerValidatorAbi } from '@mandate/sdk';
+export const namingAdapterAbi = parseAbi([
+    'function addr(bytes32) view returns (address)',
+    'function factory() view returns (address)',
+    'function ensRegistry() view returns (address)',
+]);
 export const identityRegistryAbi = parseAbi([
     'function getOwner(uint256) view returns (address)',
     'function getExpiry(uint256) view returns (uint64)',
@@ -52,7 +58,42 @@ export function createIdentityResolver(rpcUrl: string, now: () => number = () =>
             result = { name, deployment: portableIdentityDeployment, chainId: 11155111, registry, controller, resolver, subregistry, registration: identityFingerprint(ancestors), expiresAt: Math.min(Number(expiry), result?.expiresAt ?? Number.MAX_SAFE_INTEGER), canSetSubregistry };
             registry = subregistry;
         }
-        return result!;
+        const identity = result!;
+        const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+        const deployment = wayleaveSepoliaDeployment;
+        // Only the pinned, immutable adapter/factory route supports NFAT authority.
+        // An arbitrary ENS address record or contract owner cannot opt into this path.
+        if (name.split('.').length === 3 && name.endsWith('.wayleave.eth') &&
+            same(identity.registry, deployment.userRegistry) &&
+            same(identity.controller, deployment.identityAdapter)) {
+            if (!same(identity.resolver, deployment.identityAdapter))
+                throw new IdentityError('Wayleave naming adapter resolver changed');
+            const address = deployment.identityAdapter;
+            const [account, factory, ensRegistry, adapter] = await Promise.all([
+                client.readContract({ address, abi: namingAdapterAbi, functionName: 'addr', args: [namehash(name)], blockNumber }),
+                client.readContract({ address, abi: namingAdapterAbi, functionName: 'factory', blockNumber }),
+                client.readContract({ address, abi: namingAdapterAbi, functionName: 'ensRegistry', blockNumber }),
+                client.readContract({ address: deployment.productFactory, abi: kernelAccountFactoryAbi, functionName: 'identityAdapter', blockNumber }),
+            ]);
+            if (account === zeroAddress || !same(factory, deployment.productFactory) ||
+                !same(ensRegistry, identity.registry) || !same(adapter, address))
+                throw new IdentityError('Unsupported Wayleave naming association');
+            const [registry, tokenId] = await client.readContract({ address: sepoliaDeployment.validator, abi: nFTOwnerValidatorAbi, functionName: 'bindings', args: [account], blockNumber });
+            if (!same(registry, factory) || tokenId === 0n)
+                throw new IdentityError('Wayleave account is not bound to the naming factory');
+            const [registered, label, owner, epoch] = await Promise.all([
+                client.readContract({ address: factory, abi: kernelAccountFactoryAbi, functionName: 'accountOf', args: [tokenId], blockNumber }),
+                client.readContract({ address: factory, abi: kernelAccountFactoryAbi, functionName: 'labelOf', args: [tokenId], blockNumber }),
+                client.readContract({ address: factory, abi: kernelAccountFactoryAbi, functionName: 'ownerOf', args: [tokenId], blockNumber }),
+                client.readContract({ address: factory, abi: kernelAccountFactoryAbi, functionName: 'ownershipEpoch', args: [tokenId], blockNumber }),
+            ]);
+            if (!same(registered, account) || `${label}.wayleave.eth` !== name || owner === zeroAddress || epoch === 0n)
+                throw new IdentityError('Wayleave name and NFT ownership do not match');
+            const authority = { kind: 'wayleave-nft-owner' as const, registryOwner: identity.controller, account, factory, tokenId: tokenId.toString(), epoch: epoch.toString() };
+            return { ...identity, controller: owner, canSetSubregistry: false, authority,
+                registration: identityFingerprint([identity.registration, authority, owner.toLowerCase()]) };
+        }
+        return identity;
     }
     async function freshBlock() {
         if (await client.getChainId() !== 11155111)
@@ -67,6 +108,8 @@ export function createIdentityResolver(rpcUrl: string, now: () => number = () =>
         async membership(input, agentInput) {
             const blockNumber = await freshBlock();
             const identity = await discoverAt(input, blockNumber);
+            if (identity.authority)
+                throw new IdentityError('Adapter-held Wayleave names use owner-issued agent tokens');
             const name = normalizeIdentityName(agentInput);
             const suffix = `.${identity.name}`;
             const label = name.slice(0, -suffix.length);

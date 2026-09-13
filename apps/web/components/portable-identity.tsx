@@ -240,7 +240,7 @@ function IdentityPanel({
                   <details className="flow-disclosure">
                     <summary>Name details</summary>
                     <dl>
-                      <dt>Controlling wallet</dt>
+                      <dt>{identity.authority ? 'Current NFT owner' : 'Controlling wallet'}</dt>
                       <dd style={{ overflowWrap: 'anywhere' }}>
                         {identity.controller}
                       </dd>
@@ -275,6 +275,14 @@ function IdentityPanel({
                           disabled={busy}
                           onClick={() =>
                             void run(async () => {
+                              if (address.toLowerCase() !== identity.controller.toLowerCase())
+                                throw new Error(
+                                  `Connect the ${identity.authority ? 'current NFT owner' : 'ENS controlling wallet'} (${identity.controller}) to verify this name.`,
+                                );
+                              if (chainId !== identity.chainId)
+                                await switchChain.mutateAsync({ chainId: identity.chainId });
+                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
+                                throw new Error('Wallet changed; look up your name and verify again.');
                               const challenge = await api<{
                                 proof: IdentityProof;
                                 message: string;
@@ -284,6 +292,14 @@ function IdentityPanel({
                                 name: identity.name,
                               });
                               if (
+                                challenge.proof.deployment !== portableIdentityDeployment ||
+                                challenge.proof.kind !== 'owner' ||
+                                challenge.proof.name !== identity.name ||
+                                challenge.proof.identity !== identity.name ||
+                                challenge.proof.registration !== identity.registration ||
+                                challenge.proof.key.toLowerCase() !== address.toLowerCase() ||
+                                challenge.proof.expiresAt <= Date.now() / 1000 ||
+                                challenge.proof.expiresAt > Date.now() / 1000 + 300 ||
                                 challenge.proof.audience !==
                                   (gatewayAudience ?? window.location.origin) ||
                                 challenge.message !==
@@ -292,9 +308,14 @@ function IdentityPanel({
                                 throw new Error(
                                   'Gateway challenge does not match this site',
                                 );
+                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
+                                throw new Error('Wallet changed; look up your name and verify again.');
                               const signature = await sign.mutateAsync({
+                                account: address,
                                 message: challenge.message,
                               });
+                              if (!mounted.current || currentAddress.current?.toLowerCase() !== address.toLowerCase())
+                                throw new Error('Wallet changed; look up your name and verify again.');
                               await api('verify', {
                                 nonce: challenge.proof.nonce,
                                 signature,
@@ -307,14 +328,20 @@ function IdentityPanel({
                         </button>
                       )}
                       <p>
-                        Use the registry owner’s wallet. Smart-account owners
-                        need a compatible contract-signature wallet.
+                        {identity.authority
+                          ? 'Wayleave’s naming adapter holds this ENS name. Your NFT ownership verifies access to its named workspace; it does not grant ENS registry control. '
+                          : ''}
+                        Identity verification uses Sepolia. Your wallet will
+                        switch networks before signing. Use the controlling
+                        wallet shown above; smart-account owners need a compatible
+                        contract-signature wallet on Sepolia. You’ll link your
+                        Arc payment wallet separately.
                       </p>
                     </>
                   ) : (
                     <>
                       <p className="flow-message" role="status">
-                        You control this name. Choose what to connect below, or
+                        {identity.authority ? 'NFT ownership verified for this named workspace.' : 'You control this name.'} Choose what to connect below, or
                         come back later.
                       </p>
                       <button

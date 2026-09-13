@@ -8,6 +8,14 @@ Discovery walks the registry hierarchy from the configured ETHRegistry, reading 
 
 Owner challenges are bound to the gateway audience, deployment, normalized name, registration fingerprint, controlling address, nonce and expiry. EOA and compatible ERC-1271 signatures are verified through viem. Owner sessions use an HttpOnly, SameSite=Strict cookie. A connected EOA cannot substitute for a smart account's signature merely because it owns that account's NFAT; the wallet must produce the compatible contract-signature format.
 
+### Adapter-held Wayleave names
+
+Names created by the deployed Sepolia Wayleave factory are held by the immutable naming adapter, which has no ERC-1271 signing support. For this specific deployment, the gateway recognizes the current NFAT owner as the named workspace's authentication controller. This is gateway authorization backed by onchain NFT ownership, not ENS registry ownership or permission to modify ENS. Discovery exposes the actual registry owner and the NFT authority separately; the UI identifies this distinction.
+
+This exception applies only to direct `*.wayleave.eth` children in the pinned user registry whose registry owner and resolver are the pinned adapter. At the same fresh Sepolia block, the gateway checks both adapter/factory bindings, the adapter's ENS registry, the immutable name-to-account mapping, the pinned validator's account binding, and the factory's account, exact label, current NFT owner and ownership epoch. Arbitrary address records, other adapters, and other factories cannot opt in. The registration fingerprint includes this authority and epoch, so handover invalidates pending challenges, sessions and bearer tokens, including a transfer away and back. Agent access uses owner-issued tokens; the child-registry authentication path does not use this exception. Payment association still requires a separate proof from the current payment account owner on its own chain. No signing key, token approval or execution permission is added.
+
+The browser switches to Sepolia before identity signing and rejects a connected wallet that differs from the discovered authentication controller. Arc association remains a separate Arc signature.
+
 Agent access uses owner-issued bearer tokens. After verifying the ENS identity and
 associating an account, choose a connection label, permissions and session length,
 then sign the token authorization with the identity controller's wallet. No agent

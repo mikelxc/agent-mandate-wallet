@@ -13,6 +13,15 @@ export type PortableIdentity = {
     registration: Hex;
     expiresAt: number;
     canSetSubregistry: boolean;
+    /** Gateway authority for immutable, adapter-held Wayleave names; not ENS ownership. */
+    authority?: {
+        kind: 'wayleave-nft-owner';
+        registryOwner: Address;
+        account: Address;
+        factory: Address;
+        tokenId: string;
+        epoch: string;
+    };
 };
 export type PortableMembership = {
     identity: PortableIdentity;

@@ -1,7 +1,6 @@
 import { AppFrame } from '../../components/app-frame';
 import Link from 'next/link';
-import { KernelWorkspace } from '../../components/kernel-workspace';
-import { ArcWalletPage } from '../../components/arc-wallet-page';
+import { OwnedWalletManager } from '../../components/owned-wallet-manager';
 export default async function Accounts({
   searchParams,
 }: {
@@ -21,7 +20,7 @@ export default async function Accounts({
           Each ownership NFT controls a wallet on its own chain.{' '}
           <Link href="/wallets/setup">Mint on Sepolia and Arc →</Link>
         </p>
-        {isSepolia ? <KernelWorkspace compact /> : <ArcWalletPage />}
+        <OwnedWalletManager network={isSepolia ? 'sepolia' : 'arc'} />
       </section>
     </AppFrame>
   );
