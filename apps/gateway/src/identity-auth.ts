@@ -153,6 +153,8 @@ export function createIdentityRoutes(auth: IdentityAuth, audience: string, assoc
                 return json(await auth.discover(url.searchParams.get('name') ?? '', url.searchParams.get('deployment') ?? ''));
             if (url.pathname === '/identity/session' && request.method === 'GET')
                 return json(await auth.authenticate(cookieToken(request)));
+            if (url.pathname === '/identity/accounts' && request.method === 'GET' && associations)
+                return json({ accounts: await associations.list(cookieToken(request)) });
             if (url.pathname === '/identity/tokens' && request.method === 'GET' && tokens)
                 return json({ connections: await tokens.list(cookieToken(request)) });
             if (request.method !== 'POST')

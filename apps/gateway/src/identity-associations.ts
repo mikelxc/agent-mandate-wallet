@@ -27,6 +27,16 @@ export function createIdentityAssociations(db: SqlDatabase, auth: IdentityAuth, 
             await db.query(sql).run();
     })();
     return {
+        async list(token: string): Promise<IdentityAccount[]> {
+            await ready;
+            const session = await auth.authenticate(token);
+            if (session.kind !== 'owner') throw new IdentityError('Identity owner session required');
+            const rows = await db.query('SELECT payload FROM identity_accounts WHERE identity=? AND registration=?').all(session.identity.name, session.identity.registration) as { payload: string }[];
+            return Promise.all(rows.map(async row => {
+                const binding = JSON.parse(row.payload);
+                return this.authorize(session, binding.chainId, binding.account);
+            }));
+        },
         async challenge(token: string, chainId: number, account: Address) {
             await ready;
             const session = await auth.authenticate(token);

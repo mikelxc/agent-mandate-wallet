@@ -1,44 +1,49 @@
 import { expect, test } from '@playwright/test';
-
 test.setTimeout(45_000);
-
 for (const width of [320, 1280]) {
-  test(`add agent remains accessible without a wallet at ${width}px`, async ({
-    page,
-  }) => {
+  test(`dedicated creation pages at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    const writes: string[] = [];
-    page.on('request', (request) => {
-      if (request.url().includes('/gateway/') && request.method() !== 'GET')
-        writes.push(request.url());
-    });
+    await page.route('**/gateway/crosschain/config', (r) =>
+      r.fulfill({
+        json: {
+          configured: true,
+          chainId: 5042002,
+          registry: '0x1111111111111111111111111111111111111111',
+          validator: '0x2222222222222222222222222222222222222222',
+        },
+      }),
+    );
     await page.goto('/agents/new');
     await expect(
       page.getByRole('heading', { name: 'Add an agent', exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole('button', { name: 'I understand. Name my wallet' })
-      .click();
-    await expect(page).toHaveURL(/\/agents\/new\?setup=3$/);
+    await expect(page.getByLabel('ENS name', { exact: true })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Connect your wallet', exact: true }),
-    ).toBeVisible();
+      page.getByRole('navigation', { name: 'Onboarding steps' }),
+    ).toHaveCount(0);
+    await page.goto('/wallets/setup');
+    await expect(page).toHaveURL(/\/wallets\/new$/);
+    await page
+      .getByLabel('Agent wallet name', { exact: true })
+      .fill('new-wallet');
+    await expect(
+      page.getByRole('button', {
+        name: 'Create wallet on Sepolia',
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await page.getByRole('button', { name: '2. Arc', exact: true }).click();
+    await page.getByLabel('Wallet name', { exact: true }).fill('new-wallet');
+    await expect(
+      page.getByRole('button', {
+        name: 'Create wallet on Arc Testnet',
+        exact: true,
+      }),
+    ).toBeDisabled();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.reload();
-    await expect(page).toHaveURL(/\/agents\/new\?setup=3$/);
-    await expect(
-      page.getByRole('heading', {
-        name: 'Name your agent’s wallet',
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Review how your agent spends' }),
-    ).toBeVisible();
-    expect(writes).toEqual([]);
   });
 }

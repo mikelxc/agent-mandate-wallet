@@ -6,11 +6,11 @@ import { ChainWalletSetup } from './chain-wallet-setup';
 import './agent-flows.css';
 import './chain-wallet-walkthrough.css';
 
-export function ChainWalletWalkthrough() {
+export function ChainWalletWalkthrough({ newWallet = false }: { newWallet?: boolean }) {
   const { address } = useConnection();
-  return <Walkthrough key={address ?? 'disconnected'} />;
+  return <Walkthrough key={address ?? 'disconnected'} newWallet={newWallet} />;
 }
-function Walkthrough() {
+function Walkthrough({ newWallet }: { newWallet: boolean }) {
   const { address } = useConnection();
   const [step, setStep] = useState<'Sepolia' | 'Arc'>('Sepolia');
   const [wallets, setWallets] = useState({ Sepolia: '', Arc: '' });
@@ -21,7 +21,7 @@ function Walkthrough() {
       aria-label="Create wallets on both chains"
     >
       <span className="flow-eyebrow">ONE WALLET PER CHAIN</span>
-      <h1>Your agent, on two networks.</h1>
+      <h1>{newWallet ? 'Create a wallet' : 'Your agent, on two networks.'}</h1>
       <p>
         Mint a wallet and its ownership NFT on Sepolia, then on Arc. Each NFT
         controls only its wallet on that chain. Addresses, balances and
@@ -57,12 +57,14 @@ function Walkthrough() {
         <div key={network} hidden={step !== network}>
           <ChainWalletSetup
             network={network}
+            restoreVerified={!newWallet}
             onAccount={(account) =>
               setWallets((current) => ({ ...current, [network]: account }))
             }
           />
         </div>
       ))}
+      {newWallet && wallets[step] && <Link href="/accounts">View your wallets →</Link>}
       {step === 'Sepolia' && wallets.Sepolia && (
         <button className="primary" onClick={() => setStep('Arc')}>
           Next: mint on Arc →

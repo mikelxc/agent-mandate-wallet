@@ -25,6 +25,7 @@ type Configuration = {
   validator?: Address;
 };
 type ChainWalletSetupProps = {
+  restoreVerified?: boolean;
   network: 'Arc' | 'Sepolia';
   onAccount: (account: Address) => void;
   initialLabel?: string;
@@ -40,6 +41,7 @@ export function ChainWalletSetup(props: ChainWalletSetupProps) {
   return <WalletSetup key={props.network} {...props} />;
 }
 function WalletSetup({
+  restoreVerified = true,
   network,
   onAccount,
   initialLabel = '',
@@ -117,7 +119,7 @@ function WalletSetup({
     }
   }, [address]);
   useEffect(() => {
-    if (!address || !config?.configured) return;
+    if (!restoreVerified || !address || !config?.configured) return;
     try {
       const saved = localStorage.getItem(
         `${storagePrefix}:verified:${address.toLowerCase()}`,
@@ -126,7 +128,7 @@ function WalletSetup({
     } catch {
       /* An unavailable saved address is not proof of ownership. */
     }
-  }, [address, config]);
+  }, [address, config, restoreVerified]);
   async function run(action: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true;

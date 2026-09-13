@@ -36,12 +36,14 @@ async function api<T>(path: string, body?: unknown) {
 export function AgentTokenManager({
   identity,
   account,
+  accounts,
   gateway,
   audience,
   onReady,
 }: {
   identity: PortableIdentity;
   account: string;
+  accounts?: string[];
   gateway: string;
   audience?: string;
   onReady: (ready: boolean) => void;
@@ -192,12 +194,18 @@ export function AgentTokenManager({
       </label>
       <label>
         Associated Arc account
-        <input
+        {accounts ? <WayleaveSelect
+          label="Associated Arc account"
+          value={selectedAccount}
+          disabled={busy || !accounts.length}
+          onValueChange={setSelectedAccount}
+          options={accounts.map((value) => ({ value, label: value }))}
+        /> : <input
           value={selectedAccount}
           disabled={busy}
           onChange={(e) => setSelectedAccount(e.target.value)}
           placeholder="0x…"
-        />
+        />}
       </label>
       <p>
         Use an account already linked to this ENS identity in the wallet step.

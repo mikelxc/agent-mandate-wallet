@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { AgentControl } from '../components/agent-control';
 import { ArcOnboarding } from '../components/arc-onboarding';
 import { AppFrame } from '../components/app-frame';
+import { InitialSetupGuard } from '../components/initial-setup-guard';
 
 export default async function Home({
   searchParams,
@@ -20,7 +21,7 @@ export default async function Home({
   return (
     <AppFrame>
       <Suspense fallback={<p>Loading setup…</p>}>
-        <ArcOnboarding />
+        <InitialSetupGuard><ArcOnboarding /></InitialSetupGuard>
       </Suspense>
     </AppFrame>
   );

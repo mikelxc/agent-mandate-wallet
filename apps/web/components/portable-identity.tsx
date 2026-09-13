@@ -40,6 +40,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return gatewayResponse<T>(response);
 }
 type IdentityPanelProps = {
+  connectionOnly?: boolean;
   initialName?: string;
   initialAccount?: string;
   hideWalletCreation?: boolean;
@@ -57,6 +58,7 @@ export function PortableIdentityPanel(props: IdentityPanelProps) {
   return <IdentityPanel key={address ?? 'disconnected'} {...props} />;
 }
 function IdentityPanel({
+  connectionOnly = false,
   gatewayAudience,
   hideIdentityHeading = false,
   stage,
@@ -75,6 +77,8 @@ function IdentityPanel({
   const [association, setAssociation] = useState('');
   const switchChain = useSwitchChain();
   const [tokenReady, setTokenReady] = useState(false);
+  const [linkedAccounts, setLinkedAccounts] = useState<string[]>([]);
+  const [restoring, setRestoring] = useState(connectionOnly);
   const { address, chainId } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
@@ -99,6 +103,35 @@ function IdentityPanel({
     callback.current?.({ identity: false, account: false, agent: false });
   }, [address]);
   useEffect(() => {
+    if (!connectionOnly) return;
+    let cancelled = false;
+    setRestoring(true);
+    void api<{ kind: string; identity: PortableIdentity }>('session')
+      .then((session) => {
+        if (cancelled || !address || session.kind !== 'owner' ||
+            session.identity.controller.toLowerCase() !== address.toLowerCase()) return;
+        setIdentity(session.identity);
+        setName(session.identity.name);
+        setVerified(true);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setRestoring(false); });
+    return () => { cancelled = true; };
+  }, [address, connectionOnly]);
+  useEffect(() => {
+    if (!connectionOnly || !verified) return;
+    let cancelled = false;
+    void api<{ accounts: { chainId: number; account: string }[] }>('accounts')
+      .then(({ accounts }) => {
+        if (cancelled) return;
+        const linked = accounts.filter((item) => item.chainId === paymentChain).map((item) => item.account);
+        setLinkedAccounts(linked);
+        setPaymentAccount((previous) => linked.includes(previous) ? previous : (linked[0] ?? ''));
+      })
+      .catch((e) => { if (!cancelled) setError(e.message); });
+    return () => { cancelled = true; };
+  }, [connectionOnly, verified, association]);
+  useEffect(() => {
     if (mounted.current)
       callback.current?.({
         identity: verified,
@@ -122,7 +155,7 @@ function IdentityPanel({
       className="wl-agent-settings identity-flow"
       data-onboarding-stage={stage}
     >
-      {!stage && (
+      {!stage && !connectionOnly && (
         <div className="flow-heading">
           <span className="flow-eyebrow">Name &amp; access</span>
           <h1>
@@ -139,7 +172,8 @@ function IdentityPanel({
       <div className="flow-layout">
         <div className="flow-main">
           <div className="flow-surface">
-            <div hidden={!!stage && stage !== 'identity'}>
+            {restoring && <p role="status">Loading your existing connection workspace…</p>}
+            <div hidden={restoring || (connectionOnly && verified) || (!!stage && stage !== 'identity')}>
               <div
                 className="flow-section-heading"
                 hidden={hideIdentityHeading}
@@ -232,7 +266,7 @@ function IdentityPanel({
                 aria-label="Discovered identity"
                 className="identity-result"
               >
-                <div hidden={!!stage && stage !== 'identity'}>
+                <div hidden={(connectionOnly && verified) || (!!stage && stage !== 'identity')}>
                   <span className="flow-eyebrow">
                     {verified ? 'Control verified' : 'Name found'}
                   </span>
@@ -475,10 +509,12 @@ function IdentityPanel({
                 )}
                 {verified && (
                   <div hidden={!!stage && stage !== 'agent'}>
+                    {connectionOnly && <h2>{identity.name}</h2>}
                     <AgentTokenManager
                       audience={gatewayAudience}
                       identity={identity}
                       account={paymentAccount}
+                      accounts={connectionOnly ? linkedAccounts : undefined}
                       gateway={
                         gatewayAudience ?? 'https://www.wayleave.xyz/gateway'
                       }
@@ -490,7 +526,7 @@ function IdentityPanel({
             )}
           </div>
         </div>
-        {!stage && (
+        {!stage && !connectionOnly && (
           <aside className="flow-aside">
             <div
               className="identity-map"

@@ -160,7 +160,7 @@ for (const existingWallet of [false, true])
             });
           },
         );
-      let cookie = '',
+      let cookie = existingWallet ? `wayleave_identity=${seed.token}` : '',
         bearer = '',
         signedGrant = '';
       await page.route('**/gateway/**', async (route) => {
@@ -205,7 +205,7 @@ for (const existingWallet of [false, true])
       });
       await page.addInitScript(
         ({ address }) => {
-          let connected = false;
+          let connected = sessionStorage.getItem('token-test-connected') === 'true';
           const provider = {
             isMetaMask: true,
             on() {},
@@ -220,12 +220,14 @@ for (const existingWallet of [false, true])
               if (method === 'eth_accounts') return connected ? [address] : [];
               if (method === 'eth_requestAccounts') {
                 connected = true;
+                sessionStorage.setItem('token-test-connected', 'true');
                 return [address];
               }
               if (method === 'eth_chainId') return '0xaa36a7';
               if (method === 'wallet_getCapabilities') return {};
               if (method === 'wallet_requestPermissions') {
                 connected = true;
+                sessionStorage.setItem('token-test-connected', 'true');
                 return [{ parentCapability: 'eth_accounts' }];
               }
               if (method === 'personal_sign')
@@ -254,59 +256,45 @@ for (const existingWallet of [false, true])
         { address: owner.address },
       );
       try {
-        await page.goto('/?setup=1&source=regression#preview');
-        await page
-          .getByRole('button', { name: 'Connect wallet', exact: true })
-          .click();
-        const modal = page.locator('w3m-modal');
-        await modal.getByText('Bearer Test Wallet', { exact: true }).click();
-        await modal.getByRole('button', { name: 'Sign', exact: true }).click();
-        if (existingWallet) {
-          await expect(page).toHaveURL(
-            /\/payments\?source=regression#preview$/,
-          );
-          await page.goto('/connect?setup=4');
-          await expect(
-            page.locator('.arc-onboarding[data-step="4"]'),
-          ).toBeVisible();
-          await page
-            .getByRole('button', {
-              name: 'Go to step 2: ENS identity',
-              exact: true,
-            })
-            .click();
-          await expect(page).toHaveURL(/\/connect\?setup=2$/);
-          return;
-        }
-        await expect(page.locator('.arc-onboarding-status')).toContainText(
-          'Owner verified.',
-        );
-        await page
-          .getByRole('button', {
-            name: 'Go to step 2: ENS identity',
-            exact: true,
-          })
-          .click();
+        await page.goto('/agents/new');
         await page.getByLabel('ENS name', { exact: true }).fill(identity.name);
         await page
           .getByRole('button', { name: 'Look up name', exact: true })
           .click();
         await page
-          .getByRole('button', { name: 'Verify with your wallet', exact: true })
-          .click();
-        await expect(
-          page.getByText('You control this name.', { exact: false }),
-        ).toBeVisible();
-        await page
           .getByRole('button', {
-            name: 'Go to step 4: Connect agent',
+            name: 'Connect Bearer Test Wallet',
             exact: true,
           })
           .click();
+        const modal = page.locator('w3m-modal');
+        await modal.getByRole('button', { name: 'Sign', exact: true }).click();
+        await expect(modal).not.toHaveClass(/open/);
+
+        if (!existingWallet) {
+          await page.getByLabel('ENS name', { exact: true }).fill(identity.name);
+          await page
+            .getByRole('button', { name: 'Look up name', exact: true })
+            .click();
+          await page
+            .getByRole('button', {
+              name: 'Verify with your wallet',
+              exact: true,
+            })
+            .click();
+        }
+        await expect(
+          page.getByRole('navigation', { name: 'Onboarding steps' }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('button', { name: /Create wallet on/ }),
+        ).toHaveCount(0);
         const manager = page.getByRole('region', {
           name: 'Agent bearer tokens',
         });
-        await manager.getByLabel('Associated Arc account').fill(account);
+        await expect(
+          manager.getByLabel('Associated Arc account'),
+        ).toContainText(account);
         await manager.getByLabel('Session length', { exact: true }).click();
         await page.getByRole('option', { name: '7 days', exact: true }).click();
         await manager
@@ -341,26 +329,6 @@ for (const existingWallet of [false, true])
         expect(
           await page.evaluate(() => navigator.clipboard.readText()),
         ).toContain(bearer);
-        await page
-          .getByRole('button', {
-            name: 'Go to step 5: First purchase',
-            exact: true,
-          })
-          .click();
-        await expect(
-          page
-            .getByRole('button', {
-              name: 'Go to step 4: Connect agent',
-              exact: true,
-            })
-            .locator('svg'),
-        ).toHaveCount(1);
-        await page
-          .getByRole('button', {
-            name: 'Go to step 4: Connect agent',
-            exact: true,
-          })
-          .click();
         await manager
           .getByRole('button', {
             name: 'Revoke assistant.research.eth',
@@ -380,6 +348,17 @@ for (const existingWallet of [false, true])
             }),
           ),
         ).toBeNull();
+        if (existingWallet) {
+          await page.goto('/?setup=3&source=regression#preview');
+          await expect(page).toHaveURL(/\/payments\?source=regression#preview$/);
+          await page
+            .getByRole('link', { name: 'Add agent', exact: true })
+            .click();
+          await expect(page).toHaveURL(/\/agents\/new$/);
+          await expect(page.getByLabel('Associated Arc account')).toContainText(
+            account,
+          );
+        }
         await page.screenshot({
           path: '/private/tmp/wayleave-bearer-tokens.png',
           fullPage: true,

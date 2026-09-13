@@ -156,6 +156,11 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
     let nonceRequests = 0;
     await page.route('**/gateway/**', async (route) => {
       const request = route.request();
+      if (new URL(request.url()).pathname === '/gateway/crosschain/config') {
+        await route.fulfill({ json: { configured: false } });
+        return;
+      }
+
       if (request.url().endsWith('/auth/siwe/nonce')) nonceRequests++;
       const headers = new Headers(request.headers());
       if (cookie) headers.set('Cookie', cookie);
@@ -285,44 +290,6 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(nonceRequests).toBe(1);
       if (validSignature) {
         await expect(page).toHaveURL(/\/payments$/);
-        nfatBalance = 1;
-        await page.getByRole('combobox', { name: 'Wallet network' }).click();
-        await page.getByRole('option', { name: /Sepolia/ }).click();
-        await expect(
-          page.getByRole('link', { name: 'Add agent', exact: true }),
-        ).toBeVisible();
-        await page
-          .getByRole('link', { name: 'Add agent', exact: true })
-          .click();
-        await expect(page).toHaveURL(/\/agents\/new$/);
-        await expect(
-          page.getByRole('heading', { name: 'Add an agent', exact: true }),
-        ).toBeVisible();
-        await page
-          .getByRole('button', { name: 'I understand. Name my wallet' })
-          .click();
-        await expect(page).toHaveURL(/\/agents\/new\?setup=3$/);
-        await expect(
-          page.getByLabel('Agent wallet name', { exact: true }),
-        ).toBeVisible();
-        await page
-          .getByLabel('Agent wallet name', { exact: true })
-          .fill('second-agent');
-        await expect(
-          page.getByRole('button', {
-            name: 'Create wallet on Sepolia',
-            exact: true,
-          }),
-        ).toBeEnabled();
-        await page
-          .getByRole('button', { name: 'Go to step 4: Add a chain' })
-          .click();
-        await expect(page).toHaveURL(/\/agents\/new\?setup=4$/);
-        await page.goBack();
-        await expect(
-          page.getByLabel('Agent wallet name', { exact: true }),
-        ).toHaveValue('second-agent');
-        expect(signatures).toBe(1);
         // Stay in the app: a full reload resets this test's in-memory wallet provider.
         await page.getByRole('banner').getByRole('link').first().click();
         await page

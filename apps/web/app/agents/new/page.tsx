@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { AppFrame } from '../../../components/app-frame';
-import { ArcOnboarding } from '../../../components/arc-onboarding';
+import { PortableIdentityPanel } from '../../../components/portable-identity';
 
 export default function AddAgentPage() {
   return (
@@ -9,13 +9,13 @@ export default function AddAgentPage() {
         <div>
           <h1>Add an agent</h1>
           <p>
-            Create an agent wallet or verify an existing one, then connect your
-            app.
+            Connect another app to a wallet you already own. Choose its access
+            and session length.
           </p>
         </div>
       </div>
       <Suspense fallback={<p>Loading agent setup…</p>}>
-        <ArcOnboarding alwaysSetup initialStep={2} />
+        <PortableIdentityPanel connectionOnly hideWalletCreation />
       </Suspense>
     </AppFrame>
   );

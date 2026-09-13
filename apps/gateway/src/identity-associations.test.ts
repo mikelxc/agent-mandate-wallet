@@ -45,3 +45,17 @@ test('membership rotation revokes access to attached account', async () => { con
 finally {
     s.store.close();
 } });
+
+test('owner lists linked wallets with fresh ownership checks; agent sessions cannot list', async () => {
+    const s = await fixture();
+    try {
+        expect(await s.associations.list(s.ownerToken)).toEqual([]);
+        const c = await s.associations.challenge(s.ownerToken, 5042002, payment.address);
+        await s.associations.attach(s.ownerToken, c.binding.nonce, await payment.signMessage({ message: c.message }));
+        expect(await s.associations.list(s.ownerToken)).toEqual([{ chainId: 5042002, account: payment.address, controller: payment.address, epoch: '1' }]);
+        await expect(s.associations.list(s.agentToken)).rejects.toThrow('owner session');
+        await expect(s.associations.list('')).rejects.toThrow('session');
+        s.setEpoch();
+        await expect(s.associations.list(s.ownerToken)).rejects.toThrow('control changed');
+    } finally { s.store.close(); }
+});

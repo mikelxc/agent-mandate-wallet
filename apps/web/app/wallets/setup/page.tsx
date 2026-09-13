@@ -1,2 +1,4 @@
 import { redirect } from 'next/navigation';
-export default function WalletSetupPage() { redirect('/?setup=3'); }
+export default function WalletSetupPage() {
+  redirect('/wallets/new');
+}

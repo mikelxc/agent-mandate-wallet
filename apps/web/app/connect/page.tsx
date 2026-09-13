@@ -1,13 +1,5 @@
-import { AppFrame } from '../../components/app-frame';
-import { Suspense } from 'react';
-import { ArcOnboarding } from '../../components/arc-onboarding';
+import { redirect } from 'next/navigation';
 
 export default function Connect() {
-  return (
-    <AppFrame active="connect">
-      <Suspense fallback={<p>Loading connections…</p>}>
-        <ArcOnboarding alwaysSetup initialStep={5} />
-      </Suspense>
-    </AppFrame>
-  );
+  redirect('/agents/new');
 }

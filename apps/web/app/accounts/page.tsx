@@ -13,7 +13,7 @@ export default function Accounts() {
         </div>
         <p>
           Each ownership NFT controls a wallet on its own chain.{' '}
-          <Link href="/wallets/setup">Mint on Sepolia and Arc →</Link>
+          <Link href="/wallets/new">Create a wallet →</Link>
         </p>
         <OwnedWalletManager />
       </section>
