@@ -1,6 +1,9 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { AppFrame } from '../../components/app-frame';
 import { Payments } from '../../components/crosschain-payments';
+
+export const metadata: Metadata = { title: 'Payments' };
 
 export default function PaymentsPage() {
   return (

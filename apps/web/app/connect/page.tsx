@@ -1,6 +1,9 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { AppFrame } from '../../components/app-frame';
 import { OwnedAgentAccess } from '../../components/owned-agent-access';
+export const metadata: Metadata = { title: 'Connect an agent' };
+
 export default function Connect() {
   return (
     <AppFrame active="connect">
