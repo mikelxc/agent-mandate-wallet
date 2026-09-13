@@ -1,27 +1,34 @@
 'use client';
 
 import { WayleaveSelect } from './wayleave-select';
-import { useState, useTransition } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useConnection, useSwitchChain } from 'wagmi';
 
 const networks = {
-  Sepolia: { id: 11155111, name: 'Sepolia', href: '/sepolia' },
-  Arc: { id: 5042002, name: 'Arc Testnet', href: '/payments' },
+  Sepolia: { id: 11155111, name: 'Sepolia' },
+  Arc: { id: 5042002, name: 'Arc Testnet' },
 } as const;
 
-export function NetworkSelector({
-  network,
-}: {
-  network: keyof typeof networks;
-}) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [navigating, startTransition] = useTransition();
+export function NetworkSelector() {
   const { address, chainId } = useConnection();
   const switchChain = useSwitchChain();
   const [error, setError] = useState('');
-  const selected = networks[network];
+  const network = !address
+    ? 'disconnected'
+    : chainId === networks.Arc.id
+      ? 'Arc'
+      : chainId === networks.Sepolia.id
+        ? 'Sepolia'
+        : 'unsupported';
+  async function selectNetwork(next: string) {
+    if (next !== 'Sepolia' && next !== 'Arc') return;
+    setError('');
+    try {
+      await switchChain.mutateAsync({ chainId: networks[next].id });
+    } catch {
+      setError('Wallet network was not changed. Try again in your wallet.');
+    }
+  }
   return (
     <div className="network-picker">
       <span className="network-picker-label">Wallet network</span>
@@ -29,8 +36,25 @@ export function NetworkSelector({
         label="Wallet network"
         badge
         value={network}
-        disabled={navigating || switchChain.isPending}
+        disabled={!address || switchChain.isPending}
         options={[
+          ...(!address
+            ? [
+                {
+                  value: 'disconnected',
+                  label: 'No wallet connected',
+                  disabled: true,
+                },
+              ]
+            : network === 'unsupported'
+              ? [
+                  {
+                    value: 'unsupported',
+                    label: `Chain ${chainId}`,
+                    disabled: true,
+                  },
+                ]
+              : []),
           {
             value: 'Sepolia',
             label: 'Sepolia',
@@ -48,33 +72,8 @@ export function NetworkSelector({
             disabled: true,
           },
         ]}
-        onValueChange={(next) => {
-          if (next !== 'Sepolia' && next !== 'Arc') return;
-          setError('');
-          startTransition(() => router.push(pathname === '/accounts' ? `/accounts?network=${next.toLowerCase()}` : networks[next].href));
-        }}
+        onValueChange={selectNetwork}
       />
-      {address && chainId !== selected.id && (
-        <button
-          className="network-wallet-switch"
-          type="button"
-          disabled={switchChain.isPending}
-          onClick={async () => {
-            setError('');
-            try {
-              await switchChain.mutateAsync({ chainId: selected.id });
-            } catch {
-              setError(
-                'Wallet network was not changed. Try again in your wallet.',
-              );
-            }
-          }}
-        >
-          {switchChain.isPending
-            ? 'Switching wallet…'
-            : `Switch wallet to ${selected.name}`}
-        </button>
-      )}
       {error && <span role="alert">{error}</span>}
     </div>
   );

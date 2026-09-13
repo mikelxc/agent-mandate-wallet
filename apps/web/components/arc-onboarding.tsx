@@ -435,7 +435,7 @@ export function ArcOnboarding({
                   Continue to agent connection <ArrowRight size={16} />
                 </button>
               )}
-              <Link className="mobile-link" href="/sepolia">
+              <Link className="mobile-link" href="/spending">
                 I’ll add another chain later <ArrowRight size={14} />
               </Link>
             </div>

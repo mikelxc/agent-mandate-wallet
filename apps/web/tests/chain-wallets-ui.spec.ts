@@ -32,17 +32,3 @@ for (const width of [390, 1280]) {
     ).toBe(true);
   });
 }
-test('network selector restores Sepolia and Arc destinations', async ({
-  page,
-}) => {
-  await page.goto('/payments');
-  await page.getByRole('combobox', { name: 'Wallet network' }).click();
-  await page.getByRole('option', { name: /Sepolia/ }).click();
-  await expect(page).toHaveURL(/\/sepolia$/);
-  await expect(
-    page.getByRole('combobox', { name: 'Wallet network' }),
-  ).toContainText('Sepolia');
-  await page.getByRole('combobox', { name: 'Wallet network' }).click();
-  await page.getByRole('option', { name: /Arc testnet/ }).click();
-  await expect(page).toHaveURL(/\/payments$/);
-});

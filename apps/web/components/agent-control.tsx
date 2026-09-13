@@ -2437,7 +2437,7 @@ export function AgentControl({
                     className="text-button"
                     onClick={() => {
                       setRequestedOperation('');
-                      window.history.replaceState(null, '', '/');
+                      window.history.replaceState(null, '', '/spending');
                     }}
                   >
                     View all payments

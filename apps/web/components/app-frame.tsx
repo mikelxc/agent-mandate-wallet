@@ -9,7 +9,7 @@ import { NetworkSelector } from './network-selector';
 export function AppFrame({
   children,
   active = 'agents',
-  network = 'Arc',
+  network,
 }: {
   children: ReactNode;
   active?:
@@ -36,24 +36,28 @@ export function AppFrame({
             </span>
             wayleave
           </Link>
-          <NetworkSelector network={network} />
+          <NetworkSelector />
           <AccountNav />
         </div>
         <nav aria-label="Main navigation">
           <Link
-            href={network === 'Arc' ? '/payments' : '/sepolia'}
+            href="/spending"
+            aria-current={active === 'agents' ? 'page' : undefined}
+          >
+            Spending
+          </Link>
+          <Link
+            href="/payments"
             aria-current={
-              active === 'agents' ||
-              active === 'crosschain' ||
-              active === 'payments'
+              active === 'payments' || active === 'crosschain'
                 ? 'page'
                 : undefined
             }
           >
-            {network === 'Arc' ? 'Payments' : 'Spending'}
+            Payments
           </Link>
           <Link
-            href={network === 'Arc' ? '/accounts' : '/accounts?network=sepolia'}
+            href="/accounts"
             aria-current={active === 'account' ? 'page' : undefined}
           >
             Wallets
@@ -76,7 +80,7 @@ export function AppFrame({
         {children}
       </main>
       <footer className="app-footer">
-        <span>{network} · Test funds only</span>
+        <span>{network ?? 'Sepolia & Arc'} · Test funds only</span>
         <Link href="/advanced">
           Developer tools <ArrowUpRight size={13} />
         </Link>
