@@ -354,6 +354,6 @@ Turso configuration is present.
   for payment history. Test keys were revoked and then returned 401; owner sessions
   were logged out. Only offchain test-wallet login signatures were used. No payment
   or public-chain transaction was submitted; no npm release is required.
-- The production fix remains on `codex/mcp-legacy-compat`. Automatic approval
-  review rejected a direct push to main without explicit user authorization.
-  A subsequent deployment from unchanged main would omit this fix.
+- The owner authorized merging the fix into main and deleting the compatibility
+  branch. A concurrent wallet-layout update (`ac69102`) was incorporated by
+  rebasing without conflicts before the final combined release checks.
