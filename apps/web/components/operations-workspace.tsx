@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useConnection } from 'wagmi';
 import { SpendingActivity } from './spending-activity';
-import { PurchaseTracker } from './purchase-tracker';
+import { SpendingAgents, type HubAgent } from './spending-agents';
+import './spending-hub.css';
 import type { CctpOperation } from '../../gateway/src/cctp';
 import {
   mergeOperations,
@@ -37,6 +38,7 @@ export function OperationsWorkspace() {
   const [state, setState] = useState<{
     owner?: string;
     rows: Activity[];
+    agents?: HubAgent[];
     errors: string[];
     loaded: boolean;
   }>({ rows: [], errors: [], loaded: false });
@@ -71,12 +73,25 @@ export function OperationsWorkspace() {
             return result.operations;
           },
         ),
+        read<HubAgent[]>('/agents').then((agents) =>
+          agents.map((a) => ({ ...a, source: 'agents' as const })),
+        ),
+        read<{ connections: HubAgent[] }>('/identity/tokens').then((result) =>
+          result.connections.map((a) => ({
+            ...a,
+            source: 'identity/tokens' as const,
+          })),
+        ),
       ]);
       if (cancelled) return;
-      const [sepolia, arc] = results;
+      const [sepolia, arc, legacyAgents, tokens] = results;
       setState({
         owner: address,
         loaded: true,
+        agents: [
+          ...(legacyAgents.status === 'fulfilled' ? legacyAgents.value : []),
+          ...(tokens.status === 'fulfilled' ? tokens.value : []),
+        ],
         rows: mergeOperations(
           sepolia.status === 'fulfilled' ? sepolia.value : [],
           arc.status === 'fulfilled' ? arc.value : [],
@@ -85,7 +100,7 @@ export function OperationsWorkspace() {
         errors: results.flatMap((result, index) =>
           result.status === 'rejected'
             ? [
-                `${index ? 'Arc' : 'Sepolia'}: ${result.reason instanceof Error ? result.reason.message : 'Could not load requests.'}`,
+                `${['Sepolia', 'Arc', 'Agent connections', 'Agent tokens'][index]}: ${result.reason instanceof Error ? result.reason.message : 'Could not load requests.'}`,
               ]
             : [],
         ),
@@ -109,11 +124,11 @@ export function OperationsWorkspace() {
   }, [address, operation, directArc, revision]);
 
   const rows = state.owner === address ? state.rows : [];
+  const agents = state.owner === address ? (state.agents ?? []) : [];
   const selected = rows.find((row) => row.id === operation);
   if (directArc || selected)
     return (
       <>
-        <Link href="/spending">← All spending · Sepolia & Arc</Link>
         {directArc || selected?.kind === 'arc' ? (
           <Payments />
         ) : (
@@ -124,7 +139,7 @@ export function OperationsWorkspace() {
 
   return (
     <section
-      className="wl-agent-settings payments-workspace"
+      className="wl-agent-settings payments-workspace spending-hub"
       aria-label="All spending"
     >
       <div className="payments-heading">
@@ -133,9 +148,14 @@ export function OperationsWorkspace() {
           <h1>Spending</h1>
           <p>Requests and payment activity across Sepolia and Arc.</p>
         </div>
-        <Link className="secondary" href="/spending?view=arc">
-          Create an Arc payment
-        </Link>
+        <div className="flow-inline-actions">
+          <Link className="secondary" href="/accounts">
+            Manage wallets
+          </Link>
+          <Link className="primary" href="/connect">
+            Connect an agent →
+          </Link>
+        </div>
       </div>
       {!address ? (
         <div className="flow-surface">
@@ -193,27 +213,55 @@ export function OperationsWorkspace() {
             </p>
           )}
           {operation && <Link href="/spending">Show all spending</Link>}
-          <div className="flow-layout payments-layout">
-            <SpendingActivity
-              rows={rows}
-              loaded={state.loaded && !state.errors.length}
-              onRefresh={() => setRevision((value) => value + 1)}
-            />
-            <aside className="payments-context">
-              <PurchaseTracker />
-              <details className="flow-disclosure">
-                <summary>Understanding payment status</summary>
-                <p>
-                  Approval authorizes a payment. Source receipts confirm the Arc
-                  transaction; Circle attestations allow settlement. A
-                  destination receipt confirms the recipient payment.
-                </p>
-              </details>
-              <Link className="payments-identity-link" href="/payments">
-                Explore agent checkout →
-              </Link>
-            </aside>
+          <SpendingAgents
+            agents={agents}
+            loading={!state.loaded}
+            onRefresh={() => setRevision((value) => value + 1)}
+          />
+          <nav className="hub-tools" aria-label="Dashboard tools">
+            <Link href="/accounts/new">
+              <strong>Create an agent wallet</strong>
+              <span>Set up another owned account →</span>
+            </Link>
+            <Link href="/accounts">
+              <strong>Balances &amp; funding</strong>
+              <span>Manage allowances and account gas →</span>
+            </Link>
+            <Link href="/connect">
+              <strong>MCP setup &amp; permissions</strong>
+              <span>Connect, configure and manage your agents →</span>
+            </Link>
+            <Link href="/identity">
+              <strong>Name &amp; ownership</strong>
+              <span>Manage your ENS identity and ownership →</span>
+            </Link>
+          </nav>
+          <div className="hub-summary" aria-label="Spending summary">
+            <div>
+              <strong>
+                {rows.filter((r) => r.category === 'approval').length}
+              </strong>
+              <span>Awaiting approval</span>
+            </div>
+            <div>
+              <strong>
+                {rows.filter((r) => r.category === 'progress').length}
+              </strong>
+              <span>In progress</span>
+            </div>
+            <div>
+              <strong>
+                {rows.filter((r) => r.category === 'paid').length}
+              </strong>
+              <span>Paid · receipt verified</span>
+            </div>
           </div>
+          <SpendingActivity
+            rows={rows}
+            agents={agents}
+            loaded={state.loaded}
+            onRefresh={() => setRevision((value) => value + 1)}
+          />
         </>
       )}
     </section>

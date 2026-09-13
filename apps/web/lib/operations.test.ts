@@ -78,3 +78,54 @@ test('separates approval, source receipt, Circle attestation and destination set
     )[0].status,
   ).toBe('Failed · receipt verified');
 });
+
+test('filters combine across networks and grouping does not lose matching records', async () => {
+  const { groupActivity } = await import('./operations');
+  const rows = mergeOperations(
+    [sepolia],
+    [{ ...arc, agentId: 'agent-1' }],
+    owner,
+    50,
+  );
+  const defaults = {
+    network: 'all',
+    status: 'all',
+    agent: 'all',
+    search: '',
+    days: 'all',
+    group: 'network',
+  };
+  expect(groupActivity(rows, defaults, {}).map((g) => g.label)).toEqual([
+    'Arc → Sepolia',
+    'Sepolia',
+  ]);
+  expect(
+    groupActivity(
+      rows,
+      {
+        ...defaults,
+        agent: 'agent-1',
+        status: 'progress',
+        search: 'Arc purchase',
+      },
+      { 'agent-1': 'Research' },
+    )[0].records.map((r) => r.id),
+  ).toEqual(['arc']);
+  expect(
+    groupActivity(
+      rows,
+      { ...defaults, agent: 'agent-1', network: 'sepolia' },
+      {},
+    ),
+  ).toEqual([]);
+  expect(groupActivity(rows, { ...defaults, days: '7' }, {}, 1000000)).toEqual(
+    [],
+  );
+  expect(
+    groupActivity(
+      rows,
+      { ...defaults, group: 'agent', agent: 'agent-1' },
+      { 'agent-1': 'Research' },
+    )[0].label,
+  ).toBe('Research');
+});

@@ -73,12 +73,6 @@ export function AppFrame({
             >
               Agent access
             </Link>
-            <Link
-              href="/identity"
-              aria-current={active === 'identity' ? 'page' : undefined}
-            >
-              Name & access
-            </Link>
           </nav>
         )}
       </header>

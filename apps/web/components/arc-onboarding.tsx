@@ -161,8 +161,9 @@ export function ArcOnboarding({
     };
   }, [address]);
   useEffect(() => {
-    if (returning && signedIn) router.replace('/payments');
-  }, [returning, signedIn, router]);
+    if (signedIn && (returning || (!alwaysSetup && requested === null)))
+      router.replace('/spending');
+  }, [returning, signedIn, router, alwaysSetup, requested]);
   async function connect() {
     setBusy(true);
     setError('');
@@ -224,8 +225,8 @@ export function ArcOnboarding({
     >
       <div className="mobile-onboarding-top">
         <span className="mobile-wordmark">Test networks · Test funds only</span>
-        <Link href="/payments">
-          View payments <ArrowRight size={14} />
+        <Link href="/spending">
+          View spending <ArrowRight size={14} />
         </Link>
       </div>
       <nav className={styles.stepNav} aria-label="Onboarding steps">
@@ -503,9 +504,9 @@ export function ArcOnboarding({
               </button>
               <Link
                 className="first-purchase-store"
-                href="/payments?firstPurchase=1"
+                href="/spending"
               >
-                Open Payments <ArrowRight size={14} />
+                Open Spending <ArrowRight size={14} />
               </Link>
               <p className="mobile-trust">
                 Your agent visits {developerPackPublicUrl}. A purchase is

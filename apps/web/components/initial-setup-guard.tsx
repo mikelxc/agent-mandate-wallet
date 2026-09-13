@@ -62,7 +62,7 @@ export function InitialSetupGuard({ children }: { children: ReactNode }) {
         const params = new URLSearchParams(window.location.search);
         params.delete('setup');
         router.replace(
-          `/payments${params.size ? `?${params}` : ''}${window.location.hash}`,
+          `/spending${params.size ? `?${params}` : ''}${window.location.hash}`,
         );
       }
     });
@@ -78,7 +78,7 @@ export function InitialSetupGuard({ children }: { children: ReactNode }) {
             {state === 'error'
               ? 'Could not check your existing wallets.'
               : state === 'existing'
-                ? 'Opening your payments…'
+                ? 'Opening your spending…'
                 : 'Checking your existing wallets…'}
           </p>
           {state === 'error' && (
@@ -86,7 +86,7 @@ export function InitialSetupGuard({ children }: { children: ReactNode }) {
               Retry wallet check
             </button>
           )}
-          <Link href="/payments">Open payments</Link>
+          <Link href="/spending">Open spending</Link>
         </section>
       )}
       <div hidden={blocked}>{children}</div>

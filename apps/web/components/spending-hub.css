@@ -1,0 +1,136 @@
+.spending-hub {
+  max-width: 1180px;
+}
+.hub-agents {
+  margin: 0 0 32px;
+}
+.hub-count {
+  display: inline-block;
+  padding: 3px 8px;
+  margin-left: 8px;
+  border-radius: 20px;
+  background: #e6ebe5;
+  color: #59665b;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.hub-agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.hub-agent-grid h3 {
+  margin: 12px 0 8px;
+}
+.hub-address {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hub-agent-grid .flow-inline-actions {
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.hub-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+.hub-tools a {
+  background: #e9ede7;
+  border-radius: 18px;
+  padding: 22px;
+  text-decoration: none;
+}
+.hub-tools strong,
+.hub-tools span {
+  display: block;
+}
+.hub-tools strong {
+  font-size: 14px;
+}
+.hub-tools span {
+  margin-top: 10px;
+  color: #657067;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.hub-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-block: 1px solid #dce1dd;
+  padding: 24px 0;
+  margin: 32px 0;
+  gap: 20px;
+}
+.hub-summary strong,
+.hub-summary span {
+  display: block;
+}
+.hub-summary strong {
+  font-size: 30px;
+  font-weight: 500;
+}
+.hub-summary span {
+  font-size: 12px;
+  color: #657067;
+  margin-top: 8px;
+}
+.hub-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+.hub-filters label {
+  display: flex;
+  flex: 1 1 150px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: #59665b;
+}
+.hub-filters label:first-child {
+  flex-basis: 230px;
+}
+.hub-filters input,
+.hub-filters select {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid #dce1dd;
+  background: white;
+  color: #252a27;
+  padding: 12px;
+  border-radius: 10px;
+  font: inherit;
+}
+.hub-activity-group {
+  margin: 12px 0 28px;
+}
+.hub-activity-group > h3 {
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.hub-activity-group .payment-record {
+  margin-bottom: 16px;
+}
+@media (max-width: 720px) {
+  .hub-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hub-tools a {
+    padding: 18px;
+  }
+  .hub-summary {
+    gap: 12px;
+  }
+  .hub-summary strong {
+    font-size: 26px;
+  }
+  .hub-agent-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

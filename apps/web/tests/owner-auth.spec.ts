@@ -364,7 +364,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(signatures).toBe(1);
       expect(nonceRequests).toBe(1);
       if (validSignature) {
-        await expect(page).toHaveURL(/\/payments$/);
+        await expect(page).toHaveURL(/\/spending$/);
         inventoryEnabled = true;
         await page
           .getByRole('navigation', { name: 'Main navigation' })
