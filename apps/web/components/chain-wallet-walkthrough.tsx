@@ -6,26 +6,35 @@ import { ChainWalletSetup } from './chain-wallet-setup';
 import './agent-flows.css';
 import './chain-wallet-walkthrough.css';
 
-export function ChainWalletWalkthrough({ newWallet = false }: { newWallet?: boolean }) {
+export function ChainWalletWalkthrough({
+  embedded = false,
+  newWallet = false,
+}: {
+  embedded?: boolean;
+  newWallet?: boolean;
+}) {
   const { address } = useConnection();
-  return <Walkthrough key={address ?? 'disconnected'} newWallet={newWallet} />;
+  return <Walkthrough key={address ?? 'disconnected'} embedded={embedded} newWallet={newWallet} />;
 }
-function Walkthrough({ newWallet }: { newWallet: boolean }) {
+function Walkthrough({ embedded, newWallet }: { embedded: boolean; newWallet: boolean }) {
   const { address } = useConnection();
   const [step, setStep] = useState<'Sepolia' | 'Arc'>('Sepolia');
   const [wallets, setWallets] = useState({ Sepolia: '', Arc: '' });
   const [error, setError] = useState('');
   return (
     <section
-      className="wl-agent-settings chain-wallet-walkthrough"
+      className={`wl-agent-settings chain-wallet-walkthrough ${embedded ? 'chain-wallet-embedded' : ''}`}
       aria-label="Create wallets on both chains"
     >
-      <span className="flow-eyebrow">ONE WALLET PER CHAIN</span>
-      <h1>{newWallet ? 'Create a wallet' : 'Your agent, on two networks.'}</h1>
-      <p>
-        Mint a wallet and its ownership NFT on Sepolia, then on Arc. Each NFT
-        controls only its wallet on that chain. Addresses, balances and
-        ownership are independent.
+      {!embedded && (
+        <>
+          <h1>{newWallet ? 'Create a wallet' : 'Give your agent a wallet.'}</h1>
+        </>
+      )}
+      <p className="mint-step-intro">
+        {newWallet ? 'Choose a supported chain and mint a new ownership NFT with its agent wallet.' : step === 'Sepolia'
+          ? 'Start with your Sepolia wallet. Then create one on Arc for the test purchase.'
+          : 'Create your Arc wallet for USDC payments. Its NFT will also appear in your wallet.'}
       </p>
       <nav aria-label="Wallet minting steps">
         {(['Sepolia', 'Arc'] as const).map((network, index) => (
@@ -67,7 +76,7 @@ function Walkthrough({ newWallet }: { newWallet: boolean }) {
       {newWallet && wallets[step] && <Link href="/accounts">View your wallets →</Link>}
       {step === 'Sepolia' && wallets.Sepolia && (
         <button className="primary" onClick={() => setStep('Arc')}>
-          Next: mint on Arc →
+          Next: create your Arc wallet →
         </button>
       )}
       {wallets.Arc && wallets.Sepolia && (
@@ -78,16 +87,18 @@ function Walkthrough({ newWallet }: { newWallet: boolean }) {
             its own agent connection and payment setup. Minting both does not
             automatically link the Sepolia name to Arc.
           </p>
-          <Link href="/connect">Continue to agent connection →</Link>
+          {!embedded && (
+            <Link href="/connect">Continue to agent connection →</Link>
+          )}
         </div>
       )}
-      <p className="flow-note">
-        Two separate confirmations. Sepolia needs test ETH; Arc needs test USDC.
-        No token allowance or payment is approved by minting.{' '}
-        <a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">
-          Get Arc test USDC ↗
-        </a>
-      </p>
+      {step === 'Arc' && (
+        <p className="flow-note">
+          <a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">
+            Need test USDC? ↗
+          </a>
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
     </section>
   );

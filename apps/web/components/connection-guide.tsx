@@ -9,11 +9,11 @@ export function ConnectionGuide() {
       aria-labelledby="connect-agent-title"
     >
       <div>
-        <span className="entry-eyebrow">Bring your agent along.</span>
+        <span className="entry-eyebrow">Setup</span>
         <h2 id="connect-agent-title">
-          A connection.
+          Connect your
           <br />
-          Then a conversation.
+          agent app.
         </h2>
         <p>
           Your agent can check its wallet, request a payment, and follow its
@@ -40,10 +40,9 @@ export function ConnectionGuide() {
             <div>
               <h3>Link your agent app</h3>
               <p>
-                Choose your client, then Hosted HTTP or a local package with
-                npm, Bun, pnpm, or Yarn. Copy the settings into that app. For
-                guided help, copy the setup prompt into a conversation with your
-                agent and enter the connection key privately.
+                Add the connection settings from setup to your app. You can
+                follow the instructions yourself or use the provided setup
+                prompt with your agent.
               </p>
             </div>
           </li>

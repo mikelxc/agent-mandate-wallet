@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowRight,
   Badge,
+  Fingerprint,
   Bot,
   Check,
   Circle,
@@ -418,6 +419,34 @@ export function OnboardingContext({
                 ? 'Name and address verified against the registry and resolver.'
                 : 'Wallet selected. Name verification is still required.'
               : 'Name preview · Your wallet is created after you confirm the setup transaction.'}
+          </p>
+        </div>
+      )}
+      {step === 3 && (
+        <div className={styles.identityContext}>
+          <span className={styles.eyebrow}>A NAME. YOUR CONTROL.</span>
+          <div className={styles.agentNode}>
+            <Symbol icon={Fingerprint} />
+            <div>
+              <strong>Your ENS name</strong>
+              <small>
+                {identityVerified
+                  ? 'Ownership verified'
+                  : 'Verified with the wallet that controls it'}
+              </small>
+            </div>
+          </div>
+          <Relationship label="links to" />
+          <div className={styles.agentNode}>
+            <Symbol icon={Wallet} />
+            <div>
+              <strong>Your Arc wallet</strong>
+              <small>You’ll link its address in the next step</small>
+            </div>
+          </div>
+          <p className={styles.contextNote}>
+            Verifying your name proves it’s yours. It doesn’t give an agent
+            permission to spend.
           </p>
         </div>
       )}
