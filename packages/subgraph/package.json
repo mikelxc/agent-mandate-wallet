@@ -4,6 +4,7 @@
   "scripts": {
     "codegen": "graph codegen subgraph.yaml",
     "build": "graph build subgraph.yaml",
+    "build:arc": "graph build subgraph.arc-testnet.yaml",
     "verify": "bun scripts/verify.ts",
     "test:mappings": "graph test -v 0.6.0"
   },

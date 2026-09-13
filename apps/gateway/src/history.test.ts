@@ -60,3 +60,27 @@ test("context reports failed user operation separately and never asserts destina
   expect(leaked.userOperations).toEqual([]);
   expect(leaked.transfers).toEqual([]);
 });
+
+test("environment config supports both chains and rejects partial or ambiguous providers", async () => {
+  const env = {
+    WAYLEAVE_GRAPH_ENDPOINT: config.endpoint, WAYLEAVE_GRAPH_DEPLOYMENT: config.deployment,
+    WAYLEAVE_GRAPH_TOKEN: token, WAYLEAVE_GRAPH_START_BLOCK: "10", WAYLEAVE_GRAPH_CHAIN_ID: "11155111",
+    WAYLEAVE_ARC_GRAPH_ENDPOINT: "https://graph.example/arc", WAYLEAVE_ARC_GRAPH_DEPLOYMENT: "QmArc",
+    WAYLEAVE_ARC_GRAPH_TOKEN: token, WAYLEAVE_ARC_GRAPH_START_BLOCK: "20", WAYLEAVE_ARC_GRAPH_CHAIN_ID: "5042002",
+  };
+  const original = globalThis.fetch;
+  const endpoints: string[] = [];
+  globalThis.fetch = (async (url) => {
+    endpoints.push(String(url));
+    return Response.json({ data: { paymentTransfers: [], _meta: { ...metadata, deployment: String(url).endsWith("/arc") ? "QmArc" : "QmDemo" } } });
+  }) as typeof fetch;
+  try {
+    const history = historyFromEnv(env);
+    expect((await history.list(account)).coverage.chainId).toBe(11155111);
+    expect((await history.list(account, { chainId: 5042002 })).coverage).toMatchObject({ status: "indexed", deployment: "QmArc", coverageStartBlock: 20 });
+    expect(endpoints).toEqual([config.endpoint, env.WAYLEAVE_ARC_GRAPH_ENDPOINT]);
+    expect(() => historyFromEnv({ ...env, WAYLEAVE_ARC_GRAPH_DEPLOYMENT: undefined })).toThrow("incomplete");
+    expect(() => historyFromEnv({ ...env, WAYLEAVE_ARC_GRAPH_CHAIN_ID: "11155111" })).toThrow("5042002");
+    expect(() => historyFromEnv({ ...env, WAYLEAVE_GRAPH_CHAIN_ID: "5042002" })).toThrow("Invalid");
+  } finally { globalThis.fetch = original; }
+});

@@ -1,0 +1,30 @@
+{
+  "studioSlug": "wayleave",
+  "version": "arc-testnet-v0.1.0",
+  "chainId": 5042002,
+  "endpoint": "https://api.studio.thegraph.com/query/1760154/wayleave/arc-testnet-v0.1.0",
+  "deployment": "QmZ9UkFJzAsWsWmwyWpQQApXP1XQbkaSwCazSMrFEvs2LN",
+  "manifest": "packages/subgraph/subgraph.arc-testnet.yaml",
+  "startBlock": 61600603,
+  "verifiedAt": "2026-09-13T06:30:05.179Z",
+  "indexedBlock": 61602191,
+  "observedRpcHead": 61856204,
+  "hasIndexingErrors": false,
+  "syncStatus": "backfilling",
+  "sampleAccount": "0xf4462268feef5ab89e627f3c947bd40c087c5f4d",
+  "canonicalRegistrationReceiptVerified": "0x0d329bacfdaf212e19e262380dc1687819505bfc4f4da445886318a3d5b1b326",
+  "registrationVerified": true,
+  "canonicalTransferEventsVerified": [],
+  "hostedGatewayConfigured": false,
+  "mcpToolsVerified": [
+    "list_payments",
+    "get_payment_context",
+    "summarize_spending"
+  ],
+  "decentralizedNetworkPublicationVerified": false,
+  "mcpVerifiedAt": "2026-09-13T06:40:42.280Z",
+  "mcpAuthentication": "ephemeral_local_fixture",
+  "mcpData": "live_graph_and_chain_rpc",
+  "mcpSampleTransferCount": 0,
+  "mcpIndexedBlock": 61635919
+}

@@ -119,8 +119,17 @@ export class HistoryService {
 }
 /** Server-only config. Endpoints and credentials are never supplied by MCP callers. */
 export function historyFromEnv(env: Record<string, string | undefined> = process.env) {
-  if (!env.WAYLEAVE_GRAPH_ENDPOINT) return new HistoryService();
-  if (!env.WAYLEAVE_GRAPH_DEPLOYMENT || !env.WAYLEAVE_GRAPH_TOKEN || !env.WAYLEAVE_GRAPH_START_BLOCK || !env.WAYLEAVE_GRAPH_CHAIN_ID) throw new Error("History provider configuration is incomplete");
-  return new HistoryService([{ endpoint: env.WAYLEAVE_GRAPH_ENDPOINT, deployment: env.WAYLEAVE_GRAPH_DEPLOYMENT,
-    chainId: Number(env.WAYLEAVE_GRAPH_CHAIN_ID), startBlock: Number(env.WAYLEAVE_GRAPH_START_BLOCK), token: env.WAYLEAVE_GRAPH_TOKEN, apiKey: env.WAYLEAVE_GRAPH_API_KEY }]);
+  const configs: HistoryConfig[] = [];
+  for (const prefix of ["WAYLEAVE_GRAPH", "WAYLEAVE_ARC_GRAPH"]) {
+    const value = (key: string) => env[`${prefix}_${key}`];
+    if (!["ENDPOINT", "DEPLOYMENT", "TOKEN", "START_BLOCK", "CHAIN_ID", "API_KEY"].some(key => value(key))) continue;
+    if (!["ENDPOINT", "DEPLOYMENT", "TOKEN", "START_BLOCK", "CHAIN_ID"].every(key => value(key)))
+      throw new Error(`${prefix} history provider configuration is incomplete`);
+    const chainId = Number(value("CHAIN_ID"));
+    if (prefix === "WAYLEAVE_ARC_GRAPH" && chainId !== 5042002)
+      throw new Error("Arc history provider requires chain 5042002");
+    configs.push({ endpoint: value("ENDPOINT")!, deployment: value("DEPLOYMENT")!,
+      chainId, startBlock: Number(value("START_BLOCK")), token: value("TOKEN")!, apiKey: value("API_KEY") });
+  }
+  return new HistoryService(configs);
 }

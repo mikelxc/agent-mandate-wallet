@@ -9,7 +9,7 @@ for (const chainId of [11155111, 5042002]) {
   test(`all history endpoints authenticate on the connection chain ${chainId}`, async () => {
     const store = new Store(':memory:');
     let queries = 0, valid = true, read = true;
-    const history = new HistoryService([{ chainId: 11155111, endpoint: 'https://graph.example/query', deployment: 'test', startBlock: 1, token: account }], (async (_url, init) => {
+    const history = new HistoryService([{ chainId, endpoint: 'https://graph.example/query', deployment: 'test', startBlock: 1, token: account }], (async (_url, init) => {
       queries++;
       const { variables } = JSON.parse(String(init?.body));
       expect(variables.account ?? variables.where.account).toBe(account);
@@ -27,9 +27,9 @@ for (const chainId of [11155111, 5042002]) {
         expect(response.status).toBe(200);
         const body = await response.json();
         expect(body.coverage.chainId).toBe(chainId);
-        expect(body.coverage.status).toBe(chainId === 11155111 ? 'indexed' : 'not_configured');
+        expect(body.coverage.status).toBe('indexed');
       }
-      expect(queries > 0).toBe(chainId === 11155111);
+      expect(queries).toBe(3);
       expect((await get(`/agent/payments?chainId=${chainId === 11155111 ? 5042002 : 11155111}`)).status).toBe(403);
       read = false;
       expect((await get('/agent/payments')).status).toBe(403);
