@@ -1194,6 +1194,13 @@ summary:focus-visible {
 .account-home .focused-payment .status.blocked {
   color: #a04d46;
 }
+.account-home .status.warning {
+  background: #fbf3df;
+  color: var(--warning);
+}
+.account-home .focused-payment .status.warning {
+  color: var(--warning);
+}
 .account-home .focused-payment .payment-summary {
   display: flex;
   flex-direction: column;

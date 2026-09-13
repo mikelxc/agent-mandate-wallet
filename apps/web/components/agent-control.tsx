@@ -2523,7 +2523,7 @@ export function AgentControl({
                           </p>
                         </div>
                         <span
-                          className={`status ${op.status === 'rejected' ? 'blocked' : ''}`}
+                          className={`status ${op.status === 'rejected' ? 'blocked' : !op.execution && op.status === 'approval_required' && expired ? 'warning' : ''}`}
                         >
                           {op.execution
                             ? op.execution.success
