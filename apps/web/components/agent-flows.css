@@ -461,3 +461,15 @@
 @media (max-width: 600px) { .agent-access-page { padding: 24px 20px; } }
 .access-wallet-picker { margin-bottom: 24px; }
 .access-wallet-picker p { overflow-wrap: anywhere; }
+
+/* Guided steps replace the standalone panel's stacked disclosure sections. */
+.agent-access-page .agent-access-flow { max-width: none; }
+.agent-access-flow .identity-flow { width: 100%; margin: 0; }
+.agent-access-flow .identity-result { margin-top: 0; padding-top: 0; border-top: 0; }
+.agent-access-flow .guided-account-confirmation { margin: 0; padding: 0; border: 0; }
+.agent-access-flow .guided-account-confirmation > p:first-of-type { margin-top: 0; }
+.agent-access-flow .identity-result .account-confirm-action { margin: 8px 0 0; min-height: 44px; }
+.access-wallet-picker > button { margin-left: 16px; }
+@media (max-width: 600px) {
+  .agent-access-flow .account-confirm-action { width: 100%; }
+}

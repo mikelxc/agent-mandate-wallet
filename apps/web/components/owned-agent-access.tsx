@@ -98,7 +98,7 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
         <strong>{identity ? agentEnsName(identity.name) : 'Choose a wallet'}</strong>
         {!started && <button onClick={() => requestedAccount ? router.replace('/connect') : setChoosing(true)}>Change wallet</button>}
       </>}
-      {arc && !(choosing && arcWallets.length > 1) ? <p>Arc account: {arc.account}</p> : !!arcWallets.length && <label>Arc wallet
+      {arc && !(choosing && arcWallets.length > 1) ? !started && <p>Arc account: {arc.account}</p> : !!arcWallets.length && <label>Arc wallet
         <WayleaveSelect label="Arc wallet" value={arc?.account ?? selectedArc} disabled={started}
           onValueChange={setSelectedArc} options={arcWallets.map(wallet => ({ value: wallet.account, label: wallet.name, description: wallet.account }))} />
       </label>}

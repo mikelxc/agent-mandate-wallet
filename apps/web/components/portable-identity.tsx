@@ -418,12 +418,12 @@ function IdentityPanel({
                 {verified && (!stage || stage === 'account') && (
                   <details
                     open={stage === 'account'}
-                    className="flow-disclosure"
+                    className={`flow-disclosure ${stage ? 'guided-account-confirmation' : ''}`}
                   >
-                    <summary>Confirm your Arc account</summary>
-                    <h3>{linkedAccounts.length ? 'Use a linked account' : 'Link your Arc account'}</h3>
+                    <summary hidden={!!stage}>Confirm your Arc account</summary>
+                    {!stage && <h3>{linkedAccounts.length ? 'Use a linked account' : 'Link your Arc account'}</h3>}
                     <p>
-                      {linkedAccounts.length ? 'Choose an account already linked to this identity. Its address stays fixed when you grant access.' : 'Link a wallet you own to this name. You’ll sign a separate ownership proof; payments still need your approval.'}
+                      {initialAccount && linkedAccounts.includes(paymentAccount) ? 'This wallet is already linked to your identity. Continue to choose access permissions.' : linkedAccounts.length ? 'Choose an account already linked to this identity. Its address stays fixed when you grant access.' : 'Link a wallet you own to this name. You’ll sign a separate ownership proof; payments still need your approval.'}
                     </p>
                     {!hideWalletCreation && (
                       <ChainWalletSetup
@@ -456,6 +456,7 @@ function IdentityPanel({
                       />}
                     </label>
                     <button
+                      className="primary account-confirm-action"
                       disabled={busy || accountsLoading}
                       onClick={() =>
                         void run(async () => {
@@ -543,7 +544,7 @@ function IdentityPanel({
                 )}
                 {verified && (
                   <div hidden={!!stage && stage !== 'agent'}>
-                    {connectionOnly && <h2>{identity.name}</h2>}
+                    {connectionOnly && !stage && <h2>{identity.name}</h2>}
                     <AgentTokenManager
                       audience={gatewayAudience}
                       identity={identity}

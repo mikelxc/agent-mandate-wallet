@@ -111,7 +111,16 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
     const access=page.getByRole('link',{name:'Grant agent access',exact:true});
     await expect(access).toHaveAttribute('href',`/connect?chainId=5042002&account=${arcAccount}`);
     await access.click();
-    await page.getByRole('button',{name:'Use this account',exact:true}).click();
+    await expect(page.locator('.access-wallet-picker')).not.toContainText(arcAccount);
+    const confirmation = page.getByRole('button',{name:'Use this account',exact:true});
+    await expect(confirmation).toHaveClass(/primary/);
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({width,height:1000});
+      await expect(confirmation).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({path:`/private/tmp/connect-confirm-${width}.png`,fullPage:true});
+    }
+    await confirmation.click();
     await expect(manager.getByLabel('Associated Arc account')).toBeDisabled();
     await expect(manager.getByRole('heading',{name:'Set up your MCP client'})).toHaveCount(0);
     await expect(manager.getByLabel('Connection label')).toBeEnabled();
