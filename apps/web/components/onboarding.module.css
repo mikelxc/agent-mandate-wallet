@@ -801,3 +801,200 @@
     transition: none;
   }
 }
+
+/* Read the purpose first, then act; mobile follows the same DOM order. */
+.shell.shell:global(.arc-onboarding) :global(.mobile-stage) {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 48px;
+  align-items: start;
+}
+.shell:global(.arc-onboarding) :global(.arc-step-intro) {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.shell:global(.arc-onboarding) :global(.arc-step-eyebrow) {
+  display: block;
+  margin-bottom: 14px;
+  color: #626b65;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.shell:global(.arc-onboarding) .context {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 24px;
+  border-radius: 24px;
+}
+.shell.shell:global(.arc-onboarding) :global(.arc-step-actions) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 28px;
+  border: 1px solid #dce1dc;
+  border-radius: 24px;
+  background: #fff;
+  gap: 0;
+}
+.shell:global(.arc-onboarding) .stepSymbol {
+  margin-bottom: 18px;
+}
+.shell:global(.arc-onboarding) .intro {
+  padding: 0;
+}
+.shell:global(.arc-onboarding) .introSymbols {
+  margin-bottom: 18px;
+}
+.shell:global(.arc-onboarding) .intro h3 {
+  font-size: 24px;
+}
+.shell:global(.arc-onboarding) .agentNode,
+.shell:global(.arc-onboarding) .ownerNode {
+  padding: 16px;
+}
+.shell:global(.arc-onboarding) .contextNote {
+  margin-bottom: 0;
+}
+@media (max-width: 900px) {
+  .shell.shell:global(.arc-onboarding) :global(.mobile-stage) {
+    column-gap: 28px;
+  }
+  .shell.shell:global(.arc-onboarding) :global(.arc-step-actions) {
+    padding: 22px;
+  }
+}
+@media (max-width: 700px) {
+  .shell.shell:global(.arc-onboarding) :global(.mobile-stage) {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .shell:global(.arc-onboarding) .context {
+    margin: 0 0 24px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+  .shell.shell:global(.arc-onboarding) :global(.arc-step-actions) {
+    padding: 20px;
+    border-radius: 20px;
+  }
+  .shell:global(.arc-onboarding) .intro h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .shell:global(.arc-onboarding) .intro p {
+    margin-bottom: 0;
+  }
+  .shell:global(.arc-onboarding) .agentNode,
+  .shell:global(.arc-onboarding) .ownerNode {
+    padding: 12px;
+  }
+  .shell:global(.arc-onboarding) .relationship {
+    padding: 8px 0;
+  }
+  .shell:global(.arc-onboarding) .topicCopy {
+    margin-top: 14px;
+  }
+  .shell:global(.arc-onboarding) .topicCopy h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+}
+@media (max-width: 700px) {
+  .shell:global(.arc-onboarding) .identityContext,
+  .shell:global(.arc-onboarding) .connectionContext {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+    align-items: center;
+  }
+  .shell:global(.arc-onboarding) .identityContext > .eyebrow,
+  .shell:global(.arc-onboarding) .connectionContext > .eyebrow,
+  .shell:global(.arc-onboarding) .contextNote,
+  .shell:global(.arc-onboarding) .topicCopy,
+  .shell:global(.arc-onboarding) .installNote,
+  .shell:global(.arc-onboarding) .ownership {
+    grid-column: 1 / -1;
+  }
+  .shell:global(.arc-onboarding) .identityContext > .agentNode,
+  .shell:global(.arc-onboarding) .connectionContext > .agentNode {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    height: 100%;
+  }
+  .shell:global(.arc-onboarding) .identityContext > .relationship span,
+  .shell:global(.arc-onboarding) .connectionContext > .relationship span {
+    display: none;
+  }
+  .shell:global(.arc-onboarding) .identityContext > .relationship svg,
+  .shell:global(.arc-onboarding) .connectionContext > .relationship svg {
+    transform: rotate(-90deg);
+  }
+  .shell:global(.arc-onboarding) .context strong {
+    font-size: 12px;
+  }
+  .shell:global(.arc-onboarding) .context small {
+    font-size: 10px;
+  }
+  .shell:global(.arc-onboarding) .installNote {
+    margin-top: 10px;
+  }
+  .shell:global(.arc-onboarding)[data-step='5'] .context {
+    margin-top: 24px;
+  }
+}
+/* Keep the action beside its explanation, with a supporting diagram on the right. */
+.shell.shell:global(.paced-onboarding) .stepNav {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.shell.shell:global(.paced-onboarding) :global(.mobile-stage) {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-rows: auto 1fr;
+  gap: 0 56px;
+}
+.shell.shell:global(.paced-onboarding) :global(.arc-step-actions) {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.shell.shell:global(.paced-onboarding) .context {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin-top: 0;
+  padding: 28px;
+}
+@media (max-width: 900px) {
+  .shell.shell:global(.paced-onboarding) :global(.mobile-stage) {
+    column-gap: 28px;
+  }
+  .shell.shell:global(.paced-onboarding) .context {
+    padding: 20px;
+  }
+}
+@media (max-width: 700px) {
+  .shell.shell:global(.paced-onboarding) .stepNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .shell.shell:global(.paced-onboarding) :global(.mobile-stage) {
+    gap: 0;
+  }
+  .shell.shell:global(.paced-onboarding) .context {
+    order: 0;
+    margin: 0 0 24px;
+    padding: 18px;
+  }
+  .shell.shell:global(.paced-onboarding) :global(.arc-step-actions) {
+    order: 0;
+    width: 100%;
+  }
+  .shell.shell:global(.paced-onboarding) .context small {
+    font-size: 12px;
+  }
+}
+
+.shell.shell:global(.paced-onboarding) .identityContext {
+  display: block;
+}

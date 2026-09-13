@@ -19,7 +19,7 @@ export function ConnectionGuide() {
           Your agent can check its wallet, request a payment, and follow its
           status. You approve the spending here.
         </p>
-        <Link href="/wallets/setup" className="primary">
+        <Link href="/?setup=1" className="primary">
           Get started <ArrowRight size={16} />
         </Link>
       </div>

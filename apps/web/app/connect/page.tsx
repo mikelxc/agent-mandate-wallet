@@ -6,7 +6,7 @@ export default function Connect() {
   return (
     <AppFrame active="connect">
       <Suspense fallback={<p>Loading connections…</p>}>
-        <ArcOnboarding alwaysSetup initialStep={4} />
+        <ArcOnboarding alwaysSetup initialStep={5} />
       </Suspense>
     </AppFrame>
   );

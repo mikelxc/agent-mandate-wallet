@@ -1,54 +1,35 @@
 import { expect, test } from '@playwright/test';
-test.setTimeout(45000);
+test.setTimeout(45_000);
 for (const width of [390, 1280]) {
-  test(`chain-specific minting walkthrough at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 1000 });
-    const writes: string[] = [];
-    page.on('request', (r) => {
-      if (r.url().includes('/gateway/') && r.method() !== 'GET')
-        writes.push(r.url());
+  test(`adding a chain explains separate wallets at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/?setup=4');
+    await expect(
+      page.getByRole('heading', { name: 'Add another chain.' }),
+    ).toBeVisible();
+    const diagram = page.getByRole('complementary', {
+      name: 'Add another chain explained',
     });
-    await page.route('**/gateway/crosschain/config', (r) =>
-      r.fulfill({
-        json: {
-          configured: true,
-          chainId: 5042002,
-          registry: '0x39cB47aA65594767d1e456bd329Aad849EC98345',
-          validator: '0xe4cB1515BD7aC3D43f979392517EB35964A7b7cc',
-        },
-      }),
+    await expect(diagram).toContainText(
+      'Adding Arc does not move your Sepolia wallet or funds.',
     );
-    await page.goto('/wallets/setup', { waitUntil: 'domcontentloaded' });
-    const sep = page.getByRole('region', { name: 'Sepolia wallet setup' });
-    await expect(sep).toBeVisible();
-    await expect(sep.getByText(/Minting also registers/)).toBeVisible();
+    await diagram.getByText('What happens to the ENS name?').click();
+    await expect(diagram).toContainText(
+      'That association does not change ENS records.',
+    );
     await expect(
-      sep.getByRole('button', {
-        name: 'Create wallet on Sepolia',
-        exact: true,
-      }),
-    ).toBeDisabled();
-    await page.getByRole('button', { name: '2. Arc', exact: true }).click();
-    const arc = page.getByRole('region', { name: 'Arc wallet setup' });
-    await expect(arc).toBeVisible();
-    await expect(sep).toBeHidden();
+      page.getByRole('radio', { name: /Arc Testnet/ }),
+    ).toBeChecked();
     await expect(
-      arc.getByRole('button', {
-        name: 'Create wallet on Arc Testnet',
-        exact: true,
-      }),
-    ).toBeDisabled();
-    await expect(page.getByText('Both wallets are verified.')).toHaveCount(0);
-    expect(writes).toEqual([]);
+      page.getByRole('button', { name: /Create wallet on/ }),
+    ).toHaveCount(0);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: `/tmp/wayleave-chain-wallets-${width}.png`,
-      fullPage: true,
-    });
   });
 }
 test('network selector restores Sepolia and Arc destinations', async ({

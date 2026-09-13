@@ -29,10 +29,16 @@ for (const width of [320, 390, 1280]) {
     await page
       .getByRole('button', { name: 'Get started', exact: true })
       .click();
-    await expect(page).toHaveURL(/\/wallets\/setup$/);
-    await expect(page.getByRole('heading', { name: 'Your agent, on two networks.' })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Wallet minting steps' }).getByRole('button')).toHaveCount(2);
-    await expect(page.getByRole('button', { name: 'Create wallet on Sepolia', exact: true })).toBeDisabled();
+    await expect(page).toHaveURL(/setup=1/);
+    await page
+      .getByRole('button', { name: 'Go to step 3: Name your wallet' })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Name your agent’s wallet' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Review how your agent spends' }),
+    ).toBeVisible();
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByRole('heading', { name: 'Let your agents do their thing.' }),
@@ -119,9 +125,9 @@ for (const width of [390, 1280]) {
     expect(authRequests).toBe(0);
     await page.keyboard.press('Escape');
     await expect(
-      page.getByRole('button', { name: 'Connect wallet' }),
+      page.getByRole('button', { name: 'Sign in', exact: true }),
     ).toBeEnabled();
-    await page.getByRole('button', { name: 'Connect wallet' }).click();
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(
       modal.getByText('Connect Wallet', { exact: true }),
     ).toBeVisible();

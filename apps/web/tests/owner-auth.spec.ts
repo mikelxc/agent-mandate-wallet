@@ -91,6 +91,10 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
         url.hostname === 'rpc.walletconnect.org',
       async (route) => {
         const body = route.request().postDataJSON();
+        if (!body) {
+          await route.fulfill({ json: {} });
+          return;
+        }
         const contractReply = (
           target: string,
           data: Hex,
@@ -280,19 +284,37 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(signatures).toBe(1);
       expect(nonceRequests).toBe(1);
       if (validSignature) {
-        await expect(page.locator('.arc-onboarding-status')).toContainText(
-          'Owner verified.',
-        );
-        await expect(page.locator('.arc-onboarding')).toBeVisible();
+        await expect(page).toHaveURL(/\/payments$/);
+        // Stay in the app: a full reload resets this test's in-memory wallet provider.
+        await page.getByRole('banner').getByRole('link').first().click();
         await page
-          .getByRole('button', { name: 'Go to step 2: ENS identity' })
+          .getByRole('button', { name: 'Get started', exact: true })
+          .click();
+        await page.getByRole('button', { name: 'See how it works' }).click();
+        await page
+          .getByRole('button', { name: 'I understand. Name my wallet' })
           .click();
         await expect(
-          page.getByRole('heading', {
-            name: 'Use a name you own',
+          page.getByLabel('Agent wallet name', { exact: true }),
+        ).toBeVisible();
+        await page
+          .getByLabel('Agent wallet name', { exact: true })
+          .fill('research-desk');
+        await expect(
+          page.getByRole('button', {
+            name: 'Create wallet on Sepolia',
             exact: true,
           }),
-        ).toBeVisible();
+        ).toBeEnabled();
+        await expect(
+          page.getByRole('complementary', {
+            name: 'Your agent wallet explained',
+          }),
+        ).toContainText('research-desk.wayleave.eth');
+        await page.screenshot({
+          path: '/private/tmp/wayleave-named-wallet-signed-in.png',
+          fullPage: true,
+        });
         // Stored merchant evidence drives the timeline; the UI cannot advance it itself.
         const purchase = {
           id: '11111111-1111-4111-8111-111111111111',
@@ -321,7 +343,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
           return route.fulfill({ json: { purchases: [purchase] } });
         });
         await page
-          .getByRole('button', { name: 'Go to step 5: First purchase' })
+          .getByRole('button', { name: 'Go to step 6: Try a purchase' })
           .click();
         const tracker = page.getByRole('region', {
           name: 'Developer Pack purchase tracker',

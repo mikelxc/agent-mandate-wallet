@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-
 test.setTimeout(45_000);
+test.use({ reducedMotion: 'reduce' });
 for (const width of [320, 1280]) {
-  test(`Arc setup keeps identity, wallet and purchase evidence separate at ${width}px`, async ({
+  test(`onboarding teaches permissions before setup at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -12,15 +12,49 @@ for (const width of [320, 1280]) {
         writes.push(r.url());
     });
     await page.goto('/?setup=1');
+    await page.getByRole('button', { name: 'See how it works' }).click();
+    await expect(page).toHaveURL(/setup=2/);
     await expect(
-      page.getByRole('heading', { name: 'Connect your wallet.' }),
+      page.getByRole('heading', { name: 'How your agent spends.' }),
     ).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: 'Go to step 3: Name your wallet',
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole('button', { name: 'Review how your agent spends' }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel('Agent wallet name', { exact: true }),
+    ).toHaveCount(0);
+    await page
+      .getByRole('button', { name: 'Review how your agent spends' })
+      .click();
+    await page
+      .getByRole('button', { name: 'I understand. Name my wallet' })
+      .click();
+    await expect(page).toHaveURL(/setup=3/);
+    await expect(
+      page.getByRole('heading', {
+        name: 'Name your agent’s wallet',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Connect your wallet', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Review how your agent spends' }),
+    ).toHaveCount(0);
     const stages = [
       'Connect',
-      'ENS identity',
-      'Arc wallet',
-      'Connect agent',
-      'First purchase',
+      'How it works',
+      'Name your wallet',
+      'Add a chain',
+      'Connect your agent',
+      'Try a purchase',
     ];
     for (let i = 0; i < stages.length; i++) {
       await page
@@ -29,38 +63,24 @@ for (const width of [320, 1280]) {
           exact: true,
         })
         .click();
-      if (i === 1) {
-        await expect(page.getByLabel('ENS name')).toBeVisible();
-        await expect(
-          page.getByRole('link', {
-            name: 'Register one in the ENS hackathon app',
-          }),
-        ).toBeVisible();
-      }
-      if (i === 2 || i === 3)
-        await expect(
-          page.getByText('Verify your ENS name in the identity step first.'),
-        ).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
     }
+    await expect(page.getByText('OPTIONAL · AFTER SETUP')).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Make your first purchase.' }),
-    ).toBeVisible();
-    await expect(
-      page.locator('.arc-onboarding aside').getByText('Verified', { exact: true }),
+      page
+        .locator('.arc-onboarding aside')
+        .getByText('Verified', { exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.locator('.arc-onboarding aside').getByText('Not yet verified', { exact: true }),
+      page
+        .locator('.arc-onboarding aside')
+        .getByText('Not yet verified', { exact: true }),
     ).toHaveCount(4);
     expect(writes).toEqual([]);
-    await page.screenshot({
-      path: `/tmp/wayleave-arc-onboarding-${width}.png`,
-      fullPage: true,
-    });
   });
 }
 test('wallet page never offers Sepolia deployment or creates a wallet while disconnected', async ({
@@ -77,12 +97,12 @@ test('wallet page never offers Sepolia deployment or creates a wallet while disc
     }),
   );
   await page.goto('/accounts');
-  await page.getByLabel('Wallet label', { exact: true }).fill('research-desk');
+  await page.getByLabel('Wallet name', { exact: true }).fill('research-desk');
   await expect(
     page.getByRole('button', { name: 'Create wallet on Arc Testnet' }),
   ).toBeDisabled();
   await expect(
-    page.getByText('Creation uses native test USDC', { exact: false }),
+    page.getByText('You’ll confirm with test USDC on Arc.', { exact: false }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: /Create.*Sepolia/ }),

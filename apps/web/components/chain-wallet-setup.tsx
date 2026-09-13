@@ -24,29 +24,28 @@ type Configuration = {
   registry?: Address;
   validator?: Address;
 };
-export function ArcWalletSetup({
-  onAccount,
-}: {
-  onAccount: (account: Address) => void;
-}) {
-  return <ChainWalletSetup network="Arc" onAccount={onAccount} />;
-}
-export function ChainWalletSetup({
-  network,
-  onAccount,
-}: {
+type ChainWalletSetupProps = {
   network: 'Arc' | 'Sepolia';
   onAccount: (account: Address) => void;
-}) {
-  return <WalletSetup key={network} network={network} onAccount={onAccount} />;
+  initialLabel?: string;
+  onLabelChange?: (label: string) => void;
+  onIdentity?: (identity: {
+    name: string;
+    label: string;
+    account: Address;
+    nftId: string;
+  }) => void;
+};
+export function ChainWalletSetup(props: ChainWalletSetupProps) {
+  return <WalletSetup key={props.network} {...props} />;
 }
 function WalletSetup({
   network,
   onAccount,
-}: {
-  network: 'Arc' | 'Sepolia';
-  onAccount: (account: Address) => void;
-}) {
+  initialLabel = '',
+  onLabelChange,
+  onIdentity,
+}: ChainWalletSetupProps) {
   const chain = network === 'Arc' ? arcTestnet : sepolia;
   const storagePrefix =
     network === 'Arc' ? 'wayleave:arc-create' : 'wayleave:sepolia-create';
@@ -55,7 +54,7 @@ function WalletSetup({
   const switcher = useSwitchChain();
   const write = useWriteContract();
   const [config, setConfig] = useState<Configuration>();
-  const [label, setLabel] = useState('');
+  const [label, setLabel] = useState(initialLabel);
   const [existing, setExisting] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -205,6 +204,14 @@ function WalletSetup({
       });
       if (!resolved || !isAddressEqual(resolved, account))
         throw new Error('ENSv2 name does not resolve to this Sepolia wallet.');
+      if (owner.current !== currentOwner)
+        throw new Error('Connected wallet changed. Verify again.');
+      onIdentity?.({
+        name: agentEnsName(walletLabel),
+        label: walletLabel,
+        account,
+        nftId: id.toString(),
+      });
     }
     if (owner.current !== currentOwner)
       throw new Error('Connected wallet changed. Verify again.');
@@ -254,15 +261,10 @@ function WalletSetup({
   }
   return (
     <section
-      className="flow-surface arc-wallet-setup"
+      className="flow-surface chain-wallet-setup"
       aria-label={`${network} wallet setup`}
     >
       <h2>Your wallet lives on {network}.</h2>
-      <p>
-        Create an NFT-controlled payment wallet. Your wallet holds its ownership
-        NFT on this chain; every payment still needs your approval. An NFT on
-        another chain does not control this wallet.
-      </p>
       {!config?.configured && (
         <p role="status">
           {config
@@ -271,18 +273,24 @@ function WalletSetup({
         </p>
       )}
       <label>
-        Wallet label
+        {network === 'Sepolia' ? 'Agent wallet name' : 'Wallet name'}
         <input
           value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          onChange={(e) => {
+            setLabel(e.target.value);
+            onLabelChange?.(e.target.value);
+          }}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="research-desk"
           maxLength={32}
         />
       </label>
       <p className="flow-note">
         {network === 'Arc'
-          ? '3–32 lowercase letters, numbers or hyphens. This labels the Arc wallet; your ENS name is registered separately on Sepolia. Creation uses native test USDC for gas.'
-          : `3–32 lowercase letters, numbers or hyphens. Minting also registers ${agentEnsName(label || 'your-name')} for this Sepolia wallet. Creation uses Sepolia ETH for gas.`}
+          ? 'Use 3–32 lowercase letters, numbers or hyphens. You’ll confirm with test USDC on Arc.'
+          : `Includes ${agentEnsName(label || 'your-name')}. You’ll confirm with Sepolia ETH.`}
       </p>
       <button
         className="primary"

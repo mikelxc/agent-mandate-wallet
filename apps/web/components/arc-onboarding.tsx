@@ -1,20 +1,27 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useConnection, usePublicClient } from 'wagmi';
+import { useConnection } from 'wagmi';
 import {
   ArrowRight,
   Check,
   Wallet,
   ShieldCheck,
-  Fingerprint,
+  Badge,
   KeyRound,
   Package,
   Clipboard,
   LockKeyhole,
+  Network,
 } from 'lucide-react';
 import Link from 'next/link';
+import type { Address } from 'viem';
+import { agentEnsName } from '@mandate/sdk';
+import { ChainWalletSetup } from './chain-wallet-setup';
+import {
+  ChainWalletPicker,
+  type AdditionalWalletNetwork,
+} from './chain-wallet-picker';
 import { PortableIdentityPanel } from './portable-identity';
 import { PurchaseTracker } from './purchase-tracker';
 import { OnboardingContext } from './onboarding-context';
@@ -25,17 +32,51 @@ import {
 } from '../lib/merchant-purchase';
 import { SpendingOverview } from './spending-overview';
 import './arc-onboarding.css';
-import { arcTestnet, sepolia } from 'viem/chains';
-import { isAddress, type Address } from 'viem';
-import { kernelAccountFactoryAbi, sepoliaDeployment } from '@mandate/sdk';
 
-const labels = [
-  'Connect',
-  'ENS identity',
-  'Arc wallet',
-  'Connect agent',
-  'First purchase',
+const steps = [
+  {
+    label: 'Connect',
+    title: 'Connect your wallet.',
+    copy: 'Use the wallet you already have. Your keys stay yours.',
+    icon: Wallet,
+  },
+  {
+    label: 'How it works',
+    title: 'How your agent spends.',
+    copy: 'You own the wallet. Your agent requests payments. You decide what gets paid.',
+    icon: ShieldCheck,
+  },
+  {
+    label: 'Name your wallet',
+    title: 'Name your agent’s wallet',
+    copy: 'Choose one name. We’ll create its wallet on Sepolia, register the ENS name, and put the ownership NFT in your wallet.',
+    icon: Badge,
+  },
+  {
+    label: 'Add a chain',
+    title: 'Add another chain.',
+    copy: 'Your named wallet starts on Sepolia. Choose another network to give your agent a wallet there, too.',
+    icon: Network,
+  },
+  {
+    label: 'Connect your agent',
+    title: 'Connect your agent.',
+    copy: 'Link your app to the Arc wallet you just added. It can read details and request payments; your signature stays with you.',
+    icon: KeyRound,
+  },
+  {
+    label: 'Try a purchase',
+    title: 'Try your first purchase.',
+    copy: 'When you’re ready, ask your agent to request the Developer Pack. You’ll review the payment before any funds move.',
+    icon: Package,
+  },
 ];
+type NamedWallet = {
+  name: string;
+  label: string;
+  account: Address;
+  nftId: string;
+};
 export function ArcOnboarding({
   initialStep,
   alwaysSetup = false,
@@ -46,87 +87,55 @@ export function ArcOnboarding({
   const query = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const arcClient = usePublicClient({ chainId: arcTestnet.id });
-  const sepoliaClient = usePublicClient({ chainId: sepolia.id });
   const { address } = useConnection();
-  const requestedStep = query.get('setup');
+  const requested = query.get('setup');
   const step =
-    requestedStep && /^[1-5]$/.test(requestedStep)
-      ? Number(requestedStep)
+    requested && /^[1-6]$/.test(requested)
+      ? Number(requested)
       : (initialStep ?? 1);
-  function setStep(next: number) {
-    const params = new URLSearchParams(query.toString());
-    params.set('setup', String(Math.max(1, Math.min(5, next))));
-    router.push(`${pathname}?${params}${window.location.hash}`, {
-      scroll: false,
-    });
-  }
-  useEffect(() => {
-    if (alwaysSetup || !address || !query.has('setup')) return;
-    let cancelled = false;
-    const leaveSetup = () => {
-      if (cancelled) return;
-      const params = new URLSearchParams(query.toString());
-      params.delete('setup');
-      router.replace(
-        `/payments${params.size ? `?${params}` : ''}${window.location.hash}`,
-        { scroll: false },
-      );
-    };
-    // Each registry is checked independently. Failed RPC reads are not proof of ownership.
-    if (sepoliaClient)
-      void sepoliaClient
-        .readContract({
-          address: sepoliaDeployment.registry,
-          abi: kernelAccountFactoryAbi,
-          functionName: 'balanceOf',
-          args: [address],
-        })
-        .then((balance) => {
-          if (balance > 0n) leaveSetup();
-        })
-        .catch(() => {});
-    if (arcClient)
-      void fetch('/gateway/crosschain/config')
-        .then((r) => (r.ok ? r.json() : null))
-        .then(async (config) => {
-          if (
-            cancelled ||
-            !config?.configured ||
-            config.chainId !== arcTestnet.id ||
-            !isAddress(config.registry)
-          )
-            return;
-          const balance = await arcClient.readContract({
-            address: config.registry as Address,
-            abi: kernelAccountFactoryAbi,
-            functionName: 'balanceOf',
-            args: [address],
-          });
-          if (balance > 0n) leaveSetup();
-        })
-        .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [address, alwaysSetup, arcClient, sepoliaClient, pathname, query]);
+  const [acceptedFor, setAcceptedFor] = useState<string>();
+  const [ownerSession, setOwnerSession] = useState('');
+  const [namedWallet, setNamedWallet] = useState<NamedWallet>();
+  const [arcWallet, setArcWallet] = useState<Address>();
+  const [selectedNetwork, setSelectedNetwork] =
+    useState<AdditionalWalletNetwork>('Arc');
+  const [draftName, setDraftName] = useState('');
   const [progress, setProgress] = useState({
     identity: false,
     account: false,
     agent: false,
   });
   const [purchaseOwner, setPurchaseOwner] = useState('');
-  const [ownerSession, setOwnerSession] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const ownerKey = address?.toLowerCase() ?? 'visitor';
+  const accepted = acceptedFor === ownerKey;
+  const signedIn =
+    !!address && ownerSession.toLowerCase() === address.toLowerCase();
+  const activeOwner = useRef(address);
+  activeOwner.current = address;
+  function setStep(next: number) {
+    const params = new URLSearchParams(query.toString());
+    params.set('setup', String(next));
+    router.push(`${pathname}?${params}`, { scroll: false });
+  }
   useEffect(() => {
+    if (address)
+      setAcceptedFor((previous) =>
+        previous === 'visitor' ? address.toLowerCase() : previous,
+      );
+    setOwnerSession('');
+    setNamedWallet(undefined);
+    setArcWallet(undefined);
+    setDraftName('');
     setProgress({ identity: false, account: false, agent: false });
     setPurchaseOwner('');
-    setOwnerSession('');
+    setError('');
     let cancelled = false;
     if (address)
-      fetch('/gateway/auth/session', { credentials: 'same-origin' })
+      void fetch('/gateway/auth/session', { credentials: 'same-origin' })
         .then(async (r) => (r.ok ? r.json() : null))
         .then((s) => {
           if (!cancelled && s?.address?.toLowerCase() === address.toLowerCase())
@@ -143,14 +152,17 @@ export function ArcOnboarding({
     };
     const failed = (event: Event) =>
       setError((event as CustomEvent<string>).detail);
-    window.addEventListener('wayleave:owner-auth-error', failed);
     window.addEventListener('wayleave:owner-session', listener);
+    window.addEventListener('wayleave:owner-auth-error', failed);
     return () => {
       cancelled = true;
       window.removeEventListener('wayleave:owner-session', listener);
       window.removeEventListener('wayleave:owner-auth-error', failed);
     };
   }, [address]);
+  useEffect(() => {
+    if (returning && signedIn) router.replace('/payments');
+  }, [returning, signedIn, router]);
   async function connect() {
     setBusy(true);
     setError('');
@@ -165,8 +177,7 @@ export function ArcOnboarding({
       setBusy(false);
     }
   }
-  const setup = alwaysSetup || query.has('setup');
-  if (!setup)
+  if (!alwaysSetup && !query.has('setup'))
     return (
       <div className="agent-shell desktop-agent-pro show-on-mobile">
         <SpendingOverview
@@ -177,69 +188,145 @@ export function ArcOnboarding({
           busy={busy}
           authLabel="Sign in"
           onConnect={() => {
-            router.push('/?setup=1');
+            setReturning(true);
             void connect();
           }}
-          onSetup={() => router.push('/wallets/setup')}
+          onSetup={() => {
+            setReturning(false);
+            router.push('/?setup=1');
+          }}
         />
+        <output
+          className="mobile-status arc-onboarding-status"
+          aria-live="polite"
+        >
+          {error}
+        </output>
       </div>
     );
   const complete = [
-    !!address && ownerSession === address,
-    progress.identity,
-    progress.account,
+    signedIn,
+    accepted,
+    !!namedWallet,
+    !!arcWallet,
     progress.agent,
-    !!address && purchaseOwner === address && ownerSession === address,
+    signedIn && purchaseOwner.toLowerCase() === ownerKey,
   ];
-  const StageIcon = [Wallet, Fingerprint, Wallet, KeyRound, Package][step - 1];
+  const current = steps[step - 1];
+  const Icon = current.icon;
+  const allowed = accepted && signedIn;
+  const canLink = allowed && !!namedWallet && !!arcWallet;
   return (
     <section
-      className={`mobile-agent-onboarding ${styles.shell} arc-onboarding`}
+      className={`mobile-agent-onboarding ${styles.shell} arc-onboarding paced-onboarding`}
       data-step={step}
-      aria-label="Arc onboarding"
+      aria-label="Agent wallet onboarding"
     >
       <div className="mobile-onboarding-top">
-        <span className="mobile-wordmark">Arc Testnet · test funds only</span>
+        <span className="mobile-wordmark">Test networks · Test funds only</span>
         <Link href="/payments">
           View payments <ArrowRight size={14} />
         </Link>
       </div>
       <nav className={styles.stepNav} aria-label="Onboarding steps">
-        {labels.map((label, i) => (
+        {steps.map((item, i) => (
           <button
-            key={label}
-            aria-label={`Go to step ${i + 1}: ${label}`}
+            key={item.label}
+            type="button"
+            aria-label={`Go to step ${i + 1}: ${item.label}`}
             aria-current={step === i + 1 ? 'step' : undefined}
             onClick={() => setStep(i + 1)}
           >
             <span>{complete[i] ? <Check size={13} /> : `0${i + 1}`}</span>
-            <span>{label}</span>
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
       <div className="mobile-stage">
-        <div className="mobile-step-content">
+        <div className="arc-step-intro">
           <span className={styles.stepSymbol} aria-hidden="true">
-            <StageIcon />
+            <Icon />
           </span>
+          <div className="mobile-copy">
+            <h2>{current.title}</h2>
+            <p>{current.copy}</p>
+          </div>
+        </div>
+        {step === 4 ? (
+          <aside
+            className={`${styles.context} add-chain-context`}
+            aria-label="Add another chain explained"
+          >
+            <span className={styles.eyebrow}>
+              SAME OWNER · SEPARATE CHAIN WALLETS
+            </span>
+            <div className="chain-relationship">
+              <Badge size={22} />
+              <div>
+                <strong>Sepolia</strong>
+                <small>
+                  {namedWallet?.name ?? 'Your ENS name + agent wallet'}
+                </small>
+              </div>
+              <span>{namedWallet ? 'Verified' : 'Create first'}</span>
+            </div>
+            <div className="chain-add-connector">+ Add a network</div>
+            <div className="chain-relationship">
+              <Network size={22} />
+              <div>
+                <strong>Arc</strong>
+                <small>Another wallet and ownership NFT</small>
+              </div>
+              <span>{arcWallet ? 'Verified' : 'To add'}</span>
+            </div>
+            <div className={styles.topicCopy}>
+              <h3>More places to pay. You still own it.</h3>
+              <p>
+                Your owner wallet holds an NFT on each chain. Adding Arc does
+                not move your Sepolia wallet or funds.
+              </p>
+            </div>
+            <details>
+              <summary>What happens to the ENS name?</summary>
+              <p>
+                It still resolves to your Sepolia wallet. In the next step, you
+                can sign a Wayleave association to the Arc wallet. That
+                association does not change ENS records.
+              </p>
+            </details>
+          </aside>
+        ) : step === 6 ? (
+          <aside className={styles.context} aria-label="Your purchase progress">
+            <PurchaseTracker onPurchased={setPurchaseOwner} />
+          </aside>
+        ) : (
+          <OnboardingContext
+            step={step === 2 ? 6 : step === 3 ? 2 : step === 5 ? 4 : 1}
+            owner={signedIn ? address : undefined}
+            account={step === 5 ? arcWallet : namedWallet?.account}
+            walletName={
+              namedWallet?.name ??
+              (draftName ? agentEnsName(draftName) : 'Your agent wallet')
+            }
+            identityVerified={!!namedWallet}
+            nftId={namedWallet?.nftId}
+            hostName="Your agent app"
+            hasCredential={progress.agent}
+            onExplore={() => setStep(2)}
+          />
+        )}
+        <div className="mobile-step-content arc-step-actions">
           {step === 1 && (
             <>
-              <div className="mobile-copy">
-                <h2>Connect your wallet.</h2>
-                <p>
-                  Use the wallet you already have. Your agent requests payments;
-                  you approve the spending.
-                </p>
-              </div>
               <button
                 className="mobile-primary"
                 disabled={busy}
-                onClick={() => (complete[0] ? setStep(2) : void connect())}
+                onClick={() => (signedIn ? setStep(2) : void connect())}
               >
                 {busy
-                  ? 'Opening wallet…'
-                  : complete[0]
-                    ? 'Continue to ENS identity'
+                  ? 'Check your wallet…'
+                  : signedIn
+                    ? 'Continue to how it works'
                     : address
                       ? 'Sign in with your wallet'
                       : 'Connect wallet'}
@@ -249,43 +336,176 @@ export function ArcOnboarding({
                 <LockKeyhole size={14} />
                 Signing in won’t move money.
               </p>
-              <details className="connection-details">
-                <summary>Networks used during setup</summary>
-                <p>
-                  ENS registration and sign-in use Sepolia. Your payment wallet
-                  is created on Arc Testnet.
-                </p>
-              </details>
             </>
           )}
-          {(step === 3 || step === 4) && (
-            <div className="mobile-copy">
-              <h2>
-                {step === 3 ? 'Create your Arc wallet.' : 'Connect your agent.'}
-              </h2>
-              <p>
-                {step === 3
-                  ? 'Create a wallet you own, then link it to your ENS identity.'
-                  : 'Give your agent permission to read and request payments. You keep the signing authority.'}
-              </p>
-            </div>
-          )}
-          <div className="arc-identity-form" hidden={step < 2 || step > 4}>
-            <PortableIdentityPanel
-              key={address ?? 'disconnected'}
-              stage={step === 3 ? 'account' : step === 4 ? 'agent' : 'identity'}
-              onProgress={setProgress}
-            />
-          </div>
-          {step === 5 && (
+          {step === 2 && (
             <>
-              <div className="mobile-copy">
-                <h2>Make your first purchase.</h2>
+              <div className="access-acknowledgement">
+                <ShieldCheck size={22} />
+                <h3>Your agent requests. You approve.</h3>
                 <p>
-                  Try a 0.10 test-USDC Developer Pack purchase. Review its
-                  request here, then let it read what it bought.
+                  The ownership NFT stays in your wallet. A connection lets an
+                  app read details and request payments. It does not hand over
+                  your signing key.
                 </p>
               </div>
+              <button
+                className="mobile-primary"
+                onClick={() => {
+                  setAcceptedFor(ownerKey);
+                  setStep(3);
+                }}
+              >
+                I understand. Name my wallet <ArrowRight size={17} />
+              </button>
+              <p className="mobile-trust">
+                This acknowledgement grants no spending permission.
+              </p>
+            </>
+          )}
+          {step === 4 && (
+            <ChainWalletPicker
+              value={selectedNetwork}
+              onChange={setSelectedNetwork}
+            />
+          )}
+          {step >= 3 && step <= 5 && !accepted && (
+            <div className="setup-prerequisite">
+              <p>
+                First, understand what your agent can do and what stays in your
+                control.
+              </p>
+              <button className="mobile-primary" onClick={() => setStep(2)}>
+                Review how your agent spends <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+          {step >= 3 && step <= 5 && accepted && !signedIn && (
+            <div className="setup-prerequisite">
+              <p>
+                Connect and verify the wallet that will own your agent wallets.
+              </p>
+              <button
+                className="mobile-primary"
+                disabled={busy}
+                onClick={() => void connect()}
+              >
+                {busy ? 'Check your wallet…' : 'Connect your wallet'}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+          {allowed && (
+            <div hidden={step !== 3}>
+              <ChainWalletSetup
+                network="Sepolia"
+                onAccount={() => {}}
+                onLabelChange={setDraftName}
+                onIdentity={(identity) => {
+                  if (activeOwner.current === address) setNamedWallet(identity);
+                }}
+              />
+              <p className="mobile-trust">
+                One setup transaction creates the wallet, its ownership NFT and
+                ENS name. Completion waits for the receipt and name resolution.
+              </p>
+              {namedWallet && (
+                <button className="mobile-primary" onClick={() => setStep(4)}>
+                  Continue: add another chain <ArrowRight size={16} />
+                </button>
+              )}
+            </div>
+          )}
+          {allowed && !!namedWallet && (
+            <div hidden={step !== 4}>
+              <ChainWalletSetup
+                key={namedWallet.account}
+                network={selectedNetwork}
+                initialLabel={namedWallet.label}
+                onAccount={(account) => {
+                  if (activeOwner.current === address) setArcWallet(account);
+                }}
+              />
+              <p className="mobile-trust">
+                Arc is used for this app’s USDC payment route. You’ll confirm a
+                separate creation transaction on Arc.
+              </p>
+              {arcWallet && (
+                <button className="mobile-primary" onClick={() => setStep(5)}>
+                  Continue to agent connection <ArrowRight size={16} />
+                </button>
+              )}
+              <Link className="mobile-link" href="/sepolia">
+                I’ll add another chain later <ArrowRight size={14} />
+              </Link>
+            </div>
+          )}
+          {allowed && step === 4 && !namedWallet && (
+            <>
+              <p>Create or verify your named Sepolia wallet first.</p>
+              <button className="mobile-primary" onClick={() => setStep(3)}>
+                Name your agent’s wallet <ArrowRight size={16} />
+              </button>
+            </>
+          )}
+          {allowed && step === 5 && !canLink && (
+            <>
+              <p>
+                This connection uses an Arc wallet. Finish naming your wallet
+                and adding Arc first.
+              </p>
+              <button
+                className="mobile-primary"
+                onClick={() => setStep(namedWallet ? 4 : 3)}
+              >
+                {namedWallet ? 'Add Arc' : 'Name your agent’s wallet'}
+                <ArrowRight size={16} />
+              </button>
+            </>
+          )}
+          {canLink && (
+            <div hidden={step !== 5} className="arc-identity-form">
+              <div className="connection-preparation">
+                <span>
+                  {progress.identity
+                    ? progress.account
+                      ? '3 · Connect your app'
+                      : '2 · Associate your Arc wallet'
+                    : '1 · Verify the name for this connection'}
+                </span>
+                <p>
+                  {progress.identity
+                    ? progress.account
+                      ? 'Create a scoped connection and install it in your app.'
+                      : 'Sign an association between your name and the Arc wallet you own. This does not authorize payments.'
+                    : 'Your ENS name is already registered. Verify control with Wayleave so it can issue a named connection.'}
+                </p>
+              </div>
+              <PortableIdentityPanel
+                key={`${address}:${namedWallet.account}:${arcWallet}`}
+                initialName={namedWallet.name}
+                initialAccount={arcWallet}
+                hideWalletCreation
+                hideIdentityHeading
+                stage={
+                  !progress.identity
+                    ? 'identity'
+                    : !progress.account
+                      ? 'account'
+                      : 'agent'
+                }
+                onProgress={setProgress}
+              />
+              {progress.agent && (
+                <button className="mobile-primary" onClick={() => setStep(6)}>
+                  Continue: try a purchase <ArrowRight size={16} />
+                </button>
+              )}
+            </div>
+          )}
+          {step === 6 && (
+            <>
+              <span className="setup-optional">OPTIONAL · AFTER SETUP</span>
               <div className="first-purchase-instruction">
                 <span>ASK YOUR AGENT</span>
                 <p>{purchaseInstruction}</p>
@@ -310,68 +530,26 @@ export function ArcOnboarding({
                 className="first-purchase-store"
                 href="/payments?firstPurchase=1"
               >
-                Continue to Payments <ArrowRight size={14} />
+                Open Payments <ArrowRight size={14} />
               </Link>
               <p className="mobile-trust">
-                Your agent visits {developerPackPublicUrl}. Your payment stays
-                in Wayleave.
+                Your agent visits {developerPackPublicUrl}. A purchase is
+                complete only after its payment and delivery are verified.
               </p>
-              {!progress.account && (
-                <p className="mobile-trust">
-                  Link your Arc wallet and create its bearer token before
-                  requesting a purchase.
-                </p>
+              {!progress.agent && (
+                <button className="mobile-link" onClick={() => setStep(5)}>
+                  Finish connecting your agent first <ArrowRight size={14} />
+                </button>
               )}
             </>
           )}
-          {step > 1 && step < 5 && (
-            <button
-              className="mobile-primary"
-              onClick={() =>
-                step === 4 &&
-                progress.identity &&
-                progress.account &&
-                progress.agent
-                  ? router.push('/payments?firstPurchase=1')
-                  : setStep(step + 1)
-              }
-            >
-              {step === 4 &&
-              progress.identity &&
-              progress.account &&
-              progress.agent
-                ? 'Finish setup & try a purchase'
-                : complete[step - 1]
-                  ? 'Continue'
-                  : 'Explore next step'}
-              <ArrowRight size={16} />
-            </button>
-          )}
         </div>
-        {step === 5 ? (
-          <aside className={styles.context} aria-label="Your purchase progress">
-            <PurchaseTracker onPurchased={setPurchaseOwner} />
-          </aside>
-        ) : (
-          <OnboardingContext
-            step={step === 3 ? 2 : step === 2 ? 6 : step}
-            owner={address}
-            walletName="Your Arc wallet"
-            identityVerified={progress.identity}
-            hostName="Your agent"
-            hasCredential={progress.agent}
-            onExplore={() => setStep(2)}
-          />
-        )}
       </div>
       <output
         className="mobile-status arc-onboarding-status"
         aria-live="polite"
       >
-        {error ||
-          (complete[0]
-            ? 'Owner verified. Payment approvals remain separate.'
-            : '')}
+        {error}
       </output>
     </section>
   );

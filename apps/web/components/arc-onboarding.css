@@ -1,4 +1,339 @@
 /* The production onboarding shell and context panel come from onboarding.module.css. */
-.arc-onboarding [hidden]{display:none!important}.arc-onboarding .mobile-onboarding-top>a{display:flex;align-items:center;gap:10px;font-size:12px;color:#626b65;min-height:40px}.arc-onboarding .mobile-step-content{min-width:0}.arc-identity-form{width:100%;min-width:0}.arc-onboarding .identity-flow{padding:0}.arc-onboarding .identity-flow .flow-layout{display:block}.arc-onboarding .identity-flow .flow-surface{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}.arc-onboarding .identity-flow .flow-section-heading>.flow-symbol{display:none}.arc-onboarding .identity-flow .flow-section-heading h2{font-size:clamp(30px,3.5vw,42px);line-height:1.13;letter-spacing:-1.5px;font-weight:550}.arc-onboarding .identity-flow .flow-section-heading p{font-size:15px;line-height:1.75}.arc-onboarding .identity-result{margin:0}.arc-onboarding .identity-flow label{font-size:12px}.arc-onboarding .identity-flow input:not([type=checkbox]){border:1px solid #dce1dc;border-radius:14px;background:#fff;padding:14px;font-size:14px}.arc-onboarding .identity-flow button.primary{width:100%;justify-content:space-between;border-radius:14px;min-height:50px;padding:14px 18px;font-size:13px;background:#252a27;color:#fff}.arc-onboarding .arc-wallet-setup{padding:0;border:0}.arc-wallet-setup label{display:block;margin:16px 0}.arc-wallet-setup input{display:block;width:100%;padding:12px;border:1px solid #d8ded8;border-radius:8px;margin-top:8px}.arc-wallet-setup details{margin-top:24px}.arc-onboarding pre{font-size:11px;background:white;padding:16px;border-radius:14px}.arc-onboarding .connection-details{font-size:12px;line-height:1.7}.first-purchase-instruction{padding:20px;border:1px solid #dce1dc;background:white;border-radius:18px;margin:0 0 10px}.first-purchase-instruction>span{font-size:10px;letter-spacing:.07em;color:#69716b}.first-purchase-instruction p{font-size:13px;line-height:1.8;overflow-wrap:anywhere;margin:12px 0 0}.first-purchase-store{display:flex;align-items:center;gap:8px;padding:18px 0 0;font-size:12px;color:#515e54}.arc-onboarding .mobile-trust{overflow-wrap:anywhere}.wayleave-app:has(.arc-onboarding) .app-header nav{display:none}.arc-onboarding .purchase-tracker h3{font-size:23px}.arc-onboarding .purchase-tracker .purchase-tracker-price small{display:inline;font-size:14px}.arc-onboarding .purchase-tracker-top>span{font-size:10px}.arc-onboarding .purchase-tracker .purchase-tracker-status{font-size:13px}.arc-onboarding .purchase-tracker ol{margin:20px 0}.arc-onboarding .purchase-tracker li small{font-size:10px}.arc-onboarding .mobile-status{margin:25px 0 0;padding:0;min-height:0;text-align:left;background:transparent;font-size:12px;color:#626b65}@media(max-width:700px){.arc-onboarding .identity-flow .flow-section-heading h2{font-size:32px}.arc-onboarding .identity-flow .flow-section-heading p{font-size:14px}.arc-onboarding .purchase-tracker-price{font-size:36px}}
+.arc-onboarding [hidden] {
+  display: none !important;
+}
+.arc-onboarding .mobile-onboarding-top > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #626b65;
+  min-height: 40px;
+}
+.arc-onboarding .mobile-step-content {
+  min-width: 0;
+}
+.arc-identity-form {
+  width: 100%;
+  min-width: 0;
+}
+.arc-onboarding .identity-flow {
+  padding: 0;
+}
+.arc-onboarding .identity-flow .flow-layout {
+  display: block;
+}
+.arc-onboarding .identity-flow .flow-surface {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.arc-onboarding .identity-flow .flow-section-heading > .flow-symbol {
+  display: none;
+}
+.arc-onboarding .identity-flow .flow-section-heading h2 {
+  font-size: clamp(30px, 3.5vw, 42px);
+  line-height: 1.13;
+  letter-spacing: -1.5px;
+  font-weight: 550;
+}
+.arc-onboarding .identity-flow .flow-section-heading p {
+  font-size: 15px;
+  line-height: 1.75;
+}
+.arc-onboarding .identity-result {
+  margin: 0;
+}
+.arc-onboarding .identity-flow label {
+  font-size: 12px;
+}
+.arc-onboarding .identity-flow input:not([type='checkbox']) {
+  border: 1px solid #dce1dc;
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+  font-size: 14px;
+}
+.arc-onboarding .identity-flow button.primary {
+  width: 100%;
+  justify-content: space-between;
+  border-radius: 14px;
+  min-height: 50px;
+  padding: 14px 18px;
+  font-size: 13px;
+  background: #252a27;
+  color: #fff;
+}
+.arc-onboarding .chain-wallet-setup {
+  padding: 0;
+  border: 0;
+}
+.chain-wallet-setup label {
+  display: block;
+  margin: 16px 0;
+}
+.chain-wallet-setup input {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d8ded8;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.chain-wallet-setup details {
+  margin-top: 24px;
+}
+.arc-onboarding pre {
+  font-size: 11px;
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+}
+.arc-onboarding .connection-details {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.first-purchase-instruction {
+  padding: 20px;
+  border: 1px solid #dce1dc;
+  background: white;
+  border-radius: 18px;
+  margin: 0 0 10px;
+}
+.first-purchase-instruction > span {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: #69716b;
+}
+.first-purchase-instruction p {
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  margin: 12px 0 0;
+}
+.first-purchase-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 0 0;
+  font-size: 12px;
+  color: #515e54;
+}
+.arc-onboarding .mobile-trust {
+  overflow-wrap: anywhere;
+}
+.wayleave-app:has(.arc-onboarding) .app-header nav {
+  display: none;
+}
+.arc-onboarding .purchase-tracker h3 {
+  font-size: 23px;
+}
+.arc-onboarding .purchase-tracker .purchase-tracker-price small {
+  display: inline;
+  font-size: 14px;
+}
+.arc-onboarding .purchase-tracker-top > span {
+  font-size: 10px;
+}
+.arc-onboarding .purchase-tracker .purchase-tracker-status {
+  font-size: 13px;
+}
+.arc-onboarding .purchase-tracker ol {
+  margin: 20px 0;
+}
+.arc-onboarding .purchase-tracker li small {
+  font-size: 10px;
+}
+.arc-onboarding .mobile-status {
+  margin: 25px 0 0;
+  padding: 0;
+  min-height: 0;
+  text-align: left;
+  background: transparent;
+  font-size: 12px;
+  color: #626b65;
+}
+@media (max-width: 700px) {
+  .arc-onboarding .identity-flow .flow-section-heading h2 {
+    font-size: 32px;
+  }
+  .arc-onboarding .identity-flow .flow-section-heading p {
+    font-size: 14px;
+  }
+  .arc-onboarding .purchase-tracker-price {
+    font-size: 36px;
+  }
+}
 
-.arc-onboarding .arc-wallet-setup>h2{display:none}
+.arc-onboarding .chain-wallet-setup > h2 {
+  display: none;
+}
+
+.wayleave-app:has(.arc-onboarding) .app-footer > span {
+  display: none;
+}
+
+.paced-onboarding .access-acknowledgement {
+  margin: 0 0 24px;
+  padding: 20px 0;
+  border-top: 1px solid #dce1dc;
+}
+.paced-onboarding .access-acknowledgement > svg {
+  color: #52644c;
+  margin-bottom: 12px;
+}
+.paced-onboarding .access-acknowledgement h3 {
+  font-size: 19px;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.paced-onboarding .access-acknowledgement p,
+.paced-onboarding .setup-prerequisite p,
+.paced-onboarding .connection-preparation p,
+.paced-onboarding .add-chain-context details {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #647067;
+}
+.paced-onboarding .setup-prerequisite p {
+  margin: 0 0 20px;
+}
+.paced-onboarding .chain-relationship {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 16px;
+  border: 1px solid #dce1dc;
+  border-radius: 16px;
+  background: #fff;
+}
+.paced-onboarding .chain-relationship > svg {
+  flex: 0 0 auto;
+  color: #536a46;
+}
+.paced-onboarding .chain-relationship > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.paced-onboarding .chain-relationship strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.paced-onboarding .chain-relationship small {
+  color: #647067;
+  overflow-wrap: anywhere;
+}
+.paced-onboarding .chain-relationship > span {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: #647067;
+}
+.paced-onboarding .chain-add-connector {
+  text-align: center;
+  padding: 14px;
+  font-size: 12px;
+  color: #647067;
+}
+.paced-onboarding .add-chain-context details {
+  margin-top: 20px;
+  border-top: 1px solid #dce1dc;
+  padding-top: 16px;
+}
+.paced-onboarding .add-chain-context summary {
+  cursor: pointer;
+  color: #394b37;
+}
+.paced-onboarding .connection-preparation {
+  margin-bottom: 24px;
+}
+.paced-onboarding .connection-preparation > span,
+.paced-onboarding .setup-optional {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #536a46;
+  margin-bottom: 12px;
+}
+
+.chain-wallet-picker {
+  border: 0;
+  padding: 0;
+  margin: 0 0 24px;
+  min-width: 0;
+}
+.chain-wallet-picker legend {
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.chain-wallet-options {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding: 3px;
+}
+.chain-wallet-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 14px;
+  border: 1px solid #dce1dc;
+  border-radius: 14px;
+  cursor: pointer;
+  background: #fff;
+}
+.chain-wallet-option[data-selected='true'] {
+  border-color: #718762;
+  background: #f1f4ed;
+}
+.chain-wallet-option:focus-within {
+  outline: 2px solid #536a46;
+  outline-offset: 2px;
+}
+.chain-wallet-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.chain-wallet-option > span {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+.chain-wallet-option > svg {
+  flex-shrink: 0;
+  color: #536a46;
+}
+.chain-wallet-option strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.chain-wallet-option small,
+.chain-wallet-picker > p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #647067;
+}
+
+/* Setup chooses its network at the point of action. */
+.wayleave-app:has(.paced-onboarding) .app-header .network-picker {
+  display: none;
+}
+.paced-onboarding .chain-wallet-setup {
+  background: transparent;
+  border-radius: 0;
+}
+.paced-onboarding .chain-wallet-setup > .primary {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 14px;
+  margin-top: 12px;
+}

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useConnection } from 'wagmi';
 import Link from 'next/link';
-import { ChainWalletSetup } from './arc-wallet-setup';
+import { ChainWalletSetup } from './chain-wallet-setup';
 import './agent-flows.css';
 import './chain-wallet-walkthrough.css';
 

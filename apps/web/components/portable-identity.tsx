@@ -5,7 +5,7 @@ import { AgentTokenManager } from './agent-token-manager';
 import { gatewayResponse } from '../lib/gateway-response';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArcWalletSetup } from './arc-wallet-setup';
+import { ChainWalletSetup } from './chain-wallet-setup';
 import {
   useConnection,
   useConnect,
@@ -40,7 +40,11 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return gatewayResponse<T>(response);
 }
 type IdentityPanelProps = {
+  initialName?: string;
+  initialAccount?: string;
+  hideWalletCreation?: boolean;
   gatewayAudience?: string;
+  hideIdentityHeading?: boolean;
   stage?: 'identity' | 'account' | 'agent';
   onProgress?: (progress: {
     identity: boolean;
@@ -54,23 +58,19 @@ export function PortableIdentityPanel(props: IdentityPanelProps) {
 }
 function IdentityPanel({
   gatewayAudience,
+  hideIdentityHeading = false,
   stage,
   onProgress,
-}: {
-  gatewayAudience?: string;
-  stage?: 'identity' | 'account' | 'agent';
-  onProgress?: (progress: {
-    identity: boolean;
-    account: boolean;
-    agent: boolean;
-  }) => void;
-}) {
-  const [name, setName] = useState('');
+  initialName = '',
+  initialAccount = '',
+  hideWalletCreation = false,
+}: IdentityPanelProps) {
+  const [name, setName] = useState(initialName);
   const [identity, setIdentity] = useState<PortableIdentity>();
   const [verified, setVerified] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [paymentAccount, setPaymentAccount] = useState('');
+  const [paymentAccount, setPaymentAccount] = useState(initialAccount);
   const paymentChain = 5042002;
   const [association, setAssociation] = useState('');
   const switchChain = useSwitchChain();
@@ -95,7 +95,7 @@ function IdentityPanel({
     setIdentity(undefined);
     setAssociation('');
     setTokenReady(false);
-    setPaymentAccount('');
+    setPaymentAccount(initialAccount);
     callback.current?.({ identity: false, account: false, agent: false });
   }, [address]);
   useEffect(() => {
@@ -140,7 +140,10 @@ function IdentityPanel({
         <div className="flow-main">
           <div className="flow-surface">
             <div hidden={!!stage && stage !== 'identity'}>
-              <div className="flow-section-heading">
+              <div
+                className="flow-section-heading"
+                hidden={hideIdentityHeading}
+              >
                 <span className="flow-symbol">
                   <Fingerprint size={22} />
                 </span>
@@ -192,17 +195,19 @@ function IdentityPanel({
                   <ArrowRight size={16} />
                 </button>
               </form>
-              <p className="flow-note">
-                Need a name?{' '}
-                <a
-                  href="https://hackathon-deployment-manager-app-v4.ens-cf.workers.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Register one in the ENS hackathon app
-                </a>
-                , then return here. Use a name your connected wallet controls.
-              </p>
+              {!initialName && (
+                <p className="flow-note">
+                  Need a name?{' '}
+                  <a
+                    href="https://hackathon-deployment-manager-app-v4.ens-cf.workers.dev/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Register one in the ENS hackathon app
+                  </a>
+                  , then return here. Use a name your connected wallet controls.
+                </p>
+              )}
             </div>
             {!!stage && stage !== 'identity' && !verified && (
               <p role="status">
@@ -336,12 +341,15 @@ function IdentityPanel({
                       Link a wallet you own to this name. You’ll sign a separate
                       ownership proof; payments still need your approval.
                     </p>
-                    <ArcWalletSetup
-                      onAccount={(account) => {
-                        setPaymentAccount(account);
-                        setAssociation('');
-                      }}
-                    />
+                    {!hideWalletCreation && (
+                      <ChainWalletSetup
+                        network="Arc"
+                        onAccount={(account) => {
+                          setPaymentAccount(account);
+                          setAssociation('');
+                        }}
+                      />
+                    )}
                     <p className="flow-note">
                       Payment network: Arc Testnet. Arc Mainnet is coming soon.
                     </p>
