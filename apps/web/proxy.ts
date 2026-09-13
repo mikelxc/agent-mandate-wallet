@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { isPublicPage } from './lib/access-policy';
+import { isAppPage, isPublicPage } from './lib/access-policy';
 
 export function proxy(request: NextRequest) {
   // Retire the old page before authentication captures a return destination.
@@ -8,14 +8,17 @@ export function proxy(request: NextRequest) {
     url.pathname = '/connect';
     return NextResponse.redirect(url, 308);
   }
-  if (isPublicPage(request.nextUrl.pathname, request.nextUrl.search)) return NextResponse.next();
+  if (!isAppPage(request.nextUrl.pathname)) return NextResponse.next();
+  if (isPublicPage(request.nextUrl.pathname, request.nextUrl.search))
+    return NextResponse.next();
   // Fast routing hint only. AccountAccessGate verifies this opaque session with
   // the gateway before mounting private UI; the gateway protects private data.
   const session = request.cookies.get('mandate_session')?.value;
   if (session && /^[a-f0-9]{64}$/.test(session)) return NextResponse.next();
   const url = request.nextUrl.clone();
   const destination = url.pathname + url.search;
-  url.pathname = '/'; url.search = '';
+  url.pathname = '/';
+  url.search = '';
   url.searchParams.set('signin', '1');
   url.searchParams.set('returnTo', destination);
   const response = NextResponse.redirect(url);
@@ -23,5 +26,7 @@ export function proxy(request: NextRequest) {
   return response;
 }
 export const config = {
-  matcher: ['/((?!gateway(?:/|$)|mcp(?:/|$)|store/developer-pack/agent(?:/|$)|_next/|.*\\.[^/]+$).*)'],
+  matcher: [
+    '/((?!gateway(?:/|$)|mcp(?:/|$)|store/developer-pack/agent(?:/|$)|_next/|.*\\.[^/]+$).*)',
+  ],
 };
