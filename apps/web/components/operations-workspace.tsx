@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useConnection } from 'wagmi';
 import { SpendingActivity } from './spending-activity';
+import { identityConnections } from '../lib/identity-connections';
 import { SpendingAgents, type HubAgent } from './spending-agents';
 import './spending-hub.css';
 import type { CctpOperation } from '../../gateway/src/cctp';
@@ -39,6 +40,7 @@ export function OperationsWorkspace() {
     owner?: string;
     rows: Activity[];
     agents?: HubAgent[];
+    identityRequired?: boolean;
     errors: string[];
     loaded: boolean;
   }>({ rows: [], errors: [], loaded: false });
@@ -76,21 +78,29 @@ export function OperationsWorkspace() {
         read<HubAgent[]>('/agents').then((agents) =>
           agents.map((a) => ({ ...a, source: 'agents' as const })),
         ),
-        read<{ connections: HubAgent[] }>('/identity/tokens').then((result) =>
-          result.connections.map((a) => ({
-            ...a,
-            source: 'identity/tokens' as const,
+        fetch('/gateway/identity/tokens', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        })
+          .then((response) => identityConnections<HubAgent>(response))
+          .then((result) => ({
+            ...result,
+            connections: result.connections.map((a) => ({
+              ...a,
+              source: 'identity/tokens' as const,
+            })),
           })),
-        ),
       ]);
       if (cancelled) return;
       const [sepolia, arc, legacyAgents, tokens] = results;
       setState({
         owner: address,
         loaded: true,
+        identityRequired:
+          tokens.status === 'fulfilled' && tokens.value.verificationRequired,
         agents: [
           ...(legacyAgents.status === 'fulfilled' ? legacyAgents.value : []),
-          ...(tokens.status === 'fulfilled' ? tokens.value : []),
+          ...(tokens.status === 'fulfilled' ? tokens.value.connections : []),
         ],
         rows: mergeOperations(
           sepolia.status === 'fulfilled' ? sepolia.value : [],
@@ -215,6 +225,7 @@ export function OperationsWorkspace() {
           {operation && <Link href="/spending">Show all spending</Link>}
           <SpendingAgents
             agents={agents}
+            identityRequired={!!state.identityRequired}
             loading={!state.loaded}
             onRefresh={() => setRevision((value) => value + 1)}
           />

@@ -7,7 +7,7 @@ for (const path of [
   '/?operation=9749ef3f-4f5c-4cf6-8fcf-5d4e622f3471',
 ]) {
   test(`shared spending workspace handles ${path}`, async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 900 });
+    await page.setViewportSize({ width: 390, height: 900 });
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     if (path !== '/payments') {
       await expect(
@@ -74,9 +74,15 @@ test('MCP operation links and checkout requests load automatically across sessio
   let arcUnavailable = false;
   let signedIn = true;
   let revoked = false;
+  let identitySession = true;
   await page.route('**/gateway/**', (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/gateway/agents') return route.fulfill({ json: [] });
+    if (path === '/gateway/identity/tokens' && !identitySession)
+      return route.fulfill({
+        status: 400,
+        json: { error: 'Identity session required' },
+      });
     if (path === '/gateway/identity/tokens')
       return route.fulfill({
         json: {
@@ -182,14 +188,20 @@ test('MCP operation links and checkout requests load automatically across sessio
       exact: true,
     }),
   ).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('spending-hub-desktop.png'), fullPage: true });
+  await page.screenshot({
+    path: test.info().outputPath('spending-hub-desktop.png'),
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 900 });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.screenshot({ path: test.info().outputPath('spending-hub-mobile.png'), fullPage: true });
+  await page.screenshot({
+    path: test.info().outputPath('spending-hub-mobile.png'),
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(
     page.getByRole('region', { name: 'Connected agents', exact: true }),
@@ -236,6 +248,25 @@ test('MCP operation links and checkout requests load automatically across sessio
   await expect(
     page.getByText('Expired & revoked agents (1)', { exact: true }),
   ).toBeVisible();
+  identitySession = false;
+  for (let refresh = 0; refresh < 2; refresh++) {
+    await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect(
+      page.getByRole('link', { name: 'Verify identity to view them →' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Agent tokens: Identity session required', {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Sign in to load requests' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Arc regression purchase', exact: true }),
+    ).toBeVisible();
+  }
+  identitySession = true;
   arcUnavailable = true;
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(
@@ -249,6 +280,7 @@ test('MCP operation links and checkout requests load automatically across sessio
   ).toBeVisible();
   arcUnavailable = false;
   await page.goto(`/?operation=${arcId}`);
+  await expect(page).toHaveURL(new URL(`/?operation=${arcId}`, baseURL!).href);
   await expect(
     page.getByText('Arc regression purchase', { exact: true }),
   ).toBeVisible({ timeout: 30000 });
@@ -285,5 +317,4 @@ test('MCP operation links and checkout requests load automatically across sessio
   ).toHaveCount(0);
   await page.goto('/');
   await expect(page).toHaveURL(/\/spending$/);
-
 });

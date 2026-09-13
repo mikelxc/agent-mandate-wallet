@@ -14,10 +14,12 @@ export function SpendingAgents({
   agents,
   onRefresh,
   loading,
+  identityRequired = false,
 }: {
   agents: HubAgent[];
   onRefresh: () => void;
   loading: boolean;
+  identityRequired?: boolean;
 }) {
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
@@ -61,11 +63,21 @@ export function SpendingAgents({
           Grant agent access →
         </Link>
       </div>
+      {identityRequired && (
+        <p className="flow-note">
+          Identity-linked connections need a separate verification.{' '}
+          <Link href="/connect">Verify identity to view them →</Link>
+        </p>
+      )}
       {loading ? (
         <p role="status">Loading connected agents…</p>
       ) : !active.length ? (
         <div className="flow-surface">
-          <h3>Connect your first agent</h3>
+          <h3>
+            {identityRequired
+              ? 'No other connections to show'
+              : 'Connect your first agent'}
+          </h3>
           <p>
             Give an agent scoped access to read its account and request payments
             for your approval.
