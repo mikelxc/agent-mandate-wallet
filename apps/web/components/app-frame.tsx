@@ -10,6 +10,7 @@ export function AppFrame({
   children,
   active = 'agents',
   network,
+  publicFacing = false,
 }: {
   children: ReactNode;
   active?:
@@ -22,6 +23,7 @@ export function AppFrame({
     | 'payments'
     | 'store';
   network?: 'Sepolia' | 'Arc';
+  publicFacing?: boolean;
 }) {
   return (
     <div className="wayleave-app">
@@ -36,45 +38,49 @@ export function AppFrame({
             </span>
             wayleave
           </Link>
-          <NetworkSelector />
-          <AccountNav />
+          {!publicFacing && (
+            <>
+              <NetworkSelector />
+              <AccountNav />
+            </>
+          )}
         </div>
-        <nav aria-label="Main navigation">
-          <Link
-            href="/spending"
-            aria-current={active === 'agents' ? 'page' : undefined}
-          >
-            Spending
-          </Link>
-          <Link
-            href="/payments"
-            aria-current={
-              active === 'payments' || active === 'crosschain'
-                ? 'page'
-                : undefined
-            }
-          >
-            Payments
-          </Link>
-          <Link
-            href="/accounts"
-            aria-current={active === 'account' ? 'page' : undefined}
-          >
-            Wallets
-          </Link>
-          <Link
-            href="/connect"
-            aria-current={active === 'connect' ? 'page' : undefined}
-          >
-            Agent access
-          </Link>
-          <Link
-            href="/identity"
-            aria-current={active === 'identity' ? 'page' : undefined}
-          >
-            Name & access
-          </Link>
-        </nav>
+        {publicFacing ? (
+          <nav aria-label="Main navigation">
+            <Link href="/payments" aria-current="page">
+              Payments
+            </Link>
+            <Link href="/spending">Open Spending</Link>
+            <Link href="/?setup=1">Get started</Link>
+          </nav>
+        ) : (
+          <nav aria-label="Main navigation">
+            <Link
+              href="/spending"
+              aria-current={active === 'agents' ? 'page' : undefined}
+            >
+              Spending
+            </Link>
+            <Link
+              href="/accounts"
+              aria-current={active === 'account' ? 'page' : undefined}
+            >
+              Wallets
+            </Link>
+            <Link
+              href="/connect"
+              aria-current={active === 'connect' ? 'page' : undefined}
+            >
+              Agent access
+            </Link>
+            <Link
+              href="/identity"
+              aria-current={active === 'identity' ? 'page' : undefined}
+            >
+              Name & access
+            </Link>
+          </nav>
+        )}
       </header>
       <main id="app-main" className="account-home">
         {children}

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { Purchase } from 'wayleave-merchant';
 
-import { TestPurchasePrompt } from './test-purchase-prompt';
 import { PurchaseTracker } from './purchase-tracker';
 import { gatewayResponse } from '../lib/gateway-response';
 
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import './agent-flows.css';
 import './payments.css';
-import { MerchantAcceptance } from './payment-experience';
 import { useConnection, usePublicClient, useWalletClient } from 'wagmi';
 import { arcTestnet, sepolia } from 'viem/chains';
 import {
@@ -81,7 +79,7 @@ export function Payments() {
   const query = useSearchParams();
   const valid = (value: string | null) =>
     value && /^[a-f0-9-]{36}$/.test(value) ? value : '';
-  const requestId = valid(query.get('request')),
+  const requestId = valid(query.get('request') ?? query.get('operation')),
     purchaseId = valid(query.get('purchase'));
   return (
     <PaymentWorkspace
@@ -103,12 +101,12 @@ function PaymentWorkspace({
   const { data: wallet } = useWalletClient();
   const sourceClient = usePublicClient({ chainId: arcTestnet.id });
   const destinationClient = usePublicClient({ chainId: sepolia.id });
-  const [view, setView] = useState<'payments' | 'merchants'>('payments');
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [composing, setComposing] = useState(false);
   const [focusedRequest, setFocusedRequest] = useState(requestId);
   const [purchaseId, setPurchaseId] = useState(initialPurchaseId);
   const [loaded, setLoaded] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const [configured, setConfigured] = useState<boolean>();
   const [entryPoint, setEntryPoint] = useState<Address>();
   const [setupReceipt, setSetupReceipt] = useState<Record<string, string>>({});
@@ -124,6 +122,7 @@ function PaymentWorkspace({
   const [recovery, setRecovery] = useState<Recovery>({});
   const [requestKey, setRequestKey] = useState('');
   const lock = useRef(false);
+  const requestGeneration = useRef(0);
   const currentOwner = useRef(address);
   currentOwner.current = address;
   async function loadConfiguration() {
@@ -170,6 +169,7 @@ function PaymentWorkspace({
     }
   }
   async function refresh() {
+    const generation = ++requestGeneration.current;
     const owner = address;
     const { operations: records } = await api<{ operations: Payment[] }>('');
     if (focusedRequest && !records.some((p) => p.id === focusedRequest))
@@ -185,14 +185,46 @@ function PaymentWorkspace({
           'This purchase does not match the linked payment. Open the approval URL returned by your agent.',
         );
     }
-    if (currentOwner.current !== owner) return;
+    if (currentOwner.current !== owner || generation !== requestGeneration.current) return;
     setLoaded(true);
+    setError('');
     setPayments(
       records.filter(
         (p) => p.intent.fundingOwner.toLowerCase() === owner?.toLowerCase(),
       ),
     );
   }
+  useEffect(() => {
+    if (!address || !configured) return;
+    let cancelled = false;
+    const load = () => {
+      setLoadingRequests(true);
+      void refresh()
+        .catch((error) => {
+          if (!cancelled) setError(error.message);
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingRequests(false);
+        });
+    };
+    load();
+    const sessionChanged = (event: Event) => {
+      const session = (event as CustomEvent<{ address: string } | null>).detail;
+      if (session?.address.toLowerCase() === address.toLowerCase()) load();
+      else {
+        requestGeneration.current++;
+        setPayments([]);
+        setLoaded(false);
+        setLoadingRequests(false);
+      }
+    };
+    window.addEventListener('wayleave:owner-session', sessionChanged);
+    return () => {
+      cancelled = true;
+      requestGeneration.current++;
+      window.removeEventListener('wayleave:owner-session', sessionChanged);
+    };
+  }, [address, configured, focusedRequest, purchaseId]);
   function remember(
     id: string,
     phase: 'source' | 'destination',
@@ -344,563 +376,477 @@ function PaymentWorkspace({
       <div className="payments-heading">
         <div>
           <span className="flow-eyebrow">YOUR AGENTS, YOUR APPROVAL</span>
-          <h1>Payments</h1>
-          <p>A familiar name at checkout. A payment you control.</p>
+          <h1>{focusedRequest ? 'Payment request' : 'Arc payment'}</h1>
+          <p>Review the exact terms before approving a payment.</p>
         </div>
         <Link className="secondary" href="/connect">
           Grant agent access <Plus size={16} />
         </Link>
       </div>
-      <div className="payments-navigation" aria-label="Payment views">
-        <button
-          aria-pressed={view === 'payments'}
-          onClick={() => setView('payments')}
-        >
-          Your payments
-        </button>
-        <button
-          aria-pressed={view === 'merchants'}
-          onClick={() => setView('merchants')}
-        >
-          Accept payments
-        </button>
-        <span className="payments-network">
-          <span /> Arc Testnet
-        </span>
-      </div>
-      {view === 'merchants' ? (
-        <MerchantAcceptance />
-      ) : (
-        <div className="flow-layout payments-layout">
-          <div className="flow-main">
-            <TestPurchasePrompt />
-            {focusedRequest && (
-              <div className="flow-message">
-                <strong>Review the purchase your agent requested.</strong>
-                <p>
-                  Connect and sign in, then load your requests. The matching
-                  payment opens below.
-                </p>
-                <button
-                  onClick={() => {
-                    setFocusedRequest('');
-                    setPurchaseId('');
-                  }}
-                >
-                  Show all payments
-                </button>
-              </div>
-            )}
-            {loaded &&
-              focusedRequest &&
-              !payments.some((payment) => payment.id === focusedRequest) && (
-                <p role="alert">
-                  This payment was not found for your connected wallet.
-                </p>
-              )}
-            {error && (
-              <p className="flow-message" role="alert">
-                {error}
+      <div className="flow-layout payments-layout">
+        <div className="flow-main">
+          {focusedRequest && (
+            <div className="flow-message">
+              <strong>Review the purchase your agent requested.</strong>
+              <p>
+                Connect and sign in. Your request loads automatically below.
+              </p>
+              <button
+                onClick={() => {
+                  window.location.assign('/spending');
+                }}
+              >
+                Show all payments
+              </button>
+            </div>
+          )}
+          {loaded &&
+            focusedRequest &&
+            !payments.some((payment) => payment.id === focusedRequest) && (
+              <p role="alert">
+                This payment was not found for your connected wallet.
               </p>
             )}
-            {configured === undefined && error && (
-              <button disabled={busy} onClick={() => run(loadConfiguration)}>
-                Try again
-              </button>
-            )}
-            {configured === false && (
-              <div className="flow-surface flow-empty" role="status">
-                <ReceiptText size={28} />
-                <h2>Payments aren’t ready here yet</h2>
-                <p>
-                  Arc payments are not configured. You can still manage your
-                  agent wallets on Sepolia.
-                </p>
-              </div>
-            )}
-            {configured === undefined && !error && (
-              <p role="status">Checking payment availability…</p>
-            )}
-            {configured && (
-              <>
-                <div className="flow-section-heading">
-                  <h2>Requests & activity</h2>
-                  <div className="flow-inline-actions">
-                    {address && (
-                      <button disabled={busy} onClick={() => run(refresh)}>
-                        {busy
-                          ? 'Loading…'
-                          : loaded
-                            ? 'Refresh'
-                            : 'Load requests'}
-                      </button>
-                    )}
-                    {address && (
-                      <button
-                        disabled={busy}
-                        aria-expanded={composing}
-                        onClick={() => setComposing(!composing)}
-                      >
-                        <Plus size={15} />
-                        {composing ? 'Close request' : 'Create request'}
-                      </button>
-                    )}
-                  </div>
+          {error && (
+            <p className="flow-message" role="alert">
+              {error}
+            </p>
+          )}
+          {configured === undefined && error && (
+            <button disabled={busy} onClick={() => run(loadConfiguration)}>
+              Try again
+            </button>
+          )}
+          {configured === false && (
+            <div className="flow-surface flow-empty" role="status">
+              <ReceiptText size={28} />
+              <h2>Payments aren’t ready here yet</h2>
+              <p>
+                Arc payments are not configured. You can still manage your agent
+                wallets on Sepolia.
+              </p>
+            </div>
+          )}
+          {configured === undefined && !error && (
+            <p role="status">Checking payment availability…</p>
+          )}
+          {configured && (
+            <>
+              <div className="flow-section-heading">
+                <h2>Requests & activity</h2>
+                <div className="flow-inline-actions">
+                  {address && (
+                    <button
+                      disabled={busy || loadingRequests}
+                      onClick={() => run(refresh)}
+                    >
+                      {loadingRequests ? 'Loading…' : 'Refresh'}
+                    </button>
+                  )}
+                  {address && (
+                    <button
+                      disabled={busy}
+                      aria-expanded={composing}
+                      onClick={() => setComposing(!composing)}
+                    >
+                      <Plus size={15} />
+                      {composing ? 'Close request' : 'Create request'}
+                    </button>
+                  )}
                 </div>
-                {!address && (
-                  <div className="flow-surface flow-empty">
-                    <span className="flow-symbol">
-                      <Wallet size={24} />
-                    </span>
-                    <h2>Your next payment starts here</h2>
-                    <p>
-                      Connect your wallet to review agent requests and follow
-                      payments to their recipients. You approve before funds
-                      move.
+              </div>
+              {!address && (
+                <div className="flow-surface flow-empty">
+                  <span className="flow-symbol">
+                    <Wallet size={24} />
+                  </span>
+                  <h2>Your next payment starts here</h2>
+                  <p>
+                    Connect your wallet to review agent requests and follow
+                    payments to their recipients. You approve before funds move.
+                  </p>
+                  <button
+                    className="primary"
+                    disabled={busy}
+                    onClick={() =>
+                      run(async () => {
+                        const { openWalletPicker } =
+                          await import('../lib/wallet-config');
+                        await openWalletPicker();
+                      })
+                    }
+                  >
+                    Connect wallet <ArrowRight size={16} />
+                  </button>
+                </div>
+              )}
+              {address && !composing && payments.length === 0 && (
+                <div className="flow-surface flow-empty">
+                  <ReceiptText size={28} />
+                  <h2>
+                    {loaded
+                      ? 'No payment requests yet'
+                      : loadingRequests
+                        ? 'Loading your requests…'
+                        : 'Sign in to review requests'}
+                  </h2>
+                  <p>
+                    {loaded
+                      ? 'Requests from your agent will appear here for review. You can also create one yourself.'
+                      : 'Requests load automatically after you sign in with the owner wallet.'}
+                  </p>
+                </div>
+              )}
+              {address && composing && (
+                <div className="flow-surface">
+                  <h2>Create a manual request</h2>
+                  <p>
+                    This saves a request for review. You’ll approve any movement
+                    of funds separately.
+                  </p>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void run(async () => {
+                        if (!address)
+                          throw new Error(
+                            'Connect and verify the funding owner first.',
+                          );
+                        if (
+                          !/^\d+(\.\d{1,6})?$/.test(amount) ||
+                          !/^\d+(\.\d{1,6})?$/.test(maxFee)
+                        )
+                          throw new Error(
+                            'USDC amounts accept at most six decimal places.',
+                          );
+                        const key = requestKey || crypto.randomUUID();
+                        setRequestKey(key);
+                        const intent = parseCctpIntent({
+                          version: 1,
+                          kind: 'cctp_payment',
+                          sourceChainId: arcCctpRoute.sourceChainId,
+                          destinationChainId: arcCctpRoute.destinationChainId,
+                          sourceDomain: arcCctpRoute.sourceDomain,
+                          destinationDomain: arcCctpRoute.destinationDomain,
+                          sourceToken: arcCctpRoute.sourceToken,
+                          destinationToken: arcCctpRoute.destinationToken,
+                          account,
+                          fundingOwner: address,
+                          recipient,
+                          amount: parseUnits(amount, 6).toString(),
+                          maxFee: parseUnits(maxFee, 6).toString(),
+                          amountSemantics: 'source_debit',
+                          minFinalityThreshold: 2000,
+                          businessReference: reference,
+                          idempotencyKey: key,
+                        });
+                        await api('', { intent });
+                        setRequestKey('');
+                        setComposing(false);
+                        await refresh();
+                      });
+                    }}
+                  >
+                    <div className="flow-fields">
+                      <label className="flow-wide">
+                        Agent wallet on Arc
+                        <input
+                          required
+                          value={account}
+                          onChange={(e) => {
+                            setAccount(e.target.value);
+                            setRequestKey('');
+                          }}
+                          placeholder="0x…"
+                        />
+                      </label>
+                      <label className="flow-wide">
+                        Recipient on Sepolia
+                        <input
+                          required
+                          value={recipient}
+                          onChange={(e) => {
+                            setRecipient(e.target.value);
+                            setRequestKey('');
+                          }}
+                          placeholder="0x…"
+                        />
+                      </label>
+                      <label>
+                        Amount from your wallet (USDC)
+                        <input
+                          required
+                          inputMode="decimal"
+                          value={amount}
+                          onChange={(e) => {
+                            setAmount(e.target.value);
+                            setRequestKey('');
+                          }}
+                        />
+                      </label>
+                      <label>
+                        Maximum transfer fee (USDC)
+                        <input
+                          required
+                          inputMode="decimal"
+                          value={maxFee}
+                          onChange={(e) => {
+                            setMaxFee(e.target.value);
+                            setRequestKey('');
+                          }}
+                        />
+                      </label>
+                      <label className="flow-wide">
+                        Payment reference
+                        <input
+                          required
+                          maxLength={128}
+                          value={reference}
+                          onChange={(e) => {
+                            setReference(e.target.value);
+                            setRequestKey('');
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <p className="flow-note">
+                      The recipient gets this amount minus the transfer fee. You
+                      pay Arc gas in USDC and Sepolia gas in ETH.
                     </p>
                     <button
                       className="primary"
-                      disabled={busy}
-                      onClick={() =>
-                        run(async () => {
-                          const { openWalletPicker } =
-                            await import('../lib/wallet-config');
-                          await openWalletPicker();
-                        })
-                      }
+                      type="submit"
+                      disabled={busy || !address}
                     >
-                      Connect wallet <ArrowRight size={16} />
+                      Save request for review <ArrowRight size={16} />
                     </button>
-                  </div>
-                )}
-                {address && !composing && payments.length === 0 && (
-                  <div className="flow-surface flow-empty">
-                    <ReceiptText size={28} />
-                    <h2>
-                      {loaded
-                        ? 'No payment requests yet'
-                        : 'Your requests, in one place'}
-                    </h2>
-                    <p>
-                      {loaded
-                        ? 'Requests from your agent will appear here for review. You can also create one yourself.'
-                        : 'Load requests for your connected wallet to review payments or pick up a transfer in progress.'}
-                    </p>
-                  </div>
-                )}
-                {address && composing && (
-                  <div className="flow-surface">
-                    <h2>Create a manual request</h2>
-                    <p>
-                      This saves a request for review. You’ll approve any
-                      movement of funds separately.
-                    </p>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        void run(async () => {
-                          if (!address)
-                            throw new Error(
-                              'Connect and verify the funding owner first.',
-                            );
-                          if (
-                            !/^\d+(\.\d{1,6})?$/.test(amount) ||
-                            !/^\d+(\.\d{1,6})?$/.test(maxFee)
-                          )
-                            throw new Error(
-                              'USDC amounts accept at most six decimal places.',
-                            );
-                          const key = requestKey || crypto.randomUUID();
-                          setRequestKey(key);
-                          const intent = parseCctpIntent({
-                            version: 1,
-                            kind: 'cctp_payment',
-                            sourceChainId: arcCctpRoute.sourceChainId,
-                            destinationChainId: arcCctpRoute.destinationChainId,
-                            sourceDomain: arcCctpRoute.sourceDomain,
-                            destinationDomain: arcCctpRoute.destinationDomain,
-                            sourceToken: arcCctpRoute.sourceToken,
-                            destinationToken: arcCctpRoute.destinationToken,
-                            account,
-                            fundingOwner: address,
-                            recipient,
-                            amount: parseUnits(amount, 6).toString(),
-                            maxFee: parseUnits(maxFee, 6).toString(),
-                            amountSemantics: 'source_debit',
-                            minFinalityThreshold: 2000,
-                            businessReference: reference,
-                            idempotencyKey: key,
-                          });
-                          await api('', { intent });
-                          setRequestKey('');
-                          setComposing(false);
-                          await refresh();
-                        });
-                      }}
+                  </form>
+                </div>
+              )}
+              {loaded && payments.length > 0 && (
+                <div className="payments-filters" aria-label="Filter payments">
+                  {(['all', 'pending', 'paid'] as const).map((value) => (
+                    <button
+                      key={value}
+                      aria-pressed={filter === value}
+                      onClick={() => setFilter(value)}
                     >
-                      <div className="flow-fields">
-                        <label className="flow-wide">
-                          Agent wallet on Arc
-                          <input
-                            required
-                            value={account}
-                            onChange={(e) => {
-                              setAccount(e.target.value);
-                              setRequestKey('');
-                            }}
-                            placeholder="0x…"
-                          />
-                        </label>
-                        <label className="flow-wide">
-                          Recipient on Sepolia
-                          <input
-                            required
-                            value={recipient}
-                            onChange={(e) => {
-                              setRecipient(e.target.value);
-                              setRequestKey('');
-                            }}
-                            placeholder="0x…"
-                          />
-                        </label>
-                        <label>
-                          Amount from your wallet (USDC)
-                          <input
-                            required
-                            inputMode="decimal"
-                            value={amount}
-                            onChange={(e) => {
-                              setAmount(e.target.value);
-                              setRequestKey('');
-                            }}
-                          />
-                        </label>
-                        <label>
-                          Maximum transfer fee (USDC)
-                          <input
-                            required
-                            inputMode="decimal"
-                            value={maxFee}
-                            onChange={(e) => {
-                              setMaxFee(e.target.value);
-                              setRequestKey('');
-                            }}
-                          />
-                        </label>
-                        <label className="flow-wide">
-                          Payment reference
-                          <input
-                            required
-                            maxLength={128}
-                            value={reference}
-                            onChange={(e) => {
-                              setReference(e.target.value);
-                              setRequestKey('');
-                            }}
-                          />
-                        </label>
-                      </div>
-                      <p className="flow-note">
-                        The recipient gets this amount minus the transfer fee.
-                        You pay Arc gas in USDC and Sepolia gas in ETH.
+                      {value === 'all'
+                        ? 'All payments'
+                        : value === 'pending'
+                          ? 'In progress'
+                          : 'Paid'}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {loaded &&
+                payments.length > 0 &&
+                !payments.some(
+                  (p) =>
+                    filter === 'all' ||
+                    (filter === 'paid' ? !!p.destination : !p.destination),
+                ) && <p className="flow-message">No payments in this view.</p>}
+              {payments
+                .filter((p) => !focusedRequest || p.id === focusedRequest)
+                .filter(
+                  (p) =>
+                    filter === 'all' ||
+                    (filter === 'paid' ? !!p.destination : !p.destination),
+                )
+                .map((payment) =>
+                  !currentRoute(payment) ? (
+                    <article
+                      className="flow-surface payment-record"
+                      key={payment.id}
+                    >
+                      <h2>{payment.intent.businessReference}</h2>
+                      <p>
+                        This saved request targets a route no longer supported
+                        by this release. Its approved terms are unchanged. A
+                        request with an existing source transaction needs
+                        reconciliation on its original route.
                       </p>
-                      <button
-                        className="primary"
-                        type="submit"
-                        disabled={busy || !address}
-                      >
-                        Save request for review <ArrowRight size={16} />
-                      </button>
-                    </form>
-                  </div>
-                )}
-                {loaded && payments.length > 0 && (
-                  <div
-                    className="payments-filters"
-                    aria-label="Filter payments"
-                  >
-                    {(['all', 'pending', 'paid'] as const).map((value) => (
-                      <button
-                        key={value}
-                        aria-pressed={filter === value}
-                        onClick={() => setFilter(value)}
-                      >
-                        {value === 'all'
-                          ? 'All payments'
-                          : value === 'pending'
-                            ? 'In progress'
-                            : 'Paid'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {loaded &&
-                  payments.length > 0 &&
-                  !payments.some(
-                    (p) =>
-                      filter === 'all' ||
-                      (filter === 'paid' ? !!p.destination : !p.destination),
-                  ) && (
-                    <p className="flow-message">No payments in this view.</p>
-                  )}
-                {payments
-                  .filter((p) => !focusedRequest || p.id === focusedRequest)
-                  .filter(
-                    (p) =>
-                      filter === 'all' ||
-                      (filter === 'paid' ? !!p.destination : !p.destination),
-                  )
-                  .map((payment) =>
-                    !currentRoute(payment) ? (
-                      <article
-                        className="flow-surface payment-record"
-                        key={payment.id}
-                      >
-                        <h2>{payment.intent.businessReference}</h2>
-                        <p>
-                          This saved request targets a route no longer supported
-                          by this release. Its approved terms are unchanged. A
-                          request with an existing source transaction needs
-                          reconciliation on its original route.
-                        </p>
-                      </article>
-                    ) : (
-                      <article
-                        className="flow-surface payment-record"
-                        key={payment.id}
-                      >
-                        <div className="payment-record-heading">
-                          <div>
-                            <span className="flow-eyebrow">
-                              {payment.destination
-                                ? 'Payment received'
-                                : payment.source
-                                  ? 'On its way'
-                                  : payment.sourceTransactionHash ||
-                                      recovery[payment.id]?.source
-                                    ? 'Checking Arc transaction'
-                                    : payment.signature
-                                      ? 'Approved · Ready to send'
-                                      : 'Needs your approval'}
-                            </span>
-                            <h2>{payment.intent.businessReference}</h2>
-                          </div>
-                          <strong className="payment-amount">
-                            {usdc(payment.intent.amount)} <small>USDC</small>
-                          </strong>
-                        </div>
-                        <details
-                          className="payment-review"
-                          open={focusedRequest === payment.id || undefined}
-                        >
-                          <summary>
+                    </article>
+                  ) : (
+                    <article
+                      className="flow-surface payment-record"
+                      key={payment.id}
+                    >
+                      <div className="payment-record-heading">
+                        <div>
+                          <span className="flow-eyebrow">
                             {payment.destination
-                              ? 'View receipt'
-                              : 'Review payment'}{' '}
-                            <span>Arc → Ethereum Sepolia</span>
-                          </summary>
-                          <dl>
-                            <dt>From your wallet</dt>
-                            <dd>{payment.intent.fundingOwner}</dd>
-                            <dt>Maximum transfer fee</dt>
-                            <dd>{usdc(payment.intent.maxFee)} USDC</dd>
-                            <dt>Minimum received</dt>
-                            <dd>
-                              {usdc(
-                                (
-                                  BigInt(payment.intent.amount) -
-                                  BigInt(payment.intent.maxFee)
-                                ).toString(),
-                              )}{' '}
-                              USDC
-                            </dd>
-                            <dt>Recipient · Sepolia</dt>
-                            <dd>{payment.intent.recipient}</dd>
-                            <dt>Via agent wallet · Arc</dt>
-                            <dd>{payment.intent.account}</dd>
-                          </dl>
-                          {(payment.source?.transactionHash ??
-                            payment.sourceTransactionHash ??
-                            recovery[payment.id]?.source) && (
+                              ? 'Payment received'
+                              : payment.source
+                                ? 'On its way'
+                                : payment.sourceTransactionHash ||
+                                    recovery[payment.id]?.source
+                                  ? 'Checking Arc transaction'
+                                  : payment.signature
+                                    ? 'Approved · Ready to send'
+                                    : 'Needs your approval'}
+                          </span>
+                          <h2>{payment.intent.businessReference}</h2>
+                        </div>
+                        <strong className="payment-amount">
+                          {usdc(payment.intent.amount)} <small>USDC</small>
+                        </strong>
+                      </div>
+                      <details
+                        className="payment-review"
+                        open={focusedRequest === payment.id || undefined}
+                      >
+                        <summary>
+                          {payment.destination
+                            ? 'View receipt'
+                            : 'Review payment'}{' '}
+                          <span>Arc → Ethereum Sepolia</span>
+                        </summary>
+                        <dl>
+                          <dt>From your wallet</dt>
+                          <dd>{payment.intent.fundingOwner}</dd>
+                          <dt>Maximum transfer fee</dt>
+                          <dd>{usdc(payment.intent.maxFee)} USDC</dd>
+                          <dt>Minimum received</dt>
+                          <dd>
+                            {usdc(
+                              (
+                                BigInt(payment.intent.amount) -
+                                BigInt(payment.intent.maxFee)
+                              ).toString(),
+                            )}{' '}
+                            USDC
+                          </dd>
+                          <dt>Recipient · Sepolia</dt>
+                          <dd>{payment.intent.recipient}</dd>
+                          <dt>Via agent wallet · Arc</dt>
+                          <dd>{payment.intent.account}</dd>
+                        </dl>
+                        {(payment.source?.transactionHash ??
+                          payment.sourceTransactionHash ??
+                          recovery[payment.id]?.source) && (
+                          <p>
+                            <a
+                              href={`https://testnet.arcscan.app/tx/${payment.source?.transactionHash ?? payment.sourceTransactionHash ?? recovery[payment.id]?.source}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              View Arc transaction ↗
+                            </a>
+                          </p>
+                        )}
+                        {(payment.destination?.transactionHash ??
+                          payment.destinationTransactionHash ??
+                          recovery[payment.id]?.destination) && (
+                          <p>
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              View Sepolia transaction ↗
+                            </a>
+                          </p>
+                        )}
+                        {payment.destination && (
+                          <p>
+                            Recipient received{' '}
+                            {usdc(payment.destination.merchantAmount)} USDC.
+                            Service delivery is separate.
+                          </p>
+                        )}
+                        {!payment.destination && payment.source && (
+                          <p className="flow-message" role="status">
+                            {payment.circle
+                              ? 'Ready to complete on Sepolia. Your wallet will need Sepolia ETH for this final transaction.'
+                              : 'Your Arc payment is confirmed. Check transfer progress to see when it can be completed on Sepolia.'}
+                          </p>
+                        )}
+                        {payment.prepared && (
+                          <details className="flow-disclosure">
+                            <summary>
+                              Network costs and execution details
+                            </summary>
                             <p>
-                              <a
-                                href={`https://testnet.arcscan.app/tx/${payment.source?.transactionHash ?? payment.sourceTransactionHash ?? recovery[payment.id]?.source}`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View Arc transaction ↗
-                              </a>
-                            </p>
-                          )}
-                          {(payment.destination?.transactionHash ??
-                            payment.destinationTransactionHash ??
-                            recovery[payment.id]?.destination) && (
-                            <p>
-                              <a
-                                href={`https://sepolia.etherscan.io/tx/${payment.destination?.transactionHash ?? payment.destinationTransactionHash ?? recovery[payment.id]?.destination}`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View Sepolia transaction ↗
-                              </a>
-                            </p>
-                          )}
-                          {payment.destination && (
-                            <p>
-                              Recipient received{' '}
-                              {usdc(payment.destination.merchantAmount)} USDC.
-                              Service delivery is separate.
-                            </p>
-                          )}
-                          {!payment.destination && payment.source && (
-                            <p className="flow-message" role="status">
-                              {payment.circle
-                                ? 'Ready to complete on Sepolia. Your wallet will need Sepolia ETH for this final transaction.'
-                                : 'Your Arc payment is confirmed. Check transfer progress to see when it can be completed on Sepolia.'}
-                            </p>
-                          )}
-                          {payment.prepared && (
-                            <details className="flow-disclosure">
-                              <summary>
-                                Network costs and execution details
-                              </summary>
-                              <p>
-                                Maximum account gas budget:{' '}
-                                {formatUnits(
-                                  (BigInt(payment.prepared.op.gasFees) &
-                                    ((1n << 128n) - 1n)) *
-                                    ((BigInt(
+                              Maximum account gas budget:{' '}
+                              {formatUnits(
+                                (BigInt(payment.prepared.op.gasFees) &
+                                  ((1n << 128n) - 1n)) *
+                                  ((BigInt(
+                                    payment.prepared.op.accountGasLimits,
+                                  ) >>
+                                    128n) +
+                                    (BigInt(
                                       payment.prepared.op.accountGasLimits,
-                                    ) >>
-                                      128n) +
-                                      (BigInt(
-                                        payment.prepared.op.accountGasLimits,
-                                      ) &
-                                        ((1n << 128n) - 1n)) +
-                                      BigInt(
-                                        payment.prepared.op.preVerificationGas,
-                                      )),
-                                  18,
-                                )}{' '}
-                                USDC. Actual source gas is determined onchain.
-                              </p>
-                              <p>
-                                Recorded state:{' '}
-                                {payment.status.replaceAll('_', ' ')}. Circle
-                                CCTP settles this transfer in two transactions,
-                                one on each network.
-                              </p>
-                            </details>
+                                    ) &
+                                      ((1n << 128n) - 1n)) +
+                                    BigInt(
+                                      payment.prepared.op.preVerificationGas,
+                                    )),
+                                18,
+                              )}{' '}
+                              USDC. Actual source gas is determined onchain.
+                            </p>
+                            <p>
+                              Recorded state:{' '}
+                              {payment.status.replaceAll('_', ' ')}. Circle CCTP
+                              settles this transfer in two transactions, one on
+                              each network.
+                            </p>
+                          </details>
+                        )}
+                        {chainId !==
+                          (payment.circle ? sepolia.id : arcTestnet.id) &&
+                          !payment.destination && (
+                            <button
+                              disabled={busy || !wallet}
+                              onClick={() =>
+                                run(async () => {
+                                  await wallet!.switchChain({
+                                    id: payment.circle
+                                      ? sepolia.id
+                                      : arcTestnet.id,
+                                  });
+                                })
+                              }
+                            >
+                              Switch wallet to{' '}
+                              {payment.circle ? 'Sepolia' : 'Arc'}
+                            </button>
                           )}
-                          {chainId !==
-                            (payment.circle ? sepolia.id : arcTestnet.id) &&
-                            !payment.destination && (
+                        {!payment.signature && !payment.source && (
+                          <details className="flow-disclosure">
+                            <summary>
+                              Prepare your wallet{' '}
+                              <span>Allowance &amp; network costs</span>
+                            </summary>
+                            <p>
+                              Before approval, allow this agent wallet to draw
+                              exactly {usdc(payment.intent.amount)} USDC. An
+                              account gas deposit may also be needed. Each setup
+                              action opens a separate wallet confirmation.
+                            </p>
+                            <div className="flow-inline-actions">
                               <button
-                                disabled={busy || !wallet}
-                                onClick={() =>
-                                  run(async () => {
-                                    await wallet!.switchChain({
-                                      id: payment.circle
-                                        ? sepolia.id
-                                        : arcTestnet.id,
-                                    });
-                                  })
-                                }
-                              >
-                                Switch wallet to{' '}
-                                {payment.circle ? 'Sepolia' : 'Arc'}
-                              </button>
-                            )}
-                          {!payment.signature && !payment.source && (
-                            <details className="flow-disclosure">
-                              <summary>
-                                Prepare your wallet{' '}
-                                <span>Allowance &amp; network costs</span>
-                              </summary>
-                              <p>
-                                Before approval, allow this agent wallet to draw
-                                exactly {usdc(payment.intent.amount)} USDC. An
-                                account gas deposit may also be needed. Each
-                                setup action opens a separate wallet
-                                confirmation.
-                              </p>
-                              <div className="flow-inline-actions">
-                                <button
-                                  disabled={busy}
-                                  onClick={() =>
-                                    run(async () => {
-                                      const signer = await connected(
-                                        payment,
-                                        arcTestnet.id,
-                                      );
-                                      if (!sourceClient)
-                                        throw new Error('Arc RPC unavailable.');
-                                      const hash = await signer.writeContract({
-                                        chain: arcTestnet,
-                                        address: arcCctpRoute.sourceToken,
-                                        abi: erc20Abi,
-                                        functionName: 'approve',
-                                        args: [
-                                          payment.intent.account,
-                                          BigInt(payment.intent.amount),
-                                        ],
-                                      });
-                                      const receipt =
-                                        await sourceClient.waitForTransactionReceipt(
-                                          {
-                                            hash,
-                                          },
-                                        );
-                                      if (receipt.status !== 'success')
-                                        throw new Error(
-                                          'Token allowance reverted.',
-                                        );
-                                      setSetupReceipt((prior) => ({
-                                        ...prior,
-                                        [payment.id]:
-                                          'Payment allowance confirmed. The payment has not been sent.',
-                                      }));
-                                    })
-                                  }
-                                >
-                                  Allow this payment amount
-                                </button>
-                              </div>
-                              <label>
-                                Gas deposit (USDC)
-                                <input
-                                  inputMode="decimal"
-                                  value={gasDeposit}
-                                  onChange={(event) =>
-                                    setGasDeposit(event.target.value)
-                                  }
-                                  placeholder="Only if the account needs gas"
-                                />
-                              </label>
-                              <button
-                                disabled={busy || !entryPoint || !gasDeposit}
+                                disabled={busy}
                                 onClick={() =>
                                   run(async () => {
                                     const signer = await connected(
                                       payment,
                                       arcTestnet.id,
                                     );
-                                    if (
-                                      !sourceClient ||
-                                      !entryPoint ||
-                                      !/^\d+(\.\d{1,18})?$/.test(gasDeposit) ||
-                                      parseUnits(gasDeposit, 18) <= 0n
-                                    )
-                                      throw new Error(
-                                        'Enter a positive USDC gas deposit.',
-                                      );
+                                    if (!sourceClient)
+                                      throw new Error('Arc RPC unavailable.');
                                     const hash = await signer.writeContract({
                                       chain: arcTestnet,
-                                      address: entryPoint,
-                                      abi: entryPointAbi,
-                                      functionName: 'depositTo',
-                                      args: [payment.intent.account],
-                                      value: parseUnits(gasDeposit, 18),
+                                      address: arcCctpRoute.sourceToken,
+                                      abi: erc20Abi,
+                                      functionName: 'approve',
+                                      args: [
+                                        payment.intent.account,
+                                        BigInt(payment.intent.amount),
+                                      ],
                                     });
                                     const receipt =
                                       await sourceClient.waitForTransactionReceipt(
@@ -909,123 +855,176 @@ function PaymentWorkspace({
                                         },
                                       );
                                     if (receipt.status !== 'success')
-                                      throw new Error('Gas deposit reverted.');
+                                      throw new Error(
+                                        'Token allowance reverted.',
+                                      );
                                     setSetupReceipt((prior) => ({
                                       ...prior,
                                       [payment.id]:
-                                        'Account gas deposit confirmed. The payment has not been sent.',
+                                        'Payment allowance confirmed. The payment has not been sent.',
                                     }));
                                   })
                                 }
                               >
-                                Add account gas deposit
+                                Allow this payment amount
                               </button>
-                            </details>
-                          )}
-                          {setupReceipt[payment.id] && (
-                            <p role="status">{setupReceipt[payment.id]}</p>
-                          )}
-                          <div className="flow-inline-actions">
-                            {!payment.signature &&
-                              !payment.source &&
-                              (payment.prepared ? (
-                                <button
-                                  className="primary"
-                                  disabled={busy}
-                                  onClick={() => run(() => approve(payment))}
-                                >
-                                  Approve {usdc(payment.intent.amount)} USDC
-                                </button>
-                              ) : (
-                                <button
-                                  className="primary"
-                                  disabled={busy}
-                                  onClick={() => run(() => prepare(payment))}
-                                >
-                                  Check payment readiness
-                                </button>
-                              ))}
-                            {payment.signature && !payment.source && (
+                            </div>
+                            <label>
+                              Gas deposit (USDC)
+                              <input
+                                inputMode="decimal"
+                                value={gasDeposit}
+                                onChange={(event) =>
+                                  setGasDeposit(event.target.value)
+                                }
+                                placeholder="Only if the account needs gas"
+                              />
+                            </label>
+                            <button
+                              disabled={busy || !entryPoint || !gasDeposit}
+                              onClick={() =>
+                                run(async () => {
+                                  const signer = await connected(
+                                    payment,
+                                    arcTestnet.id,
+                                  );
+                                  if (
+                                    !sourceClient ||
+                                    !entryPoint ||
+                                    !/^\d+(\.\d{1,18})?$/.test(gasDeposit) ||
+                                    parseUnits(gasDeposit, 18) <= 0n
+                                  )
+                                    throw new Error(
+                                      'Enter a positive USDC gas deposit.',
+                                    );
+                                  const hash = await signer.writeContract({
+                                    chain: arcTestnet,
+                                    address: entryPoint,
+                                    abi: entryPointAbi,
+                                    functionName: 'depositTo',
+                                    args: [payment.intent.account],
+                                    value: parseUnits(gasDeposit, 18),
+                                  });
+                                  const receipt =
+                                    await sourceClient.waitForTransactionReceipt(
+                                      {
+                                        hash,
+                                      },
+                                    );
+                                  if (receipt.status !== 'success')
+                                    throw new Error('Gas deposit reverted.');
+                                  setSetupReceipt((prior) => ({
+                                    ...prior,
+                                    [payment.id]:
+                                      'Account gas deposit confirmed. The payment has not been sent.',
+                                  }));
+                                })
+                              }
+                            >
+                              Add account gas deposit
+                            </button>
+                          </details>
+                        )}
+                        {setupReceipt[payment.id] && (
+                          <p role="status">{setupReceipt[payment.id]}</p>
+                        )}
+                        <div className="flow-inline-actions">
+                          {!payment.signature &&
+                            !payment.source &&
+                            (payment.prepared ? (
                               <button
+                                className="primary"
                                 disabled={busy}
-                                onClick={() => run(() => submitSource(payment))}
+                                onClick={() => run(() => approve(payment))}
                               >
-                                {payment.sourceTransactionHash ||
-                                recovery[payment.id]?.source
-                                  ? 'Check source receipt'
-                                  : 'Send approved payment'}
+                                Approve {usdc(payment.intent.amount)} USDC
                               </button>
-                            )}
-                            {payment.source &&
-                              !payment.circle &&
-                              !payment.destination && (
-                                <button
-                                  disabled={busy}
-                                  onClick={() =>
-                                    run(async () => {
-                                      await api(
-                                        `/${payment.id}/attestation`,
-                                        {},
-                                      );
-                                      await refresh();
-                                    })
-                                  }
-                                >
-                                  Check transfer progress
-                                </button>
-                              )}
-                            {payment.circle && !payment.destination && (
+                            ) : (
+                              <button
+                                className="primary"
+                                disabled={busy}
+                                onClick={() => run(() => prepare(payment))}
+                              >
+                                Check payment readiness
+                              </button>
+                            ))}
+                          {payment.signature && !payment.source && (
+                            <button
+                              disabled={busy}
+                              onClick={() => run(() => submitSource(payment))}
+                            >
+                              {payment.sourceTransactionHash ||
+                              recovery[payment.id]?.source
+                                ? 'Check source receipt'
+                                : 'Send approved payment'}
+                            </button>
+                          )}
+                          {payment.source &&
+                            !payment.circle &&
+                            !payment.destination && (
                               <button
                                 disabled={busy}
                                 onClick={() =>
-                                  run(() => submitDestination(payment))
+                                  run(async () => {
+                                    await api(`/${payment.id}/attestation`, {});
+                                    await refresh();
+                                  })
                                 }
                               >
-                                {payment.destinationTransactionHash ||
-                                recovery[payment.id]?.destination
-                                  ? 'Check Sepolia receipt'
-                                  : 'Complete payment on Sepolia'}
+                                Check transfer progress
                               </button>
                             )}
-                          </div>
-                        </details>
-                      </article>
-                    ),
-                  )}
-              </>
-            )}
-          </div>
-          <aside className="payments-context">
-            <PurchaseTracker purchaseId={purchaseId || undefined} />
-            <Link className="payments-identity-link" href="/identity">
-              Set up your agent’s ENS identity <ArrowUpRight size={14} />
-            </Link>
-            <details className="flow-disclosure">
-              <summary>About this test route</summary>
-              <p>
-                Circle CCTP transfers native test USDC from Arc to Ethereum
-                Sepolia. This release requires a wallet transaction on each
-                network. Destination submission is manual.
-              </p>
-              <p>
-                The source amount includes the transfer fee. Gas is additional.
-                Payment receipt and service delivery are separate.
-              </p>
-              <a
-                href="https://testnet.arcscan.app/address/0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View deployed Arc agent wallet ↗
-              </a>
-              <p>
-                Deployment recorded September 11. A completed cross-chain
-                transfer is not yet recorded in deployment evidence.
-              </p>
-            </details>
-          </aside>
+                          {payment.circle && !payment.destination && (
+                            <button
+                              disabled={busy}
+                              onClick={() =>
+                                run(() => submitDestination(payment))
+                              }
+                            >
+                              {payment.destinationTransactionHash ||
+                              recovery[payment.id]?.destination
+                                ? 'Check Sepolia receipt'
+                                : 'Complete payment on Sepolia'}
+                            </button>
+                          )}
+                        </div>
+                      </details>
+                    </article>
+                  ),
+                )}
+            </>
+          )}
         </div>
-      )}
+        <aside className="payments-context">
+          {purchaseId && <PurchaseTracker purchaseId={purchaseId} />}
+          <Link className="payments-identity-link" href="/identity">
+            Set up your agent’s ENS identity <ArrowUpRight size={14} />
+          </Link>
+          <details className="flow-disclosure">
+            <summary>About this test route</summary>
+            <p>
+              Circle CCTP transfers native test USDC from Arc to Ethereum
+              Sepolia. This release requires a wallet transaction on each
+              network. Destination submission is manual.
+            </p>
+            <p>
+              The source amount includes the transfer fee. Gas is additional.
+              Payment receipt and service delivery are separate.
+            </p>
+            <a
+              href="https://testnet.arcscan.app/address/0xf4462268feEf5AB89e627F3C947Bd40C087C5F4d"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View deployed Arc agent wallet ↗
+            </a>
+            <p>
+              Deployment recorded September 11. A completed cross-chain transfer
+              is not yet recorded in deployment evidence.
+            </p>
+          </details>
+        </aside>
+      </div>
     </section>
   );
 }

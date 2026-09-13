@@ -25,7 +25,7 @@ test('MCP purchase travels through the durable merchant gateway and only deliver
     expect(data(await call('list_offerings')).offerings[0].id).toBe(offering.id);
     const quote = data(await call('get_purchase_quote', { offeringId: offering.id, idempotencyKey: 'mcp-attempt-1' }));
     const purchase = data(await call('request_purchase', { quoteId: quote.id }));
-    expect(purchase.approvalUrl).toContain(`/payments?request=${purchase.operationId}`);
+    expect(purchase.approvalUrl).toContain(`/spending?request=${purchase.operationId}`);
     expect(data(await call('request_purchase', { quoteId: quote.id })).operationId).toBe(purchase.operationId);
     expect((await call('get_purchase_delivery', { purchaseId: purchase.id })).isError).toBe(true);
     const op = await service.operations.get(purchase.operationId, buyer.owner), hash = `0x${'ab'.repeat(32)}` as const;

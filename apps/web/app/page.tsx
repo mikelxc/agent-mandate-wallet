@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { AgentControl } from '../components/agent-control';
+import { redirect } from 'next/navigation';
 import { ArcOnboarding } from '../components/arc-onboarding';
 import { AppFrame } from '../components/app-frame';
 import { InitialSetupGuard } from '../components/initial-setup-guard';
@@ -29,12 +29,10 @@ export default async function Home({ searchParams }: HomeProps) {
   const { operation } = await searchParams;
   // MCP approval links identify the request, independently of wallet network.
   if (operation) {
-    return (
-      <AppFrame>
-        <AgentControl />
-      </AppFrame>
-    );
+    const id = Array.isArray(operation) ? operation[0] : operation;
+    redirect(`/spending?${new URLSearchParams({ operation: id })}`);
   }
+
   return (
     <AppFrame>
       <Suspense fallback={<p>Loading setup…</p>}>

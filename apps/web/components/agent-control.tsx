@@ -2436,8 +2436,7 @@ export function AgentControl({
                   <button
                     className="text-button"
                     onClick={() => {
-                      setRequestedOperation('');
-                      window.history.replaceState(null, '', '/spending');
+                      window.location.assign('/spending');
                     }}
                   >
                     View all payments

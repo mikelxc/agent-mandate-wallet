@@ -39,7 +39,7 @@ test('quotes bind immutable pricing; concurrent acceptance and retries create on
   const purchases = await Promise.all([f.service.requestPurchase(q.id, f.buyer), f.service.requestPurchase(q.id, f.buyer)]);
   expect(purchases[0].operationId).toBe(purchases[1].operationId);
   expect((await f.service.operations.list(f.buyer.owner))).toHaveLength(1);
-  expect(purchases[0].approvalUrl).toBe(`https://www.wayleave.xyz/payments?request=${purchases[0].operationId}&purchase=${q.id}`);
+  expect(purchases[0].approvalUrl).toBe(`https://www.wayleave.xyz/spending?request=${purchases[0].operationId}&purchase=${q.id}`);
   expect(JSON.stringify(purchases[0])).not.toContain('signature');
   f.time(q.expiresAt + 1);
   expect((await f.service.requestPurchase(q.id, f.buyer)).operationId).toBe(purchases[0].operationId);

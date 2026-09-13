@@ -1,13 +1,16 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { AppFrame } from '../../components/app-frame';
-import { AgentControl } from '../../components/agent-control';
+import { OperationsWorkspace } from '../../components/operations-workspace';
 
 export const metadata: Metadata = { title: 'Spending' };
 
 export default function SpendingPage() {
   return (
     <AppFrame>
-      <AgentControl />
+      <Suspense fallback={<p>Loading spending…</p>}>
+        <OperationsWorkspace />
+      </Suspense>
     </AppFrame>
   );
 }

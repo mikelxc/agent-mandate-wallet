@@ -17,7 +17,7 @@ export function TestPurchasePrompt() {
       <h2>Put your wallet to work.</h2>
       <p>
         Ask your connected agent to buy the Developer Pack for 0.10 test USDC.
-        Approve its request here, then ask it to explain what it bought.
+        Open its approval link to review the request, then ask it to explain what it bought.
       </p>
       <details className="test-purchase-funding">
         <summary>Need test USDC?</summary>
@@ -44,8 +44,8 @@ export function TestPurchasePrompt() {
         {copied ? 'Instruction copied' : 'Copy purchase instruction'}
       </button>
       <p className="flow-note">
-        Your agent visits the public purchase page. You stay here to approve and
-        track the payment. Transfer fees and gas are additional; review the
+        Your agent visits the public purchase page. Open its approval link to approve and
+        track the payment in Spending. Transfer fees and gas are additional; review the
         exact quote before signing.
       </p>
       {error && <p role="alert">{error}</p>}

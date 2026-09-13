@@ -87,7 +87,7 @@ export class MerchantService {
     if (!op || op.agentId !== saved.agentId || op.intentHash !== cctpIntentHash(this.intent(saved))) throw new MerchantError('Purchase payment binding does not match');
     const delivered = await this.store.db.query('SELECT bundleSha256 FROM merchant_fulfillments WHERE quoteId=?').get(id) as { bundleSha256: string } | null;
     const settled = op.status === 'settled' && !!op.source && !!op.destination;
-    return { id, quote: saved.quote, operationId: op.id, approvalUrl: new URL(`/payments?request=${op.id}&purchase=${id}`, this.audience).href, paymentStatus: op.status, delivery: settled && delivered ? 'available' : 'locked', sourceTransactionHash: op.source?.transactionHash, destinationTransactionHash: op.destination?.transactionHash, merchantAmount: op.destination?.merchantAmount, ...(settled && delivered ? { bundleSha256: delivered.bundleSha256 } : {}) };
+    return { id, quote: saved.quote, operationId: op.id, approvalUrl: new URL(`/spending?request=${op.id}&purchase=${id}`, this.audience).href, paymentStatus: op.status, delivery: settled && delivered ? 'available' : 'locked', sourceTransactionHash: op.source?.transactionHash, destinationTransactionHash: op.destination?.transactionHash, merchantAmount: op.destination?.merchantAmount, ...(settled && delivered ? { bundleSha256: delivered.bundleSha256 } : {}) };
   }
   async delivery(id: string, owner: string, agentId?: string): Promise<PurchaseDelivery> {
     const purchase = await this.purchase(id, owner, agentId);
