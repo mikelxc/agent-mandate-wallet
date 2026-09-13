@@ -62,14 +62,17 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
     if(!response) return route.fulfill({status:401,json:{error:'No owner session'}});
     await route.fulfill({status:response.status, headers:Object.fromEntries(response.headers), body:await response.text()});
   });
-  await mockOwnedWalletRpc(page,owner.address);
+  await mockOwnedWalletRpc(page,owner.address,'payments');
   await page.route('**/gateway/auth/session',r=>r.fulfill({json:{address:owner.address,chainId:11155111}}));
   try {
     await page.context().addCookies([{name:'mandate_session',value:'a'.repeat(64),url:baseURL!}]);
     await page.goto('/?signin=1&returnTo=%2Fconnect');
     await expect(page).toHaveURL(/\/connect$/);
-    const lookup=async()=>{await expect(page.getByLabel('ENS name',{exact:true})).toHaveValue(identity.name);
-    await expect(page.getByLabel('ENS name',{exact:true})).toBeDisabled(); await page.getByRole('button',{name:'Look up name',exact:true}).click();};
+    const lookup=async()=>{
+      await expect(page.getByRole('button',{name:'Look up name',exact:true})).toHaveCount(0);
+      await expect(page.getByLabel('ENS identity from your wallets',{exact:true})).toHaveCount(0);
+      await expect(page.getByRole('region',{name:'Discovered identity'})).toBeVisible();
+    };
     await lookup();
     await page.setViewportSize({width:320,height:900});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -85,6 +88,8 @@ for (const wrongOwner of [false]) test(`shared access flow verifies, links, gran
     await page.getByRole('button',{name:'Verify with your wallet',exact:true}).click();
     await expect(page.getByLabel('Agent wallet address')).toBeDisabled();
     await expect(page.getByLabel('Agent wallet address')).toHaveValue(arcAccount);
+    await expect(page.getByLabel('Agent wallet address',{exact:true})).toHaveValue(arcAccount);
+    await expect(page.getByLabel('Agent wallet address',{exact:true})).toBeDisabled();
     await page.getByRole('button',{name:'Verify and link wallet',exact:true}).click();
     const manager=page.getByRole('region',{name:'Agent bearer tokens'});
     await expect(manager.getByLabel('Associated Arc account')).toBeDisabled();

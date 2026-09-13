@@ -36,9 +36,11 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
   const [selected, setSelected] = useState('');
   const [revision, setRevision] = useState(0);
   const [started, setStarted] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const [selectedArc, setSelectedArc] = useState('');
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setStarted(false); setErrors([]);
+    setLoading(true); setStarted(false); setErrors([]); setSelectedArc(''); setChoosing(false);
     void Promise.allSettled([
       (async () => {
         if (!sepoliaClient) throw new Error('Sepolia RPC unavailable');
@@ -77,20 +79,33 @@ function OwnedAccessPicker({ owner }: { owner: Address }) {
   </div>;
   const identity = identities.find(wallet => wallet.key === selected);
   const matchingArc = wallets.filter(wallet => wallet.chainId === arcTestnet.id && wallet.name === identity?.name);
-  const arc = requested?.chainId === arcTestnet.id ? requested : matchingArc.length === 1 ? matchingArc[0] : undefined;
+  const arcWallets = wallets.filter(wallet => wallet.chainId === arcTestnet.id);
+  const arc = requested?.chainId === arcTestnet.id ? requested
+    : arcWallets.find(wallet => wallet.account === selectedArc)
+      ?? (matchingArc.length === 1 ? matchingArc[0] : arcWallets.length === 1 ? arcWallets[0] : undefined);
   return <>
     {errors.map(error => <p role="alert" key={error}>{error}</p>)}
     {!!errors.length && <button onClick={() => setRevision(value => value + 1)}>Retry wallet lookup</button>}
     {!!identities.length && <div className="flow-surface access-wallet-picker">
-      <label>ENS identity from your wallets
-        <WayleaveSelect label="ENS identity from your wallets" value={selected} disabled={started}
-          onValueChange={setSelected} options={identities.map(wallet => ({ value: wallet.key, label: agentEnsName(wallet.name), description: wallet.account }))} />
-      </label>
-      <p>{arc ? `Arc account: ${arc.account}` : 'Confirm an Arc account after verifying this identity.'}</p>
+      {choosing ? <>
+        <label>Wallet
+          <WayleaveSelect label="Wallet" value={selected}
+            onValueChange={value => { setSelected(value); setSelectedArc(''); }}
+            options={identities.map(wallet => ({ value: wallet.key, label: agentEnsName(wallet.name), description: wallet.account }))} />
+        </label>
+        <button onClick={() => setChoosing(false)}>Use this wallet</button>
+      </> : <>
+        <strong>{identity ? agentEnsName(identity.name) : 'Choose a wallet'}</strong>
+        {!started && <button onClick={() => requestedAccount ? router.replace('/connect') : setChoosing(true)}>Change wallet</button>}
+      </>}
+      {arc && !(choosing && arcWallets.length > 1) ? <p>Arc account: {arc.account}</p> : !!arcWallets.length && <label>Arc wallet
+        <WayleaveSelect label="Arc wallet" value={arc?.account ?? selectedArc} disabled={started}
+          onValueChange={setSelectedArc} options={arcWallets.map(wallet => ({ value: wallet.account, label: wallet.name, description: wallet.account }))} />
+      </label>}
     </div>}
     {!identities.length && <p>No owned Sepolia names were found. You can verify another ENS identity below.</p>}
-    <AgentAccessFlow key={`${identity?.key ?? 'manual'}:${arc?.account ?? ''}`} restoreExisting
+    {!choosing && <AgentAccessFlow key={`${identity?.key ?? 'manual'}:${arc?.account ?? ''}`} restoreExisting
       initialName={identity ? agentEnsName(identity.name) : undefined} initialAccount={arc?.account}
-      onProgress={progress => setStarted(progress.identity)} />
+      onProgress={progress => setStarted(progress.identity)} />}
   </>;
 }

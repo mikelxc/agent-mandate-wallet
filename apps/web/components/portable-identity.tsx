@@ -81,6 +81,9 @@ function IdentityPanel({
   const [linkedAccounts, setLinkedAccounts] = useState<string[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(false);
   const [restoring, setRestoring] = useState(connectionOnly);
+  const [discoveryRevision, setDiscoveryRevision] = useState(0);
+  const [discovering, setDiscovering] = useState(false);
+  const automaticDiscovery = connectionOnly && !!initialName;
   const { address, chainId } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
@@ -122,6 +125,17 @@ function IdentityPanel({
       .finally(() => { if (!cancelled) setRestoring(false); });
     return () => { cancelled = true; };
   }, [address, connectionOnly]);
+  useEffect(() => {
+    if (!automaticDiscovery || restoring || verified) return;
+    let cancelled = false;
+    setDiscovering(true);
+    setError('');
+    void api<PortableIdentity>(`discover?deployment=${portableIdentityDeployment}&name=${encodeURIComponent(initialName)}`)
+      .then(result => { if (!cancelled) setIdentity(result); })
+      .catch(e => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load wallet identity.'); })
+      .finally(() => { if (!cancelled) setDiscovering(false); });
+    return () => { cancelled = true; };
+  }, [automaticDiscovery, initialName, restoring, verified, discoveryRevision]);
   useEffect(() => {
     if (!connectionOnly || !verified) return;
     let cancelled = false;
@@ -192,7 +206,10 @@ function IdentityPanel({
                   <p>Look it up first. Verify it with your wallet next.</p>
                 </div>
               </div>
-              <form
+              {automaticDiscovery ? <>
+                {discovering && <p role="status">Loading your wallet identity…</p>}
+                {!discovering && !identity && <button onClick={() => setDiscoveryRevision(value => value + 1)}>Retry identity lookup</button>}
+              </> : <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   void run(async () => {
@@ -235,7 +252,7 @@ function IdentityPanel({
                   {busy ? 'Looking up name…' : 'Look up name'}{' '}
                   <ArrowRight size={16} />
                 </button>
-              </form>
+              </form>}
               {!initialName && (
                 <p className="flow-note">
                   Need a name?{' '}

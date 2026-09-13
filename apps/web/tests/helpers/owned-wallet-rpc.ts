@@ -5,7 +5,7 @@ export const arcAccount = '0x3333333333333333333333333333333333333333';
 export const sepoliaAccount = '0x4444444444444444444444444444444444444444';
 const arcRegistry = '0x5555555555555555555555555555555555555555';
 const arcValidator = '0x6666666666666666666666666666666666666666';
-export async function mockOwnedWalletRpc(page: Page, owner: string) {
+export async function mockOwnedWalletRpc(page: Page, owner: string, arcLabel = 'desk') {
   await page.route('**/*', async route => {
     const request = route.request();
     if(request.method() !== 'POST' || request.url().includes('/gateway/')) return route.fallback();
@@ -20,7 +20,7 @@ export async function mockOwnedWalletRpc(page: Page, owner: string) {
         return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:(decoded.args![0] as any[]).map(entry=>({success:true,returnData:call(entry.callData)}))});
       }
       const decoded=decodeFunctionData({abi,data});
-      const values: Record<string,any>={nextTokenId:2n,ownerOf:owner,accountOf:arc?arcAccount:sepoliaAccount,labelOf:'desk',bindings:[registry,1n],ownershipEpoch:1n,balanceOf:0n,allowance:0n};
+      const values: Record<string,any>={nextTokenId:2n,ownerOf:owner,accountOf:arc?arcAccount:sepoliaAccount,labelOf:arc ? arcLabel : 'desk',bindings:[registry,1n],ownershipEpoch:1n,balanceOf:0n,allowance:0n};
       if(!(decoded.functionName in values)) throw new Error(`Unexpected wallet read ${decoded.functionName}`);
       return encodeFunctionResult({abi:abi as any,functionName:decoded.functionName,result:values[decoded.functionName]});
     }
