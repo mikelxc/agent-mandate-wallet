@@ -290,6 +290,79 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(nonceRequests).toBe(1);
       if (validSignature) {
         await expect(page).toHaveURL(/\/payments$/);
+        await page
+          .getByRole('navigation', { name: 'Main navigation' })
+          .getByRole('link', { name: 'Wallets', exact: true })
+          .click();
+        await expect(
+          page.getByRole('button', { name: 'Refresh wallets' }),
+        ).toBeVisible();
+        await page.getByRole('link', { name: 'Create new wallet' }).click();
+        await expect(page).toHaveURL(/\/accounts\/new$/);
+        await expect(
+          page.getByRole('button', { name: /Connect.*wallet/i }),
+        ).toHaveCount(0);
+        for (const width of [390, 1280]) {
+          await page.setViewportSize({ width, height: 900 });
+          await page
+            .getByLabel('Agent wallet name', { exact: true })
+            .fill('research-wallet');
+          await expect(
+            page.getByRole('button', {
+              name: 'Create wallet on Sepolia',
+              exact: true,
+            }),
+          ).toBeEnabled();
+          await page
+            .getByRole('navigation', { name: 'Wallet network' })
+            .getByRole('button', { name: /Arc Testnet/ })
+            .click();
+          await expect(
+            page.getByRole('complementary', {
+              name: 'Wallet ownership explained',
+            }),
+          ).toContainText('Ownership NFT');
+          await page
+            .getByRole('navigation', { name: 'Wallet network' })
+            .getByRole('button', { name: /Sepolia/ })
+            .click();
+          expect(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          ).toBe(true);
+          await page.screenshot({
+            path: '/private/tmp/wayleave-account-new-' + width + '.png',
+            fullPage: true,
+          });
+        }
+        for (const session of [
+          null,
+          {
+            address: '0x1111111111111111111111111111111111111111',
+            chainId: 11155111,
+          },
+        ]) {
+          await page.route('**/gateway/auth/session', (route) =>
+            route.fulfill({
+              status: session ? 200 : 401,
+              json: session ?? { error: 'Signed out' },
+            }),
+          );
+          await page.evaluate(() =>
+            window.dispatchEvent(
+              new CustomEvent('wayleave:owner-session', { detail: null }),
+            ),
+          );
+          await expect(
+            page.getByRole('heading', { name: 'Sign in to create a wallet' }),
+          ).toBeVisible();
+          await expect(
+            page.getByLabel('Agent wallet name', { exact: true }),
+          ).toHaveCount(0);
+          await page.unroute('**/gateway/auth/session');
+        }
+
         // Stay in the app: a full reload resets this test's in-memory wallet provider.
         await page.getByRole('banner').getByRole('link').first().click();
         await page

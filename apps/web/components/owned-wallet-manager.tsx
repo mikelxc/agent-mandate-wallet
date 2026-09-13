@@ -32,6 +32,15 @@ import {
 } from '../lib/owned-wallets';
 import { gatewayResponse } from '../lib/gateway-response';
 import { WayleaveSelect } from './wayleave-select';
+import { Plus, RefreshCw, Wallet } from 'lucide-react';
+
+function CreateWalletLink() {
+  return (
+    <Link className="primary account-create-link" href="/accounts/new">
+      <Plus size={16} aria-hidden="true" /> Create new wallet
+    </Link>
+  );
+}
 
 export function OwnedWalletManager({ network }: { network?: string }) {
   const { address } = useConnection();
@@ -42,7 +51,25 @@ export function OwnedWalletManager({ network }: { network?: string }) {
       network={network}
     />
   ) : (
-    <p>Connect your wallet to see its ownership NFTs across Sepolia and Arc.</p>
+    <section className="flow-surface wallet-manager">
+      <div className="wallet-toolbar">
+        <h2>Wallet access</h2>
+        <div className="wallet-toolbar-actions">
+          <button className="secondary" disabled>
+            <RefreshCw size={15} aria-hidden="true" /> Refresh wallets
+          </button>
+          <CreateWalletLink />
+        </div>
+      </div>
+      <div className="wallet-empty">
+        <Wallet size={28} aria-hidden="true" />
+        <h3>Your wallets, in one place</h3>
+        <p>
+          Connect your wallet to see its ownership NFTs across Sepolia and Arc.
+        </p>
+        <Link href="/">Sign in to your account →</Link>
+      </div>
+    </section>
   );
 }
 function WalletInventory({
@@ -155,20 +182,28 @@ function WalletInventory({
   }, [owner, sepoliaClient, arcClient, revision, network]);
   const wallet = wallets.find((item) => item.key === selected);
   return (
-    <section className="wallet-manager">
-      <p>Ownership NFTs on Sepolia and Arc Testnet · verified onchain</p>
-      <button
-        className="secondary"
-        disabled={loading}
-        onClick={() => {
-          setLoading(true);
-          setWallets([]);
-          setErrors([]);
-          setRevision((value) => value + 1);
-        }}
-      >
-        Refresh wallets
-      </button>
+    <section className="flow-surface wallet-manager">
+      <div className="wallet-toolbar">
+        <div>
+          <h2>Wallet access</h2>
+          <p>Ownership NFTs on Sepolia and Arc Testnet</p>
+        </div>
+        <div className="wallet-toolbar-actions">
+          <button
+            className="secondary"
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              setWallets([]);
+              setErrors([]);
+              setRevision((value) => value + 1);
+            }}
+          >
+            <RefreshCw size={15} aria-hidden="true" /> Refresh wallets
+          </button>
+          <CreateWalletLink />
+        </div>
+      </div>
       {loading && (
         <output>Loading ownership NFTs across supported chains…</output>
       )}
@@ -182,7 +217,9 @@ function WalletInventory({
           {errors.length
             ? 'No wallets found on the chains that could be checked.'
             : 'No ownership NFTs found for this account.'}{' '}
-          <Link href="/wallets/setup">Create a wallet</Link>
+          <span>
+            Each new agent wallet comes with an ownership NFT held by you.
+          </span>
         </p>
       )}
       {!!wallets.length && (
@@ -334,7 +371,7 @@ function WalletSettings({
     }
   }
   return (
-    <div>
+    <div className="wallet-settings">
       <h2>{wallet.name} settings</h2>
       <p>
         {wallet.network} · Ownership NFT #{wallet.id}

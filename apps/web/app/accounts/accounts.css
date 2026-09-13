@@ -1,0 +1,273 @@
+.accounts-page {
+  max-width: 1120px;
+}
+.accounts-page .flow-heading {
+  margin-bottom: 32px;
+}
+.accounts-page .flow-heading > p {
+  max-width: 570px;
+}
+.accounts-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #69716b;
+  margin-bottom: 32px;
+}
+.wallet-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eceeec;
+  margin-bottom: 28px;
+}
+.wallet-toolbar h2,
+.wallet-toolbar p {
+  margin: 0;
+}
+.wallet-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.accounts-page .account-create-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 18px;
+  background: #252a27;
+  color: white;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+}
+.wallet-toolbar .secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 24px;
+}
+.wallet-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: #69716b;
+}
+.wallet-empty > svg {
+  margin: 0 auto 8px;
+}
+.wallet-empty span {
+  display: block;
+}
+.wallet-empty a,
+.account-created a {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.wallet-settings {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid #eceeec;
+}
+.wallet-settings h2,
+.wallet-address {
+  overflow-wrap: anywhere;
+}
+.wallet-settings .wallet-balances {
+  margin: 28px 0;
+}
+.wallet-settings > button {
+  margin: 0 12px 16px 0;
+}
+.wallet-settings details {
+  padding: 18px 0;
+  border-top: 1px solid #eceeec;
+}
+.wallet-manager output {
+  display: block;
+  margin: 16px 0;
+}
+.wallet-manager [role='alert'] {
+  overflow-wrap: anywhere;
+}
+.account-create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 48px;
+}
+.account-create-main {
+  min-width: 0;
+}
+.account-create-main [hidden] {
+  display: none !important;
+}
+.account-chain-choice {
+  display: flex;
+  border-bottom: 1px solid #dce1dc;
+  margin-bottom: 28px;
+  gap: 24px;
+}
+.account-chain-choice button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  flex: 1;
+  padding: 12px 0 18px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #69716b;
+  text-align: left;
+}
+.account-chain-choice button[aria-pressed='true'] {
+  border-bottom-color: #252a27;
+  color: #252a27;
+}
+.account-chain-choice span {
+  font-weight: 550;
+  font-size: 16px;
+}
+.account-chain-choice small {
+  font-size: 12px;
+}
+.account-chain-choice svg {
+  position: absolute;
+  right: 4px;
+  top: 14px;
+}
+.account-create-main .chain-wallet-setup {
+  padding: 30px;
+}
+.account-create-main .chain-wallet-setup h2 {
+  font-size: 23px;
+  margin-bottom: 24px;
+}
+.account-create-main .chain-wallet-setup details {
+  margin-top: 24px;
+}
+.account-ownership {
+  background: #e9eeea;
+  padding: 32px;
+  border-radius: 28px;
+}
+.account-owner-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+}
+.account-owner-node code {
+  font-size: 12px;
+  color: #69716b;
+}
+.account-ownership-arrow {
+  display: block;
+  margin: 4px auto 20px;
+  color: #7a867c;
+}
+.account-nft-node {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: white;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 32px;
+}
+.account-nft-node strong,
+.account-nft-node span {
+  display: block;
+}
+.account-nft-node span {
+  font-size: 12px;
+  color: #69716b;
+  margin-top: 6px;
+}
+.account-nft-node svg {
+  flex-shrink: 0;
+}
+.account-ownership details {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #d2dad3;
+  font-size: 13px;
+}
+.account-ownership summary {
+  cursor: pointer;
+}
+.account-ownership .account-testnet-note {
+  font-size: 12px;
+  margin: 24px 0 0;
+}
+.account-gate {
+  max-width: 680px;
+  padding: 40px;
+}
+.account-gate > svg {
+  margin-bottom: 24px;
+  color: #69716b;
+}
+.account-gate .account-create-link {
+  margin-top: 16px;
+}
+.account-created {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  background: white;
+  border-radius: 24px;
+}
+.accounts-page :is(a, button, summary):focus-visible {
+  outline: 2px solid #252a27;
+  outline-offset: 5px;
+}
+@media (max-width: 800px) {
+  .account-create-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .wallet-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+}
+@media (max-width: 480px) {
+  .accounts-page {
+    width: calc(100% - 32px);
+    padding-top: 28px;
+  }
+  .accounts-page .flow-surface,
+  .account-ownership {
+    padding: 22px;
+  }
+  .wallet-toolbar-actions {
+    width: 100%;
+  }
+  .wallet-toolbar-actions > * {
+    flex: 1 1 140px;
+  }
+  .wallet-toolbar-actions :is(button, .account-create-link) {
+    padding: 12px 10px;
+    gap: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .accounts-back {
+    margin-bottom: 24px;
+  }
+}

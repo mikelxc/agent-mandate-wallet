@@ -13,6 +13,9 @@ for (const width of [320, 1280]) {
         },
       }),
     );
+    await page.route('**/gateway/auth/session', (route) =>
+      route.fulfill({ status: 401, json: { error: 'Sign in' } }),
+    );
     await page.goto('/agents/new');
     await expect(
       page.getByRole('heading', { name: 'Add an agent', exact: true }),
@@ -21,25 +24,17 @@ for (const width of [320, 1280]) {
     await expect(
       page.getByRole('navigation', { name: 'Onboarding steps' }),
     ).toHaveCount(0);
-    await page.goto('/wallets/setup');
-    await expect(page).toHaveURL(/\/wallets\/new$/);
-    await page
-      .getByLabel('Agent wallet name', { exact: true })
-      .fill('new-wallet');
+    await page.goto('/accounts/new');
+    await expect(page).toHaveURL(/\/accounts\/new$/);
     await expect(
-      page.getByRole('button', {
-        name: 'Create wallet on Sepolia',
-        exact: true,
-      }),
-    ).toBeDisabled();
-    await page.getByRole('button', { name: '2. Arc', exact: true }).click();
-    await page.getByLabel('Wallet name', { exact: true }).fill('new-wallet');
+      page.getByRole('heading', { name: 'Sign in to create a wallet' }),
+    ).toBeVisible();
     await expect(
-      page.getByRole('button', {
-        name: 'Create wallet on Arc Testnet',
-        exact: true,
-      }),
-    ).toBeDisabled();
+      page.getByLabel('Agent wallet name', { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: /Connect.*wallet/i }),
+    ).toHaveCount(0);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

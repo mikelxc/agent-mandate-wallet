@@ -1,20 +1,20 @@
 import { AppFrame } from '../../components/app-frame';
-import Link from 'next/link';
 import { OwnedWalletManager } from '../../components/owned-wallet-manager';
+import '../../components/agent-flows.css';
+import './accounts.css';
+
 export default function Accounts() {
   return (
     <AppFrame active="account">
-      <section className="account-page">
-        <div className="account-page-heading">
-          <h1>Wallet access</h1>
+      <section className="wl-agent-settings accounts-page">
+        <div className="flow-heading">
+          <span className="flow-eyebrow">YOUR ACCOUNT</span>
+          <h1>Your agent wallets</h1>
           <p>
-            See what your agents’ spending wallets can draw from your balance.
+            A wallet for each agent. Your funds stay together, and you approve
+            every payment.
           </p>
         </div>
-        <p>
-          Each ownership NFT controls a wallet on its own chain.{' '}
-          <Link href="/wallets/new">Create a wallet →</Link>
-        </p>
         <OwnedWalletManager />
       </section>
     </AppFrame>
