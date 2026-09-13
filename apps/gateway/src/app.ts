@@ -104,7 +104,7 @@ export function createApp(
     now?: () => number;
     routes?: GatewayRoute[];
     history?: HistoryService;
-    authenticateScopedAgent?: (request: Request) => Promise<(Agent & { scopes: string[] }) | null>;
+    authenticateScopedAgent?: (request: Request, chainId?: number) => Promise<(Agent & { scopes: string[]; chainId: number }) | null>;
   } = {},
 ) {
   const dashboardOrigin = options.dashboardOrigin ?? "http://localhost:3000";
@@ -218,17 +218,28 @@ export function createApp(
       if (path === "/health" && request.method === "GET")
         return json({ ok: true, chainId: 11155111, mode: "human_approval" });
       if (path.startsWith("/agent/")) {
+        const isHistory = /^\/agent\/payments(?:\/(summary|context))?$/.test(path) && request.method === "GET";
         const bearer = request.headers.get("authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
         const legacy = !options.authenticateScopedAgent && bearer && (await store.authenticateAgent(hashToken(bearer), now()));
-        const portable = !legacy && options.authenticateScopedAgent ? await options.authenticateScopedAgent(request) : null;
+        const portable = !legacy && options.authenticateScopedAgent ? await options.authenticateScopedAgent(request, isHistory ? undefined : 11155111) : null;
         const agent = legacy || portable;
         if (!agent) deny(401, "Invalid or revoked agent connection");
         const requiredScope = request.method === "GET" ? "read" : "propose_payment";
         if (portable && !portable.scopes.includes(requiredScope)) deny(403, "Agent permission required");
         await limit(`agent:${agent.id}`);
-        await own(agent.account, agent.owner);
-        if (/^\/agent\/payments(?:\/(summary|context))?$/.test(path) && request.method === "GET")
+        if (isHistory) {
+          // Scoped authentication already revalidates control on the token's chain.
+          // Never query the Sepolia validator for an Arc account or silently query
+          // another chain's index for the same address.
+          if (!portable) await own(agent.account, agent.owner);
+          const chainId = portable?.chainId ?? 11155111;
+          const filters = parseHistoryFilters(Object.fromEntries(url.searchParams));
+          if (filters.chainId !== undefined && filters.chainId !== chainId)
+            deny(403, "History chain is outside this connection. Connect an account on the requested chain.");
+          url.searchParams.set("chainId", String(chainId));
           return json(await paymentHistory(path, url, agent.account));
+        }
+        await own(agent.account, agent.owner);
         if (path === "/agent/account" && request.method === "GET")
           return json({
             agent,

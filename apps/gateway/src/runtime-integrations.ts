@@ -38,7 +38,7 @@ export function runtimeIntegrations(store: Store, chain: Chain, audience: string
     const authenticate = createCompatibleAgentAuth(store, chain, tokens.authenticate);
     return {
         history: historyFromEnv(),
-        authenticateScopedAgent: (request: Request) => authenticate(request, 11155111),
+        authenticateScopedAgent: (request: Request, chainId?: number) => authenticate(request, chainId),
         routes: [
             async (request: Request) => {
                 if (new URL(request.url).pathname !== '/agent/account' || request.method !== 'GET') return null;
