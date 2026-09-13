@@ -66,7 +66,7 @@ export function AppFrame({
             href="/connect"
             aria-current={active === 'connect' ? 'page' : undefined}
           >
-            Connect an agent
+            Agent access
           </Link>
           <Link
             href="/identity"

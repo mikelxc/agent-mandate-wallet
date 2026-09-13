@@ -256,7 +256,7 @@ for (const existingWallet of [false, true])
         { address: owner.address },
       );
       try {
-        await page.goto('/agents/new');
+        await page.goto('/connect');
         await page.getByLabel('ENS name', { exact: true }).fill(identity.name);
         await page
           .getByRole('button', { name: 'Look up name', exact: true })
@@ -298,7 +298,7 @@ for (const existingWallet of [false, true])
         await manager.getByLabel('Session length', { exact: true }).click();
         await page.getByRole('option', { name: '7 days', exact: true }).click();
         await manager
-          .getByRole('button', { name: 'Sign and create bearer token' })
+          .getByRole('button', { name: 'Sign and grant access' })
           .click();
         await expect(manager.getByRole('status')).toContainText(
           'Token created',

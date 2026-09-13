@@ -14,3 +14,19 @@ Validation:
 - Live gateway health returned HTTP 200, `ok: true`, chain 11155111 and `human_approval` mode.
 
 The owner must retry the real wallet signature in step 5. No user key, public-chain transaction, allowance or payment was used for this release.
+
+## Token button follow-up
+
+The token creation button silently disabled itself for an invalid/missing Arc account or connection label. It now remains clickable when idle and explains the exact field to correct before any gateway challenge or wallet signature. Surrounding whitespace is trimmed, and the ENS expiry note now describes the expiry cap without presenting it as a failure. Signature and gateway authorization checks are unchanged.
+
+The isolated release uses committed base `472b550` plus this component fix. The concurrent account-picker changes in the workspace are excluded. Frontend TypeScript and two browser regressions passed, including clickable missing-account and invalid-label guidance with no extra signature. Production release verification follows below.
+
+Published production deployment `dpl_G7A9MYHJKBa94c6hyBXmLq2eWtZG` (Ready), aliased to https://www.wayleave.xyz. Vercel build and TypeScript checks passed. Both browser regressions passed again against the live frontend with disposable injected wallets and intercepted gateway responses; no user-wallet signature or public-chain transaction was requested.
+
+## Guided step 5 — completed fields
+
+The guided connection flow now disables the ENS name and Arc account inherited from earlier steps. Connection label, duration and permissions remain editable before issuance; after issuance they are disabled in a collapsed signed-settings disclosure. MCP client setup appears only after token creation, and the connection list is collapsed in guided mode. Standalone connection management retains its editable account choice.
+
+A local-only staged harness exercised the actual PortableIdentityPanel and AgentTokenManager through identity verification, Arc association and token issuance, using disposable wallet signatures and intercepted gateway responses backed by real identity/association/token handlers. It verified all inherited fields disabled, no premature MCP controls, editable pre-sign settings, locked post-sign settings, and exactly three signatures for the three distinct proofs. The harness was removed from the deployable app before release. Frontend TypeScript passed. This UI test is not evidence of a user-wallet signature or live payment.
+
+Published as production deployment `dpl_GpxgRTKFGsHhp2MiaD7fmiKurRfM` (Ready), aliased to https://www.wayleave.xyz. Vercel production compilation and TypeScript validation passed. No local test harness route was included in the production route list.

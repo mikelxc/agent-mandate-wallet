@@ -84,7 +84,7 @@ export function MerchantAcceptance() {
             merchant receipt, and gas is additional. Agree these terms before
             requesting payment.
           </p>
-          <Link href="/connect">Connect an agent ↗</Link>
+          <Link href="/connect">Grant agent access ↗</Link>
         </details>
       </section>
       <div className="merchant-future">

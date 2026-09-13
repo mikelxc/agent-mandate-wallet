@@ -3,6 +3,7 @@
 import { PortableMcpSetup } from './portable-mcp-setup';
 import { AgentTokenManager } from './agent-token-manager';
 import { gatewayResponse } from '../lib/gateway-response';
+import { WayleaveSelect } from './wayleave-select';
 
 import { useEffect, useRef, useState } from 'react';
 import { ChainWalletSetup } from './chain-wallet-setup';
@@ -78,6 +79,7 @@ function IdentityPanel({
   const switchChain = useSwitchChain();
   const [tokenReady, setTokenReady] = useState(false);
   const [linkedAccounts, setLinkedAccounts] = useState<string[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
   const [restoring, setRestoring] = useState(connectionOnly);
   const { address, chainId } = useConnection();
   const connectors = useConnectors();
@@ -99,6 +101,7 @@ function IdentityPanel({
     setIdentity(undefined);
     setAssociation('');
     setTokenReady(false);
+    setLinkedAccounts([]);
     setPaymentAccount(initialAccount);
     callback.current?.({ identity: false, account: false, agent: false });
   }, [address]);
@@ -109,6 +112,7 @@ function IdentityPanel({
     void api<{ kind: string; identity: PortableIdentity }>('session')
       .then((session) => {
         if (cancelled || !address || session.kind !== 'owner' ||
+            (initialName && session.identity.name !== initialName) ||
             session.identity.controller.toLowerCase() !== address.toLowerCase()) return;
         setIdentity(session.identity);
         setName(session.identity.name);
@@ -121,14 +125,16 @@ function IdentityPanel({
   useEffect(() => {
     if (!connectionOnly || !verified) return;
     let cancelled = false;
+    setAccountsLoading(true);
     void api<{ accounts: { chainId: number; account: string }[] }>('accounts')
       .then(({ accounts }) => {
         if (cancelled) return;
         const linked = accounts.filter((item) => item.chainId === paymentChain).map((item) => item.account);
         setLinkedAccounts(linked);
-        setPaymentAccount((previous) => linked.includes(previous) ? previous : (linked[0] ?? ''));
+        setPaymentAccount((previous) => initialAccount || (linked.includes(previous) ? previous : (linked[0] ?? '')));
       })
-      .catch((e) => { if (!cancelled) setError(e.message); });
+      .catch((e) => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setAccountsLoading(false); });
     return () => { cancelled = true; };
   }, [connectionOnly, verified, association]);
   useEffect(() => {
@@ -206,6 +212,7 @@ function IdentityPanel({
                 <input
                   id="identity-name"
                   value={name}
+                  disabled={busy || (!!stage && !!initialName)}
                   onChange={(e) => {
                     setName(e.target.value);
                     setAssociation('');
@@ -396,11 +403,10 @@ function IdentityPanel({
                     open={stage === 'account'}
                     className="flow-disclosure"
                   >
-                    <summary>Connect an Arc wallet</summary>
-                    <h3>Keep the name. Choose the wallet.</h3>
+                    <summary>Confirm your Arc account</summary>
+                    <h3>{linkedAccounts.length ? 'Use a linked account' : 'Link your Arc account'}</h3>
                     <p>
-                      Link a wallet you own to this name. You’ll sign a separate
-                      ownership proof; payments still need your approval.
+                      {linkedAccounts.length ? 'Choose an account already linked to this identity. Its address stays fixed when you grant access.' : 'Link a wallet you own to this name. You’ll sign a separate ownership proof; payments still need your approval.'}
                     </p>
                     {!hideWalletCreation && (
                       <ChainWalletSetup
@@ -416,19 +422,30 @@ function IdentityPanel({
                     </p>
                     <label>
                       Agent wallet address
-                      <input
+                      {connectionOnly && !initialAccount && linkedAccounts.length ? <WayleaveSelect
+                        label="Agent wallet address"
                         value={paymentAccount}
+                        disabled={busy || accountsLoading}
+                        onValueChange={setPaymentAccount}
+                        options={linkedAccounts.map(account => ({ value: account, label: account }))}
+                      /> : <input
+                        value={paymentAccount}
+                        disabled={busy || accountsLoading || (!!stage && !!initialAccount)}
                         onChange={(e) => {
                           setPaymentAccount(e.target.value);
                           setAssociation('');
                         }}
                         placeholder="0x…"
-                      />
+                      />}
                     </label>
                     <button
-                      disabled={busy}
+                      disabled={busy || accountsLoading}
                       onClick={() =>
                         void run(async () => {
+                          if (connectionOnly && linkedAccounts.includes(paymentAccount)) {
+                            setAssociation(`Using linked Arc account ${paymentAccount}.`);
+                            return;
+                          }
                           if (!isAddress(paymentAccount))
                             throw new Error(
                               'Enter the payment smart-account address',
@@ -502,7 +519,7 @@ function IdentityPanel({
                         })
                       }
                     >
-                      Verify and link wallet
+                      {accountsLoading ? 'Loading linked accounts…' : linkedAccounts.includes(paymentAccount) ? 'Use this account' : 'Verify and link wallet'}
                     </button>
                     {association && <p role="status">{association}</p>}
                   </details>
@@ -514,7 +531,8 @@ function IdentityPanel({
                       audience={gatewayAudience}
                       identity={identity}
                       account={paymentAccount}
-                      accounts={connectionOnly ? linkedAccounts : undefined}
+                      guided={!!stage}
+                      accounts={connectionOnly && !stage ? linkedAccounts : undefined}
                       gateway={
                         gatewayAudience ?? 'https://www.wayleave.xyz/gateway'
                       }

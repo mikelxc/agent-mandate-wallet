@@ -22,7 +22,7 @@ import {
   ChainWalletPicker,
   type AdditionalWalletNetwork,
 } from './chain-wallet-picker';
-import { PortableIdentityPanel } from './portable-identity';
+import { AgentAccessFlow } from './agent-access-flow';
 import { PurchaseTracker } from './purchase-tracker';
 import { OnboardingContext } from './onboarding-context';
 import styles from './onboarding.module.css';
@@ -465,35 +465,10 @@ export function ArcOnboarding({
           )}
           {canLink && (
             <div hidden={step !== 5} className="arc-identity-form">
-              <div className="connection-preparation">
-                <span>
-                  {progress.identity
-                    ? progress.account
-                      ? '3 · Connect your app'
-                      : '2 · Associate your Arc wallet'
-                    : '1 · Verify the name for this connection'}
-                </span>
-                <p>
-                  {progress.identity
-                    ? progress.account
-                      ? 'Create a scoped connection and install it in your app.'
-                      : 'Sign an association between your name and the Arc wallet you own. This does not authorize payments.'
-                    : 'Your ENS name is already registered. Verify control with Wayleave so it can issue a named connection.'}
-                </p>
-              </div>
-              <PortableIdentityPanel
+              <AgentAccessFlow
                 key={`${address}:${namedWallet.account}:${arcWallet}`}
                 initialName={namedWallet.name}
                 initialAccount={arcWallet}
-                hideWalletCreation
-                hideIdentityHeading
-                stage={
-                  !progress.identity
-                    ? 'identity'
-                    : !progress.account
-                      ? 'account'
-                      : 'agent'
-                }
                 onProgress={setProgress}
               />
               {progress.agent && (

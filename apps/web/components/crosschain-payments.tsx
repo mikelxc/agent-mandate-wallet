@@ -347,8 +347,8 @@ function PaymentWorkspace({
           <h1>Payments</h1>
           <p>A familiar name at checkout. A payment you control.</p>
         </div>
-        <Link className="secondary" href="/agents/new">
-          Add agent <Plus size={16} />
+        <Link className="secondary" href="/connect">
+          Grant agent access <Plus size={16} />
         </Link>
       </div>
       <div className="payments-navigation" aria-label="Payment views">

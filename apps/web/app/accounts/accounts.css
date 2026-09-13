@@ -336,3 +336,4 @@
     margin-bottom: 24px;
   }
 }
+.wallet-grant-access { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; white-space: nowrap; }

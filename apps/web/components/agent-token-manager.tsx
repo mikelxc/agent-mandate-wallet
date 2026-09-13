@@ -37,6 +37,7 @@ export function AgentTokenManager({
   identity,
   account,
   accounts,
+  guided = false,
   gateway,
   audience,
   onReady,
@@ -44,6 +45,7 @@ export function AgentTokenManager({
   identity: PortableIdentity;
   account: string;
   accounts?: string[];
+  guided?: boolean;
   gateway: string;
   audience?: string;
   onReady: (ready: boolean) => void;
@@ -98,7 +100,17 @@ export function AgentTokenManager({
     issued && !issued.connection.revokedAt && issued.connection.expiresAt > now
       ? issued
       : undefined;
+  const settingsLocked = guided && !!activeIssued;
   async function issue() {
+    if (settingsLocked) return;
+    if (!isAddress(selectedAccount)) {
+      setError('Choose or enter the Arc account you linked in the wallet step. Use its full 0x address, not your ENS name or owner wallet.');
+      return;
+    }
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) {
+      setError('Enter a connection label such as assistant or research-agent: 1–63 lowercase letters, numbers or hyphens, with no spaces or ENS suffix. Start and end with a letter or number.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -177,18 +189,21 @@ export function AgentTokenManager({
   }
   return (
     <section className="mcp-setup-options" aria-label="Agent bearer tokens">
-      <h3>Create an agent connection</h3>
+      <h3>{settingsLocked ? 'Connection created' : 'Create an agent connection'}</h3>
+      {settingsLocked ? <p>Your signed connection settings are locked. Set up your client below.</p> :
       <p>
         Sign with your wallet to issue a bearer token for this agent and
         account. No agent key or registry transaction is needed. Payments still
         require your separate approval.
-      </p>
+      </p>}
+      <details open={!settingsLocked} className="flow-disclosure">
+      <summary>{settingsLocked ? 'Signed connection settings' : 'Connection settings'}</summary>
       <label>
         Connection label
         <input
           value={label}
-          disabled={busy}
-          onChange={(e) => setLabel(e.target.value)}
+          disabled={busy || settingsLocked}
+          onChange={(e) => setLabel(e.target.value.trim())}
           placeholder="research-assistant"
         />
       </label>
@@ -197,25 +212,25 @@ export function AgentTokenManager({
         {accounts ? <WayleaveSelect
           label="Associated Arc account"
           value={selectedAccount}
-          disabled={busy || !accounts.length}
+          disabled={busy || guided || !accounts.length}
           onValueChange={setSelectedAccount}
           options={accounts.map((value) => ({ value, label: value }))}
         /> : <input
           value={selectedAccount}
-          disabled={busy}
-          onChange={(e) => setSelectedAccount(e.target.value)}
+          disabled={busy || guided}
+          onChange={(e) => setSelectedAccount(e.target.value.trim())}
           placeholder="0x…"
         />}
       </label>
       <p>
-        Use an account already linked to this ENS identity in the wallet step.
+        {guided ? 'Arc account confirmed in the previous step.' : 'Use an account already linked to this ENS identity in the wallet step.'}
       </p>
       <label>
         Session length
         <WayleaveSelect
           label="Session length"
           value={String(duration)}
-          disabled={busy}
+          disabled={busy || settingsLocked}
           onValueChange={(value) => setDuration(Number(value))}
           options={agentSessionLengths.map((choice) => ({
             value: String(choice.value),
@@ -224,30 +239,27 @@ export function AgentTokenManager({
         />
       </label>
       <p>
-        The signed expiry cannot outlast your ENS name (
-        {new Date(identity.expiresAt * 1000).toLocaleString()}). Create a new
-        token after expiry; revoke any token below.
+        Your token lasts for the selected session length, up to your ENS name’s
+        expiry on {new Date(identity.expiresAt * 1000).toLocaleString()}.
+        You can revoke it below at any time.
       </p>
       <label className="agent-token-permissions">
         <input
           type="checkbox"
           checked={propose}
-          disabled={busy}
+          disabled={busy || settingsLocked}
           onChange={(e) => setPropose(e.target.checked)}
         />
         Allow payment proposals in addition to reading
       </label>
-      <button
+      {!settingsLocked && <button
         type="button"
-        disabled={
-          busy ||
-          !isAddress(selectedAccount) ||
-          !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)
-        }
+        disabled={busy}
         onClick={() => void issue()}
       >
-        {busy ? 'Working…' : 'Sign and create bearer token'}
-      </button>
+        {busy ? 'Working…' : 'Sign and grant access'}
+      </button>}
+      </details>
       {error && <p role="alert">{error}</p>}
       {activeIssued && (
         <p role="status">
@@ -256,17 +268,17 @@ export function AgentTokenManager({
           Copy its settings now; the token is only shown once.
         </p>
       )}
-      <PortableMcpSetup
+      {(!guided || activeIssued) && <PortableMcpSetup
         identity={identity.name}
         agentName={activeIssued?.connection.name ?? `${label}.${identity.name}`}
         account={activeIssued?.connection.account ?? selectedAccount}
         gateway={gateway}
         token={activeIssued?.token}
         expiresAt={activeIssued?.connection.expiresAt}
-      />
+      />}
       {connections.length > 0 && (
-        <div>
-          <h3>Your connections</h3>
+        <details className="flow-disclosure" open={!guided}>
+          <summary>Your connections ({connections.length})</summary>
           {connections.map((connection) => (
             <div key={connection.id}>
               <strong>{connection.name}</strong>
@@ -294,7 +306,7 @@ export function AgentTokenManager({
               )}
             </div>
           ))}
-        </div>
+        </details>
       )}
     </section>
   );

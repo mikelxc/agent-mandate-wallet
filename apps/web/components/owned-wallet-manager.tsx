@@ -376,7 +376,12 @@ function WalletSettings({
   }
   return (
     <div className="wallet-settings">
-      <h2>{wallet.name} settings</h2>
+      <div className="wallet-toolbar">
+        <h2>{wallet.name} settings</h2>
+        <Link className="secondary wallet-grant-access" href={`/connect?chainId=${wallet.chainId}&account=${wallet.account}`}>
+          Grant agent access
+        </Link>
+      </div>
       <p>
         {wallet.network} · Ownership NFT #{wallet.id}
       </p>

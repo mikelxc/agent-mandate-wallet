@@ -448,3 +448,16 @@
 .mcp-picker strong { font-size: 12px; font-weight: 550; }
 .mcp-picker small { font-size: 10px; color: #727b74; }
 @media (max-width:420px) { .mcp-picker .mcp-client-picker { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.agent-access-flow { width: 100%; max-width: 760px; min-width: 0; }
+.agent-access-flow .connection-preparation { margin-bottom: 24px; }
+.agent-access-flow .connection-preparation > span {
+  display: block; font-size: 12px; color: #536a46; margin-bottom: 10px;
+}
+.agent-access-flow .identity-flow { padding: 0; }
+.agent-access-flow .flow-layout { display: block; }
+.agent-access-flow [hidden] { display: none !important; }
+.agent-access-page { box-sizing: border-box; width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 24px; }
+@media (max-width: 600px) { .agent-access-page { padding: 24px 20px; } }
+.access-wallet-picker { margin-bottom: 24px; }
+.access-wallet-picker p { overflow-wrap: anywhere; }

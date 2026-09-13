@@ -68,6 +68,18 @@ for (const wrongOwner of [false, true]) test(`identity starting on Arc ${wrongOw
     await page.evaluate(() => (window as any).ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x4cef52'}]}));
     await page.getByRole('button',{name:'Verify with your wallet',exact:true}).click();
     if(wrongOwner) { await expect(page.locator('.flow-message[role=alert]')).toContainText('current NFT owner'); expect(signatures).toBe(0); }
-    else { await expect(page.getByRole('status')).toContainText('NFT ownership verified'); expect(signatures).toBe(1); }
+    else { await expect(page.getByRole('status')).toContainText('NFT ownership verified'); expect(signatures).toBe(1);
+      const manager=page.getByRole('region',{name:'Agent bearer tokens'});
+      const create=manager.getByRole('button',{name:'Sign and grant access'});
+      await expect(create).toBeEnabled();
+      await create.click();
+      await expect(manager.getByRole('alert')).toContainText('Arc account you linked');
+      await manager.getByLabel('Associated Arc account').fill('  0x3333333333333333333333333333333333333333  ');
+      await manager.getByLabel('Connection label').fill('Assistant Agent');
+      await create.click();
+      await expect(manager.getByRole('alert')).toContainText('connection label such as assistant');
+      await expect(create).toBeEnabled();
+      expect(signatures).toBe(1);
+    }
   } finally {store.close();}
 });

@@ -54,17 +54,15 @@ export function SpendingOverview({
         aria-labelledby="wallet-entry-title"
       >
         <div className="entry-copy">
-          <span className="entry-eyebrow">
-            A little freedom. A clear boundary.
-          </span>
+          <span className="entry-eyebrow">Agent payments</span>
           <h1 id="wallet-entry-title">
-            Let your agents
+            Your agents request.
             <br />
-            do their thing.
+            You approve.
           </h1>
           <p>
-            Give your agents a wallet you own. Payments come from your existing
-            balance, with your approval.
+            Give your agent a wallet for paid tools and services. Review its
+            requests in Wayleave and pay from your existing wallet balance.
           </p>
           <div className={styles.actions}>
             <button className="primary" onClick={onSetup}>
@@ -77,11 +75,8 @@ export function SpendingOverview({
               </button>
             </div>
           </div>
-          <span className="entry-note">
-            Your keys stay yours. Your funds stay together.
-          </span>
           <Link href="#connect-agent" className="entry-help">
-            Connect your favorite app <ArrowRight size={14} />
+            How to connect your agent <ArrowRight size={14} />
           </Link>
         </div>
         <WalletScene />
@@ -90,24 +85,24 @@ export function SpendingOverview({
             <span className={styles.principleIcon}>
               <Wallet size={20} strokeWidth={1.5} aria-hidden="true" />
             </span>
-            <h2>One source of funds.</h2>
-            <p>Agents spend from your wallet. No juggling separate balances.</p>
+            <h2>Pay from your wallet</h2>
+            <p>Approved payments use your existing balance on that chain.</p>
           </div>
           <div>
             <span className={styles.principleIcon}>
               <ShieldCheck size={20} strokeWidth={1.5} aria-hidden="true" />
             </span>
-            <h2>A say in every payment.</h2>
+            <h2>Review each request</h2>
             <p>See the amount and recipient before you approve.</p>
           </div>
           <div>
             <span className={styles.principleIcon}>
               <Badge size={20} strokeWidth={1.5} aria-hidden="true" />
             </span>
-            <h2>Ownership stays with you.</h2>
+            <h2>Own the agent wallet</h2>
             <p>
-              An NFT in your wallet controls the agent wallet. Your agent gets
-              access; you keep ownership.
+              You hold its ownership NFT. Connecting an app does not transfer
+              ownership.
             </p>
           </div>
         </div>
@@ -115,7 +110,7 @@ export function SpendingOverview({
       </section>
     );
   return (
-    <section className="payments-heading">
+    <section className="payments-heading spending-heading">
       <div>
         <h1>Your spending, together.</h1>
         <p>
@@ -124,8 +119,8 @@ export function SpendingOverview({
             : 'No payments waiting for approval'}
         </p>
       </div>
-      <Link className="secondary" href="/agents/new">
-        {active.length ? 'Add agent' : 'Connect an agent'}
+      <Link className="secondary agent-access-action" href="/connect">
+        Grant agent access
         <ArrowRight size={16} />
       </Link>
     </section>
@@ -138,7 +133,7 @@ const sceneAgents = [
     ens: 'research.wayleave.eth',
     nft: '101',
     address: '0x1111111111111111111111111111111111111101',
-    task: 'A paper worth reading.',
+    task: 'Access a research paper',
     amount: '$4.00',
     recipient: 'Research library',
     shape: 'flower',
@@ -148,7 +143,7 @@ const sceneAgents = [
     ens: 'travel.wayleave.eth',
     nft: '102',
     address: '0x2222222222222222222222222222222222222202',
-    task: 'The next stop, sorted.',
+    task: 'Buy a travel guide',
     amount: '$12.00',
     recipient: 'Travel service',
     shape: 'arch',
@@ -158,7 +153,7 @@ const sceneAgents = [
     ens: 'coding.wayleave.eth',
     nft: '103',
     address: '0x3333333333333333333333333333333333333303',
-    task: 'A little more compute.',
+    task: 'Run a compute job',
     amount: '$2.50',
     recipient: 'Compute provider',
     shape: 'steps',
@@ -207,7 +202,7 @@ function WalletScene() {
       aria-label="Your wallet holds ownership NFTs, each controlling a real agent wallet"
     >
       <div className="scene-player">
-        <span className="scene-caption">YOUR WALLET. YOUR AGENTS.</span>
+        <span className="scene-caption">HOW A PAYMENT WORKS</span>
         <button
           aria-label={playing ? 'Pause wallet demo' : 'Play wallet demo'}
           onClick={() => setPlaying(!playing)}

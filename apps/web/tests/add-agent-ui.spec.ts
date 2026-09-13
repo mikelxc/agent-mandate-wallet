@@ -16,9 +16,10 @@ for (const width of [320, 1280]) {
     await page.route('**/gateway/auth/session', (route) =>
       route.fulfill({ status: 401, json: { error: 'Sign in' } }),
     );
-    await page.goto('/agents/new');
+    await page.goto('/connect');
+    await expect(page).toHaveURL(/\/connect$/);
     await expect(
-      page.getByRole('heading', { name: 'Add an agent', exact: true }),
+      page.getByRole('heading', { name: 'Grant agent access', exact: true }),
     ).toBeVisible();
     await expect(page.getByLabel('ENS name', { exact: true })).toBeVisible();
     await expect(
