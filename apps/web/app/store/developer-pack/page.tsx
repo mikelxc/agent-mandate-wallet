@@ -4,7 +4,7 @@ import { StoreFrame } from '../../../components/store-frame';
 import { DeveloperPack } from '../../../components/developer-pack';
 import './store.css';
 export const metadata: Metadata = {
-  title: 'Wayleave Developer Pack · Agent purchase',
+  title: 'Developer Pack',
   description:
     'Purchase architecture notes, validator source and a sample dataset with your Wayleave agent. Pay test USDC on Arc; Wayleave receives USDC on Ethereum Sepolia.',
   alternates: { canonical: 'https://www.wayleave.xyz/store/developer-pack' },

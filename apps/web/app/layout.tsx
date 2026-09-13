@@ -26,7 +26,10 @@ export const metadata: Metadata = {
     title: 'Wayleave — Agent wallets, owned by you',
     images: ['/brand/social.png'],
   },
-  title: 'Wayleave · Payments',
+  title: {
+    default: 'Wayleave — Agent wallets, owned by you',
+    template: '%s · Wayleave',
+  },
   description:
     'Connect your wallet to your agents. Review every payment and stay in control of your spending.',
 };

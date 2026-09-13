@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { AppFrame } from '../../components/app-frame';
 import { OwnedWalletManager } from '../../components/owned-wallet-manager';
 import '../../components/agent-flows.css';
 import './accounts.css';
+
+export const metadata: Metadata = { title: 'Wallets' };
 
 export default function Accounts() {
   return (
