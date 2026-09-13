@@ -124,10 +124,10 @@ export function SpendingOverview({
             : 'No payments waiting for approval'}
         </p>
       </div>
-      <button className="secondary" onClick={onSetup}>
+      <Link className="secondary" href="/agents/new">
         {active.length ? 'Add agent' : 'Connect an agent'}
         <ArrowRight size={16} />
-      </button>
+      </Link>
     </section>
   );
 }
