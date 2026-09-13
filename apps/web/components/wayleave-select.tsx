@@ -1,10 +1,16 @@
 'use client';
 
 import { Select } from '@base-ui/react/select';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Plus } from 'lucide-react';
+import Link from 'next/link';
 import './wayleave-select.css';
 
-type Choice = { value: string; label: string; description?: string; disabled?: boolean };
+type Choice = {
+  value: string;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+};
 
 export function WayleaveSelect({
   value,
@@ -14,6 +20,7 @@ export function WayleaveSelect({
   id,
   disabled,
   badge = false,
+  createAction,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -22,6 +29,7 @@ export function WayleaveSelect({
   id?: string;
   disabled?: boolean;
   badge?: boolean;
+  createAction?: { href: string; label: string };
 }) {
   return (
     <Select.Root
@@ -71,6 +79,17 @@ export function WayleaveSelect({
                 </Select.Item>
               ))}
             </Select.List>
+            {createAction && (
+              <div className="wayleave-select-footer">
+                <Link
+                  href={createAction.href}
+                  className="wayleave-select-create"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  {createAction.label}
+                </Link>
+              </div>
+            )}
           </Select.Popup>
         </Select.Positioner>
       </Select.Portal>

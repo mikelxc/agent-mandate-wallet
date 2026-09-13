@@ -223,8 +223,11 @@ function WalletInventory({
         </p>
       )}
       {!!wallets.length && (
+        <div className="wallet-selection">
+        <div className="wallet-selection-heading"><h3>Choose an agent wallet</h3><span>{wallets.length} {wallets.length === 1 ? 'wallet' : 'wallets'}</span></div>
         <WayleaveSelect
           label="Spending wallet"
+          createAction={{ href: '/accounts/new', label: 'Create new wallet' }}
           value={selected}
           onValueChange={(value) => {
             setSelected(value);
@@ -241,6 +244,7 @@ function WalletInventory({
             description: item.account,
           }))}
         />
+        </div>
       )}
       {wallet && (
         <WalletSettings
@@ -389,18 +393,18 @@ function WalletSettings({
         <div>
           <dt>Your balance</dt>
           <dd>
-            {details ? formatUnits(details.balance, 6) : '…'}{' '}
-            {wallet.chainId === sepolia.id ? 'demo USDC' : 'USDC'}
+            <span className="wallet-amount">{details ? formatUnits(details.balance, 6) : '…'}</span>{' '}
+            <span className="wallet-currency">{wallet.chainId === sepolia.id ? 'demo USDC' : 'USDC'}</span>
           </dd>
         </div>
         <div>
           <dt>This wallet can access</dt>
-          <dd>{details ? formatUnits(details.allowance, 6) : '…'} USDC</dd>
+          <dd><span className="wallet-amount">{details ? formatUnits(details.allowance, 6) : '…'}</span>{' '}<span className="wallet-currency">USDC</span></dd>
         </div>
         <div>
           <dt>Reserved for network fees</dt>
           <dd>
-            {details ? formatUnits(details.gas, 18) : '…'} {wallet.gasSymbol}
+            <span className="wallet-amount">{details ? formatUnits(details.gas, 18) : '…'}</span>{' '}<span className="wallet-currency">{wallet.gasSymbol}</span>
           </dd>
         </div>
       </dl>

@@ -9,7 +9,11 @@ import {
   type Hex,
 } from 'viem';
 import { sepolia } from 'viem/chains';
-import { sepoliaDeployment } from '@mandate/sdk';
+import {
+  sepoliaDeployment,
+  kernelAccountFactoryAbi,
+  nFTOwnerValidatorAbi,
+} from '@mandate/sdk';
 import { Store } from '../../gateway/src/store';
 import { createHostedGateway } from '../../gateway/src/hosted';
 import type { Chain } from '../../gateway/src/chain';
@@ -83,6 +87,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       'expired-ui-test-hash',
       Math.floor(Date.now() / 1000) - 3600,
     );
+    let inventoryEnabled = false;
     let nfatBalance = 0;
     let balanceReads = 0;
     await page.route(
@@ -112,9 +117,79 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
               returnData: `0x${nfatBalance.toString(16).padStart(64, '0')}`,
             };
           }
+          if (inventoryEnabled) {
+            let returnData: Hex | undefined;
+            try {
+              if (
+                target.toLowerCase() ===
+                sepoliaDeployment.registry.toLowerCase()
+              ) {
+                const { functionName } = decodeFunctionData({
+                  abi: kernelAccountFactoryAbi,
+                  data,
+                });
+                if (functionName === 'nextTokenId')
+                  returnData = encodeFunctionResult({
+                    abi: kernelAccountFactoryAbi,
+                    functionName,
+                    result: 2n,
+                  });
+                if (functionName === 'ownerOf')
+                  returnData = encodeFunctionResult({
+                    abi: kernelAccountFactoryAbi,
+                    functionName,
+                    result: owner.address,
+                  });
+                if (functionName === 'accountOf')
+                  returnData = encodeFunctionResult({
+                    abi: kernelAccountFactoryAbi,
+                    functionName,
+                    result: '0x1111111111111111111111111111111111111111',
+                  });
+                if (functionName === 'labelOf')
+                  returnData = encodeFunctionResult({
+                    abi: kernelAccountFactoryAbi,
+                    functionName,
+                    result: 'research-wallet',
+                  });
+              } else if (
+                target.toLowerCase() ===
+                sepoliaDeployment.validator.toLowerCase()
+              ) {
+                returnData = encodeFunctionResult({
+                  abi: nFTOwnerValidatorAbi,
+                  functionName: 'bindings',
+                  result: [sepoliaDeployment.registry, 1n],
+                });
+              } else {
+                returnData = ('0x' +
+                  (data.startsWith('0x70a08231') ? 19990982n : 10000000n)
+                    .toString(16)
+                    .padStart(64, '0')) as Hex;
+              }
+            } catch {}
+            if (returnData) return { success: true, returnData };
+          }
           return { success: false, returnData: '0x' };
         };
         const reply = (call: any) => {
+          if (
+            inventoryEnabled &&
+            ['eth_chainId', 'eth_blockNumber', 'eth_getCode'].includes(
+              call.method,
+            )
+          )
+            return {
+              jsonrpc: '2.0',
+              id: call.id,
+              result:
+                call.method === 'eth_chainId'
+                  ? '0xaa36a7'
+                  : call.method === 'eth_getCode'
+                    ? '0x6000'
+                    : '0x10',
+            };
+
           if (call.method === 'eth_call') {
             const { to, data } = call.params[0];
             if (data.startsWith('0x82ad56cb')) {
@@ -290,6 +365,7 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
       expect(nonceRequests).toBe(1);
       if (validSignature) {
         await expect(page).toHaveURL(/\/payments$/);
+        inventoryEnabled = true;
         await page
           .getByRole('navigation', { name: 'Main navigation' })
           .getByRole('link', { name: 'Wallets', exact: true })
@@ -297,7 +373,59 @@ for (const outcome of ['valid', 'wrong-wallet', 'provider-error'] as const)
         await expect(
           page.getByRole('button', { name: 'Refresh wallets' }),
         ).toBeVisible();
-        await page.getByRole('link', { name: 'Create new wallet' }).click();
+        const create = page
+          .locator('.wallet-toolbar-actions')
+          .getByRole('link', { name: 'Create new wallet' });
+        await expect(create).toBeVisible();
+        const selector = page.getByRole('combobox', {
+          name: 'Spending wallet',
+        });
+        await expect(selector).toContainText('research-wallet');
+        for (const width of [390, 1280]) {
+          await page.setViewportSize({ width, height: 900 });
+          await expect(create).toBeInViewport();
+          const balances = page.locator('.wallet-balances');
+          await expect(balances.locator('.wallet-amount').first()).toHaveText(
+            '19.990982',
+          );
+          const rowWidths = await balances
+            .locator(':scope > div')
+            .evaluateAll((rows) =>
+              rows.map((row) => row.getBoundingClientRect().width),
+            );
+          expect(Math.max(...rowWidths) - Math.min(...rowWidths)).toBeLessThan(
+            2,
+          );
+          await expect(balances.locator('.wallet-currency').first()).toHaveCSS(
+            'white-space',
+            'nowrap',
+          );
+          await page.screenshot({
+            path: '/private/tmp/wayleave-wallet-settings-' + width + '.png',
+            fullPage: true,
+          });
+          await selector.click();
+          const footer = page
+            .locator('.wayleave-select-footer')
+            .getByRole('link', { name: 'Create new wallet' });
+          await expect(footer).toBeVisible();
+          await expect(footer).toHaveAttribute('href', '/accounts/new');
+          await page.screenshot({
+            path: '/private/tmp/wayleave-wallet-selector-' + width + '.png',
+            fullPage: true,
+          });
+          await page.keyboard.press('Escape');
+        }
+        await selector.focus();
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Tab');
+        const footer = page
+          .locator('.wayleave-select-footer')
+          .getByRole('link', { name: 'Create new wallet' });
+        await expect(footer).toBeFocused();
+        await page.keyboard.press('Enter');
+        inventoryEnabled = false;
+
         await expect(page).toHaveURL(/\/accounts\/new$/);
         await expect(
           page.getByRole('button', { name: /Connect.*wallet/i }),

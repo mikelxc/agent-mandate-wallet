@@ -91,6 +91,33 @@ button.wayleave-select--badge {
   margin: 0;
   padding: 0;
 }
+.wayleave-select-footer {
+  margin-top: 6px;
+  padding: 8px 4px 4px;
+  border-top: 1px solid #dce1dd;
+}
+.wayleave-select-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid #252a27;
+  border-radius: 12px;
+  background: #252a27;
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 550;
+}
+.wayleave-select-create:hover {
+  background: #3a423c;
+}
+.wayleave-select-create:focus-visible {
+  outline: 2px solid #252a27;
+  outline-offset: 3px;
+}
 .wayleave-select-option {
   position: relative;
   display: flex;
